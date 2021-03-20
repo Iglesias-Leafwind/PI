@@ -255,11 +255,6 @@ h6 {
 
 /* Desktop Navigation */
 
-.main-nav {
-  /* Drop Down */
-  /* Deep Drop Down */
-}
-
 .main-nav,
 .main-nav * {
   margin: 0;
@@ -621,11 +616,11 @@ h6 {
 }
 
 #services .title a {
-  color: #111;
+  color: #ffffff;
 }
 
 #services .box:hover .title a {
-  color: #065e77;
+  color: #00fcda;
 }
 
 #services .description {
@@ -633,104 +628,11 @@ h6 {
   line-height: 28px;
   margin-bottom: 0;
   text-align: left;
-}
-
-/* Why Us Section
---------------------------------*/
-
-#why-us {
-  padding: 60px 0;
-}
-
-#why-us .why-us-content .features {
-  margin: 0 0 15px 0;
-  padding: 0;
-  transition: 0.3s ease-in-out;
-}
-
-#why-us .why-us-content .features i {
-  font-size: 36px;
-  float: left;
-}
-
-#why-us .why-us-content .features h4 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-left: 56px;
-  color: #413e66;
-  margin-bottom: 5px;
-}
-
-#why-us .why-us-content .features p {
-  font-size: 16px;
-  margin-left: 56px;
-  color: #555186;
-}
-
-#why-us .counters {
-  padding-top: 40px;
-}
-
-#why-us .counters span {
-  font-family: "Montserrat", sans-serif;
-  font-weight: bold;
-  font-size: 48px;
-  display: block;
-  color: #555186;
-}
-
-#why-us .counters p {
-  padding: 0;
-  margin: 0 0 20px 0;
-  font-family: "Montserrat", sans-serif;
-  font-size: 14px;
-  color: #8a87b6;
-}
-
-/* Call To Action Section
---------------------------------*/
-
-#call-to-action {
-  background: #2d2b46;
-  background-size: cover;
-  padding: 40px 0;
-}
-
-#call-to-action .cta-title {
-  color: #fff;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-#call-to-action .cta-text {
-  color: #fff;
-}
-
-#call-to-action .cta-btn {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 1px;
-  display: inline-block;
-  padding: 8px 26px;
-  border-radius: 3px;
-  transition: 0.5s;
-  margin: 10px;
-  border: 3px solid #fff;
-  color: #fff;
-}
-
-#call-to-action .cta-btn:hover {
-  background: #1bb1dc;
-  border: 3px solid #1bb1dc;
+  color: #f5f5f5;
 }
 
 /* Features Section
 --------------------------------*/
-
-#features {
-  padding: 80px 0;
-}
 
 #features h4 {
   font-weight: 600;
@@ -879,63 +781,6 @@ h6 {
   opacity: 1;
 }
 
-/* Testimonials Section
---------------------------------*/
-
-#testimonials {
-  padding: 60px 0;
-}
-
-#testimonials .section-header {
-  margin-bottom: 40px;
-}
-
-#testimonials .testimonial-item .testimonial-img {
-  width: 120px;
-  border-radius: 50%;
-  border: 4px solid #fff;
-  float: left;
-}
-
-#testimonials .testimonial-item h3 {
-  font-size: 20px;
-  font-weight: bold;
-  margin: 10px 0 5px 0;
-  color: #111;
-  margin-left: 140px;
-}
-
-#testimonials .testimonial-item h4 {
-  font-size: 14px;
-  color: #999;
-  margin: 0 0 15px 0;
-  margin-left: 140px;
-}
-
-#testimonials .testimonial-item p {
-  font-style: italic;
-  margin: 0 0 15px 140px;
-}
-
-#testimonials .owl-nav,
-#testimonials .owl-dots {
-  margin-top: 5px;
-  text-align: center;
-}
-
-#testimonials .owl-dot {
-  display: inline-block;
-  margin: 0 5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #ddd;
-}
-
-#testimonials .owl-dot.active {
-  background-color: #1bb1dc;
-}
-
 /* Team Section
 --------------------------------*/
 
@@ -1018,197 +863,6 @@ h6 {
   margin: 0 2px;
 }
 
-/* Clients Section
---------------------------------*/
-
-#clients {
-  padding: 60px 0;
-}
-
-#clients img {
-  max-width: 80%;
-  opacity: 0.5;
-  transition: 0.3s;
-  padding: 15px 0;
-}
-
-#clients img:hover {
-  opacity: 1;
-}
-
-#clients .owl-nav,
-#clients .owl-dots {
-  margin-top: 5px;
-  text-align: center;
-}
-
-#clients .owl-dot {
-  display: inline-block;
-  margin: 0 5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #ddd;
-}
-
-#clients .owl-dot.active {
-  background-color: #1bb1dc;
-}
-
-/* Pricing Section
---------------------------------*/
-
-#pricing {
-  padding: 80px 0;
-}
-
-#pricing .card {
-  border: 0;
-  border-radius: 0px;
-  box-shadow: 0 3px 0px 0 rgba(65, 62, 102, 0.08);
-  transition: all .3s ease-in-out;
-  padding: 36px 0;
-  position: relative;
-}
-
-#pricing .card:after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0%;
-  height: 5px;
-  background-color: #1bb1dc;
-  transition: 0.5s;
-}
-
-#pricing .card:hover {
-  -webkit-transform: scale(1.05);
-  transform: scale(1.05);
-  box-shadow: 0 20px 35px 0 rgba(0, 0, 0, 0.08);
-}
-
-#pricing .card:hover:after {
-  width: 100%;
-}
-
-#pricing .card .card-header {
-  background-color: white;
-  border-bottom: 0px;
-  -moz-text-align-last: center;
-  text-align-last: center;
-}
-
-#pricing .card .card-title {
-  margin-bottom: 16px;
-  color: #535074;
-}
-
-#pricing .card .card-block {
-  padding-top: 0;
-  text-align: center;
-}
-
-#pricing .card .list-group-item {
-  border: 0px;
-  padding: 6px;
-  color: #413e66;
-  font-weight: 300;
-}
-
-#pricing .card h3 {
-  font-size: 64px;
-  margin-bottom: 0px;
-  color: #535074;
-}
-
-#pricing .card h3 .currency {
-  font-size: 30px;
-  position: relative;
-  font-weight: 400;
-  top: -30px;
-  letter-spacing: 0px;
-}
-
-#pricing .card h3 .period {
-  font-size: 16px;
-  color: #6c67a3;
-  letter-spacing: 0px;
-}
-
-#pricing .card .list-group {
-  margin-bottom: 15px;
-}
-
-#pricing .card .btn {
-  text-transform: uppercase;
-  font-size: 13px;
-  font-weight: 500;
-  color: #5f5b96;
-  border-radius: 0;
-  padding: 10px 24px;
-  letter-spacing: 1px;
-  border-radius: 3px;
-  display: inline-block;
-  background: #1bb1dc;
-  color: #fff;
-}
-
-#pricing .card .btn:hover {
-  background: #0a98c0;
-}
-
-/* Frequently Asked Questions Section
---------------------------------*/
-
-#faq {
-  padding: 60px 0;
-  overflow: hidden;
-}
-
-#faq #faq-list {
-  padding: 0;
-  list-style: none;
-}
-
-#faq #faq-list li {
-  border-bottom: 1px solid #ebebeb;
-}
-
-#faq #faq-list a {
-  padding: 22px 0;
-  display: block;
-  position: relative;
-  font-family: "Montserrat", sans-serif;
-  font-size: 20px;
-  line-height: 1;
-  font-weight: 400;
-  padding-right: 20px;
-}
-
-#faq #faq-list i {
-  font-size: 24px;
-  position: absolute;
-  right: 0;
-  top: 20px;
-}
-
-#faq #faq-list p {
-  margin-bottom: 20px;
-}
-
-#faq #faq-list a.collapse {
-  color: #1bb1dc;
-}
-
-#faq #faq-list a.collapsed {
-  color: #000;
-}
-
-#faq #faq-list a.collapsed i::before {
-  content: "\f2c7" !important;
-}
-
 /*--------------------------------------------------------------
 # Footer
 --------------------------------------------------------------*/
@@ -1275,10 +929,6 @@ h6 {
   text-transform: uppercase;
   position: relative;
   padding-bottom: 10px;
-}
-
-#footer .footer-top .footer-links {
-  margin-bottom: 30px;
 }
 
 #footer .footer-top .footer-links ul {
