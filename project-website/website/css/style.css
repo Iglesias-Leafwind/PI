@@ -241,13 +241,12 @@ h6 {
   border-radius: 4px;
   transition: 0.5s;
   color: #fff;
-  background: #1bb1dc;
-  color: #fff;
+  background: #2D95DF;
 }
 
 #intro .intro-info .btn-get-started:hover,
 #intro .intro-info .btn-services:hover {
-  background: #0a98c0;
+  background: #0071C2;
 }
 
 /*--------------------------------------------------------------
@@ -277,7 +276,7 @@ h6 {
 .main-nav a {
   display: block;
   position: relative;
-  color: #413e66;
+  color: #3F3B3C;
   padding: 10px 15px;
   transition: 0.3s;
   font-size: 14px;
@@ -289,7 +288,7 @@ h6 {
 .main-nav a:hover,
 .main-nav .active > a,
 .main-nav li:hover > a {
-  color: #1bb1dc;
+  color: #2D95DF;
   text-decoration: none;
 }
 
