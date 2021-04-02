@@ -143,4 +143,4 @@ At the end of this project, we expect to meet all the proposed objectives and re
 
 ------
 
-![](C:\Users\Acer\Desktop\PI\PI\project-website\website\img\portfolio\calendar.png)
+![](project-website/website/img/portfolio/calendar.png)
