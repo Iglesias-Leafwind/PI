@@ -4,9 +4,9 @@ from os.path import join
 import numpy as np
 from numpyencoder import NumpyEncoder
 from manage import es
-from Imageable.VGG import model
-from Imageable.models import ImageNeo, Person, Tag, Location, Country, City, ImageES
-from Imageable.utils import get_imlist, ImageFeature
+from app.VGG import model
+from app.models import ImageNeo, Person, Tag, Location, Country, City, ImageES
+from app.utils import get_imlist, ImageFeature
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
