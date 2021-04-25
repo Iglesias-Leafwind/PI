@@ -15,10 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from app import views
+from Imageable import views
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='index'),
+    path('createIndex/', views.createIndex),
+    path('update/', views.update),
+    path('search/', views.search),
+    path('upload/', views.upload),
+    path('find/similar/', views.findSimilar)
 ]

@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
+import subprocess
 import sys
+import time
+from elasticsearch import Elasticsearch
 
 
 def main():
@@ -15,8 +18,28 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+
+    openES()
     execute_from_command_line(sys.argv)
+    closeES()
+
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+esPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
+
+def openES():
+    global elasticsearchClient
+    elasticsearchClient = subprocess.Popen(esPath)
+
+def closeES():
+    elasticsearchClient.terminate()
+    print("---------------------------------------------terminate---------------------------------------------")
+    time.sleep(1)
+    if elasticsearchClient.returncode is None:
+        # It has not terminated. Kill it.
+        elasticsearchClient.kill()
+        print("---------------------------------------------kill---------------------------------------------")
 
 
+es = Elasticsearch()
 if __name__ == '__main__':
     main()
