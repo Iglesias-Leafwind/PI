@@ -24,19 +24,21 @@
     </style>
 </head>
 <body>
-<div class="s004">
-    <div class="topbar">
+<div class="topbar">
         <h4 class="our-title">Imageable</h4>
+</div>
+<div class="s004">
+    <div class="buttonDiv child">
+        <button id="firstButton" class="buttonMargin" type="button" ><i class="fa fa-search"></i></button>
+        <button id="secondButton" class="buttonAlign buttonMargin" type="button" ><i class="fa fa-search"></i></button>
+        <button id="thirdButton" class="buttonAlign buttonMargin" type="button"><i class="fa fa-file-image-o"></i>Search For Image</button>
     </div>
-
     <div class="inner-form">
         {{ form.query }}
+        <span class="hovering">
+            <button type="button" class="search-btn pointer no-focus" ><i class="fa fa-search"></i></button>
+        </span>
     </div>
-    <span class="hovering">
-        <input type="button" class="search-btn pointer no-focus" ><i class="fa fa-search"></i>
-    </span>
-
-
 </div>
 </body>
 </html>

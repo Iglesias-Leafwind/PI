@@ -270,13 +270,18 @@ legend {
   width: 100% !important;
   display: -ms-flexbox;
   display: flex;
+  flex-flow: column wrap;
   -ms-flex-pack: center;
-      justify-content: center;
+  justify-content: center;
   -ms-flex-align: center;
-      align-items: center;
+  align-items: center;
   background-size: cover;
-  background: url("../img/lens2.jpg") 97% 79%;
+  background: url("../img/lens2.jpg") no-repeat fixed 97% 79%;
   background-size: auto;
+}
+
+.s004:nth-child(1) {
+  page-break-after: always;
 }
 
 .topbar{
@@ -298,7 +303,11 @@ legend {
 }
 
 /*global span*/
-.hovering:hover input{
+
+.hovering {
+  float: left;
+}
+.hovering:hover button{
   background-color: #2D95DF;
 }
 
@@ -307,12 +316,13 @@ legend {
 }
 
 /* input search bar */
-.inner-form input{
+.inner-form > input{
   width: 50vw;
   height: 10vh;
   padding: 2.4%;
   border-radius: 10px;
   border: 0px;
+  float: left;
 }
 
 input:focus{
@@ -323,23 +333,72 @@ input:focus{
   outline: none;
 }
 
-/* button
 .search-btn{
-  height: 10vh;
+  height: 9.98vh;
   width: 8vw;
   border-radius: 10px;
   border: 0px;
-  margin-left: -20% !important;
-  margin-top: 4%;
+  margin-top: 0.2%;
+  margin-left: -100%;
   background-color: white;
-  padding-bottom: 50%;
+  vertical-align: center;
+  text-align: center;
 }
 
 .fa-search{
-  font-size: 150%;
-  margin-left: 30%;
-}*/
+  font-size: 225%;
+}
+
+.fa-file-image-o {
+  font-size: 225%;
+  color: white;
+  padding-top: 5%;
+}
 
 .pointer{
   cursor: pointer;
+}
+
+.child {
+  display: flex;
+  flex-flow: column wrap;
+  justify-content: center;
+}
+.buttonAlign {
+
+}
+.buttonDiv {
+  display: inline-block;
+  margin-bottom: 1%;
+  width: 100%;
+  align-items: center;
+}
+.buttonMargin {
+  margin-right: 2%;
+  border-radius: 10px;
+  border: none;
+   height: 12vh;
+}
+
+#firstButton {
+  width: 8vw;
+  margin-left: 22%;
+  background-color: #2D95DF;
+}
+
+#secondButton {
+  width: 18vw;
+  background-color: #2D95DF;
+}
+
+#thirdButton {
+  width: 18vw;
+  background-color: #2D95DF;
+
+}
+
+.buttonText {
+  color: white;
+  vertical-align: center;
+  padding: 10%;
 }
