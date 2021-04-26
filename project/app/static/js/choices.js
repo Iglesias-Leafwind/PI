@@ -1,6 +1,3 @@
-
-
-/*! choices.js v3.0.4 | (c) 2018 Josh Johnson | https://github.com/jshjohnson/Choices#readme */ 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -1593,8 +1590,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: '_searchChoices',
 	    value: function _searchChoices(value) {
 	      var newValue = (0, _utils.isType)('String', value) ? value.trim() : value;
+			console.log(newValue);
 	      var currentValue = (0, _utils.isType)('String', this.currentValue) ? this.currentValue.trim() : this.currentValue;
-
+			console.log(currentValue);
 	      // If new value matches the desired length and is not the same as the current value with a space
 	      if (newValue.length >= 1 && newValue !== currentValue + ' ') {
 	        var haystack = this.store.getSearchableChoices();
