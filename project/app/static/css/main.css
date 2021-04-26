@@ -308,7 +308,7 @@ legend {
   float: left;
 }
 .hovering:hover button{
-  background-color: #2D95DF;
+  background-color: #2567F5;
 }
 
 .hovering:hover i{
@@ -326,6 +326,11 @@ legend {
 }
 
 input:focus{
+    outline: none;
+}
+
+
+button:focus{
     outline: none;
 }
 
@@ -353,7 +358,26 @@ input:focus{
   font-size: 225%;
   color: white;
   padding-top: 5%;
+  margin-left: 6%;
+  float: left;
 }
+
+.fa-folder-open {
+  font-size: 225%;
+  color: white;
+  padding-top: 5%;
+  margin-left: 3%;
+  float: left;
+}
+
+.fa-user {
+  font-size: 225%;
+  color: white;
+  padding-top: 5%;
+  margin-left: 9%;
+  float: left;
+}
+
 
 .pointer{
   cursor: pointer;
@@ -380,25 +404,33 @@ input:focus{
    height: 12vh;
 }
 
+.buttonMargin:hover{
+  background-color: #2567F5 !important;
+}
+
 #firstButton {
-  width: 8vw;
-  margin-left: 22%;
+  width: 18vw;
+  margin-left: 18%;
   background-color: #2D95DF;
+  color: white;
+  text-align: center;
 }
 
 #secondButton {
   width: 18vw;
   background-color: #2D95DF;
+  color: white;
+  text-align: center;
 }
 
 #thirdButton {
   width: 18vw;
   background-color: #2D95DF;
+  color: white;
+  text-align: center;
 
 }
 
 .buttonText {
-  color: white;
-  vertical-align: center;
-  padding: 10%;
+  margin-top: 10%;
 }
