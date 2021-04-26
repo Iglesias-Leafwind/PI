@@ -81,7 +81,7 @@ def findSimilarImages(uri):
     rank = np.argsort(scores)[::-1]
     rank_score = scores[rank]
 
-    maxres = 40  # 3 imagens com maiores scores
+    maxres = 40  # 40 imagens com maiores scores
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
@@ -158,10 +158,6 @@ def setUp():
         ImageES(meta={'id': uri}, uri=uri,
                 tags=tags, locations=locations, persons=persons)\
             .save(using=es)
-
-
-    t = open("asdad.txt", 'w')
-    t.close()
 
     # load the class label for scene recognition
     file_name = 'categories_places365.txt'

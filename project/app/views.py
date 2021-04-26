@@ -30,6 +30,7 @@ def search(request):
 
     for hit in r:
         print("score: %s, uri: %s, tags: %s"%(hit.meta.score,hit.uri, hit.tags))
+
     return render(request, 'index.html')
 
 def upload(request):
