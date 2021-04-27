@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import threading
 import time
 from elasticsearch import Elasticsearch
 
@@ -19,12 +20,17 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    openES()
+    x = threading.Thread(target=openES)
+    x.start()
+    x.join()
+
     execute_from_command_line(sys.argv)
     closeES()
 
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-esPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
+# esPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
+# esPath = "/usr/share/elasticsearch/bin"
+esPath = "/home/mar/Documents/UA/6-semester/PI/elasticsearch-7.12.0/bin/elasticsearch"
 
 def openES():
     global elasticsearchClient

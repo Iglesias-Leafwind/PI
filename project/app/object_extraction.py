@@ -11,3 +11,4 @@ class ObjectExtraction:
     def detect(self, img_path):
         detections = self.detector.detectObjectsFromImage(input_image=img_path)
         print(detections)
+
