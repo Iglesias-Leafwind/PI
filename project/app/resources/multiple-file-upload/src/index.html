@@ -1,0 +1,53 @@
+<html lang="en">
+<head>
+    <title>Krajee JQuery Plugins - © Kartik</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/4.4.7/css/fileinput.css" media="all" rel="stylesheet" type="text/css"/>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" media="all" rel="stylesheet" type="text/css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="js/bootstrap-fileinput/plugins/sortable.js" type="text/javascript"></script>
+    <script src="js/bootstrap-fileinput/fileinput.js" type="text/javascript"></script>
+    <script src="js/bootstrap-fileinput/themes/explorer/theme.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" type="text/javascript"></script>
+</head>
+<body>
+<div class="container kv-main">
+    <div class="page-header">
+        <h1>File upload demo
+        </h1>
+    </div>
+    <form enctype="multipart/form-data">
+        <input id="file-upload-demo" type="file" multiple><br />
+        <button type="submit" class="btn btn-success">Upload Files</button>
+        <button type="reset" class="btn btn-warning">Reset</button>
+    </form>
+
+</div>
+</body>
+<script>
+
+    $(document).ready(function () {
+
+        $("#file-upload-demo").fileinput({
+            'theme': 'explorer',
+            'uploadUrl': '#',
+            overwriteInitial: false,
+            initialPreviewAsData: true,
+            initialPreview: [
+                "https://lorempixel.com/1920/1080/nature/1",
+                "https://lorempixel.com/1920/1080/nature/2",
+                "https://lorempixel.com/1920/1080/nature/3",
+            ],
+            initialPreviewConfig: [
+                {caption: "nature-1.jpg", size: 329892, width: "120px", url: "{$url}", key: 1},
+                {caption: "nature-2.jpg", size: 872378, width: "120px", url: "{$url}", key: 2},
+                {caption: "nature-3.jpg", size: 632762, width: "120px", url: "{$url}", key: 3},
+            ]
+        });
+
+    });
+</script>
+</html>
+
