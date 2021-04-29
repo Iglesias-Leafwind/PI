@@ -329,6 +329,9 @@ input:focus{
     outline: none;
 }
 
+.white{
+  color: white;
+}
 
 button:focus{
     outline: none;
