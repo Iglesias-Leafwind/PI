@@ -439,12 +439,14 @@ button:focus{
 }
 
 /* Rename Profiles Modal */
-.modal-body:nth-child(n){
-  float: left;
+.modal-body{
+    /*display: grid !important;*/
+    /*grid-template-columns: repeat(3, 30%);
+    grid-column-gap: 4%;*/
 }
 
-.modal-body:nth-child(4n), .modal-body:nth-child(4n-1){
-  float: right !important;
+.modal-body input[type="text"]{
+  margin-bottom: 10%;
 }
 
 /* Search by Image Modal */

@@ -20,14 +20,14 @@ class SearchForImageForm(forms.Form):
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.FilePathField(label="", path=os.getenv("HOME"), required=False, allow_files=False, allow_folders=True, match="[A-Za-z_]+[A-Za-z0-9]*", recursive=True)
+    path = forms.CharField(widget=forms.Select(choices=tuple([(choice, choice) for choice in ['ola', 'adeus']])))
 
 
 class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #people = Person.objects.all()
-        for i in range(5): # for i in range(len(people))
+        for i in range(8): # for i in range(len(people))
             field_name = 'person_image_%s' % (i,)
             field_image = 'person_name_%s' % (i,)
             self.fields[field_image] = forms.ImageField(required=False, widget=PictureWidget)
