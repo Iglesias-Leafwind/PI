@@ -87,7 +87,20 @@
     <form action="." method="post" enctype="multipart/form-data">
       <div class="modal-body">
             {% csrf_token %}
+
+          <div class="folder-list">
+          <div id="list-example" class="list-group">
+              {% for f in folders %}
+              <span><a class="list-group-item list-group-item-action" href="#list-item-1" style="float:left;">{{ f}}</a><a><i class="fa fa-cancel" style="float:right;"></i></a></span>
+              {% endfor %}
+          </div>
+          </div>
+
+          <div class="insert-btn">
+            {{ path_form.path.label_tag }}
             {{ path_form.path }}
+          </div>
+
       </div>
         <div>
             {% for field in form %}

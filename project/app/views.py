@@ -5,7 +5,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 # import NomedoFicheiro
 
 def index(request):
-    folders = []  # folders should be Folder.objects.all()
+    folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
 
     if request.method == 'POST':
         query = SearchForm(request.POST)
@@ -56,6 +56,6 @@ def index(request):
         names = PersonsForm()
 
         fileset = ['opcao 1', 'opcao 2', 'opcao 3']  # fileset = NomedoFicheiro.cenas()
-        pathf.fields['path'] = forms.CharField(widget=forms.Select(choices=tuple([(choice, choice) for choice in fileset])))
+        pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(choices=tuple([(choice, choice) for choice in fileset])))
 
         return render(request, 'index.html', {'form': form, 'image_form': image,  'path_form': pathf, 'folders': folders, 'names_form':names, 'results': {'#indextag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#indextag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})

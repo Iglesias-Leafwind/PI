@@ -460,6 +460,35 @@ button:focus{
   border: none;
 }
 
+
+/*Add source folders Modal*/
+.insert-btn{
+  float: right;
+  width: 40%;
+  margin: 1%;
+}
+
+.insert-btn select {
+  padding: 1vh 3vw !important;
+  margin-top: 3%;
+}
+
+.folder-list{
+  float: left;
+  width: 50%;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.folder-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.folder-list {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* Search by Image Modal */
 .modal-footer{
   width: 100% !important;
