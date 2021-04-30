@@ -437,3 +437,18 @@ button:focus{
 .buttonText {
   margin-top: 10%;
 }
+
+/* Rename Profiles Modal */
+.modal-body:nth-child(n){
+  float: left;
+}
+
+.modal-body:nth-child(4n), .modal-body:nth-child(4n-1){
+  float: right !important;
+}
+
+/* Search by Image Modal */
+.modal-footer{
+  width: 100% !important;
+  flex-flow: row;
+}

@@ -1,7 +1,14 @@
 import os
 
 from django import forms
-from django.conf import settings
+from string import Template
+from django.utils.safestring import mark_safe
+
+
+class PictureWidget(forms.widgets.Widget):
+    def render(self, name, value, attrs=None, **kwargs):
+        html = Template("""<img src="$link"/>""")
+        return mark_safe(html.substitute(link=value))
 
 
 class SearchForm(forms.Form):
@@ -13,5 +20,22 @@ class SearchForImageForm(forms.Form):
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.FilePathField(label="", path=os.getenv("HOME"), required=False)
+    path = forms.FilePathField(label="", path=os.getenv("HOME"), required=False, allow_files=False, allow_folders=True, match="[A-Za-z_]+[A-Za-z0-9]*", recursive=True)
 
+
+class PersonsForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #people = Person.objects.all()
+        for i in range(5): # for i in range(len(people))
+            field_name = 'person_image_%s' % (i,)
+            field_image = 'person_name_%s' % (i,)
+            self.fields[field_image] = forms.ImageField(required=False, widget=PictureWidget)
+            self.fields[field_name] = forms.CharField(required=False)
+            # self.initial[field_image] = people[i].icon
+            # self.initial[field_name] = people[i].name
+
+    def get_interest_fields(self):
+        for field_name in self.fields:
+            if field_name.startswith('person_'):
+                yield self[field_name]
