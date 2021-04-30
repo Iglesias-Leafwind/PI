@@ -112,7 +112,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
     <form action="." method="post" enctype="multipart/form-data">
-      <div class="modal-body">
+      <div class="modal-body modal-body1">
             {% csrf_token %}
             {% for nfield in names_form.get_interest_fields %}
                 {{ nfield }}

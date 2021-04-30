@@ -439,14 +439,25 @@ button:focus{
 }
 
 /* Rename Profiles Modal */
-.modal-body{
+.modal-body1{
     /*display: grid !important;*/
-    /*grid-template-columns: repeat(3, 30%);
-    grid-column-gap: 4%;*/
+    grid-template-columns: repeat(3, 30%);
+    grid-column-gap: 4%;
 }
 
 .modal-body input[type="text"]{
   margin-bottom: 10%;
+}
+
+.modal-body select{
+  padding: 2% 4%;
+  border: none;
+  border-radius: 5px;
+  background-color: #dee0e2 !important;
+}
+
+.modal-body select:focus{
+  border: none;
 }
 
 /* Search by Image Modal */
