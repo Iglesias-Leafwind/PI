@@ -1,3 +1,4 @@
+"""
 from imageai.Detection import ObjectDetection
 import os
 
@@ -12,3 +13,4 @@ class ObjectExtraction:
         detections = self.detector.detectObjectsFromImage(input_image=img_path)
         print(detections)
 
+"""

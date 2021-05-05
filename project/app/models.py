@@ -2,8 +2,8 @@
 from elasticsearch_dsl import Document, Text, Keyword
 from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerProperty, config, \
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore
+# from manage import es
 from manage import es
-
 config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
 
 

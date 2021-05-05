@@ -20,9 +20,11 @@ from app import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     path('createIndex/', views.createIndex),
     path('update/', views.update),
     path('search/', views.search),
     path('upload/', views.upload),
     path('find/similar/', views.findSimilar)
+
 ]

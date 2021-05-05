@@ -1,15 +1,23 @@
+
 from django.shortcuts import render
+# from app.processing import *
+
+import json
+
+from app.models import *
+
+#from app.processing import uploadImages
+from app.processing import Preprocessing
+
+from manage import es
 from elasticsearch_dsl import Index, Search, Q
-from app.processing import *
 
 
 def createIndex(request):
     i = Index(using=es, name=request.GET.get("index"))
     if not i.exists(using=es):
         i.create()
-
     return render(request, 'index.html')
-
 
 def update(request):
     a = ImageES.get(using=es, id=request.GET.get("uri"))

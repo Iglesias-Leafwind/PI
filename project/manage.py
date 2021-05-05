@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from elasticsearch import Elasticsearch
-
+from elasticsearch_dsl import connections
 
 def main():
     """Run administrative tasks."""
@@ -20,13 +20,18 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    x = threading.Thread(target=openES)
-    x.start()
-    x.join()
-
+    # x = threading.Thread(target=openES)
+    # x.start()
+    # x.join()
+    print(connections.get_connection().cluster.health())
     execute_from_command_line(sys.argv)
-    closeES()
+    # closeES()
 
+
+connections.create_connection(hosts=['localhost'])
+es = Elasticsearch()
+
+"""
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # esPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
 # esPath = "/usr/share/elasticsearch/bin"
@@ -46,6 +51,6 @@ def closeES():
         print("---------------------------------------------kill---------------------------------------------")
 
 
-es = Elasticsearch()
+"""
 if __name__ == '__main__':
     main()
