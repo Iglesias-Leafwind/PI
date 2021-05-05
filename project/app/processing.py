@@ -176,4 +176,5 @@ class Preprocessing():
             for line in class_file:
                 classes.append(line.strip().split(' ')[0][3:])
         classes = tuple(classes)
+        print('fim setup')
 

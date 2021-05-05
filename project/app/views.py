@@ -6,12 +6,13 @@ import json
 
 from app.models import *
 
-#from app.processing import uploadImages
+# from app.processing import uploadImages
 from app.processing import Preprocessing
 
 from manage import es
 from elasticsearch_dsl import Index, Search, Q
 
+preproc = Preprocessing()
 
 def createIndex(request):
     i = Index(using=es, name=request.GET.get("index"))
@@ -43,9 +44,9 @@ def search(request):
 
 def upload(request):
     data = json.loads(request.body)
-    uploadImages(data["path"])
+    preproc.uploadImages(data["path"])
     return render(request, 'index.html')
 
 def findSimilar(request):
-    findSimilarImages(request.GET.get("path"))
+    preproc.findSimilarImages(request.GET.get("path"))
     return render(request, 'index.html')

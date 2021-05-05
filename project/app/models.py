@@ -4,7 +4,9 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore
 # from manage import es
 from manage import es
-config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
+
+# config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
+config.DATABASE_URL = 'bolt://neo4j:password@localhost:7687'
 
 
 # for elastic search ↓
