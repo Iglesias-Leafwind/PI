@@ -19,3 +19,9 @@ urllib3==1.26.4
 imutils==0.5.4
 opencv-python==4.5.1.48
 pytesseract==0.3.7
+
+Keras~=2.4.3
+torch~=1.8.1
+torchvision~=0.9.1
+Pillow~=8.2.0
+elasticsearch~=7.12.1
