@@ -21,4 +21,6 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('ocr', views.ocr, name='ocr'),
+    path('exif', views.exif, name='exif'),
 ]

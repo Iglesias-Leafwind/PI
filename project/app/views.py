@@ -5,6 +5,8 @@ from django.shortcuts import render
 from django import forms
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 # import NomedoFicheiro
+from app.processing import getOCR, getExif
+
 
 def index(request):
     folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
@@ -62,3 +64,13 @@ def index(request):
 
         return render(request, 'index.html', {'form': form, 'image_form': image,  'path_form': pathf, 'folders': folders, 'names_form':names, 'results': {'#indextag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#indextag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})
 
+
+def ocr(request):
+    get = request.GET.get("path")
+    res = getOCR(get)
+    return render(request, 'ocr.html', {'res': res})
+
+def exif(request):
+    get = request.GET.get("path")
+    res = getExif(get)
+    return render(request, 'exif.html', {'res': res})
