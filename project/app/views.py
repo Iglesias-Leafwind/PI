@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render
 
 from django import forms
@@ -59,3 +61,4 @@ def index(request):
         pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(choices=tuple([(choice, choice) for choice in fileset])))
 
         return render(request, 'index.html', {'form': form, 'image_form': image,  'path_form': pathf, 'folders': folders, 'names_form':names, 'results': {'#indextag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#indextag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})
+
