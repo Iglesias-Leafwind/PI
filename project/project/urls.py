@@ -23,4 +23,6 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('ocr', views.ocr, name='ocr'),
     path('exif', views.exif, name='exif'),
+    path('es', views.createIndex, name='createIndexES'),
+    path('searches', views.search, name='searchIndexES'),
 ]
