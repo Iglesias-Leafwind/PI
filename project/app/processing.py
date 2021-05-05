@@ -6,8 +6,6 @@ from numpyencoder import NumpyEncoder
 
 from manage import es
 
-# from app.VGG import model
-# from app.VGG_ import VGGNet
 from app.models import ImageNeo, Person, Tag, Location, Country, City, ImageES
 from app.utils import get_imlist, ImageFeature
 
@@ -18,14 +16,15 @@ from torchvision import transforms as trn
 from torch.nn import functional as F
 import os
 from PIL import Image
+from app.VGG_ import VGGNet
 
-import tensorflow
+
 
 class Preprocessing():
     features = []
     imageFeatures = []
 
-    # model = VGGNet()
+    model = VGGNet()
 
     def uploadImages(self, uri):
         print("----------------------------------------------")
