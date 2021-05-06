@@ -9,6 +9,7 @@ from manage import es
 from app.models import ImageNeo, Person, Tag, Location, Country, City, ImageES
 from app.utils import get_imlist, ImageFeature
 
+
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -18,7 +19,7 @@ import os
 from PIL import Image
 from app.VGG_ import VGGNet
 
-
+from app.face_recognition import FaceRecognition
 
 class Preprocessing():
     features = []

@@ -1,7 +1,7 @@
 import torch
 # https://github.com/ultralytics/yolov5/issues/36
 
-class ObjectExtract():
+class ObjectExtract:
     def __init__(self):
         # exige que o utilizador esteja ligado à net da primeira vez (ele faz uns downloads)
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
