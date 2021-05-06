@@ -26,5 +26,6 @@ urlpatterns = [
     path('es', views.createIndex, name='createIndexES'),
     path('searches', views.search, name='searchIndexES'),
     path('objextr', views.objectExtraction, name='objExtr'),
-
+    path('upload', views.uploadFolder, name='uploadFolder'),
+    path('test', views.teste, name='teste'),
 ]

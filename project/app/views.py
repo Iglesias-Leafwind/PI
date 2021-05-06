@@ -1,9 +1,12 @@
 import json
+import os
 
 import cv2
 from django.shortcuts import render
 from elasticsearch_dsl import Index, Search, Q
 from django import forms
+
+from app.face_recognition import FaceRecognition
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo
 from app.processing import getOCR, getExif, dhash, findSimilarImages
@@ -11,6 +14,7 @@ from app.object_extraction import ObjectExtract
 from manage import es
 
 obj_extr = ObjectExtract()
+frr = FaceRecognition()
 
 def index(request):
     folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
@@ -27,6 +31,7 @@ def index(request):
 
         if query.is_valid() and not query.cleaned_data['query'] == '':  # search bar input was valid and not null
             query_array = query.cleaned_data['query']
+            print(query_array)
             # use the query_array to search by tags and pass them as 'results'
             query = SearchForm()
             return render(request, "index.html",
@@ -161,3 +166,26 @@ def objectExtraction(request):
     get = request.GET.get("path")
     res = obj_extr.get_objects(get)
     return render(request, 'objextr.html', {'res': res})
+
+
+def uploadFolder(request):
+    print('tá a correr o teste!')
+    get = request.GET.get("path")
+    l = [get + f for f in os.listdir(get) if f[-4:] == '.jpg']
+
+    for foto in l:
+        image, boxes = frr.getFaceBoxes(foto)
+        for b in boxes:
+            frr.saveFaceIdentification(image, b, 'Diogo')
+        print('foto no.')
+    print('acabou de treinar nas do diogo.')
+
+def teste(request):
+    foto_teste = request.GET.get("path")
+    image, boxes = frr.getFaceBoxes(foto_teste)
+    i = 0
+    print('hm')
+    for b in boxes:
+        name = frr.getTheNameOf(image, b)
+        print(i,'Encontrou '+ name +'!!')
+        i+=1
