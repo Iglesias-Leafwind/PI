@@ -1,11 +1,12 @@
 import json
 
+import cv2
 from django.shortcuts import render
 from elasticsearch_dsl import Index, Search, Q
 from django import forms
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
-from app.models import ImageES
-from app.processing import getOCR, getExif
+from app.models import ImageES, ImageNeo
+from app.processing import getOCR, getExif, dhash
 from manage import es
 
 
@@ -106,7 +107,13 @@ def ocr(request):
 def exif(request):
     get = request.GET.get("path")
     res = getExif(get)
-    return render(request, 'exif.html', {'res': res})
+    isProcessed = alreadyProcessed(get)
+    if not isProcessed:
+        imgread = cv2.imread(get)
+        hash = dhash(imgread)
+        img = ImageNeo(folder_uri=get, name="something", hash=hash)
+        img.save()
+    return render(request, 'exif.html', {'res': res, 'isProcessed': isProcessed})
 
 
 # Elasticsearch
@@ -133,3 +140,11 @@ def search(request):
         print("score: %s, uri: %s, tags: %s" % (hit.meta.score, hit.uri, hit.tags))
 
     return render(request, 'es.html', {'r': r})
+
+
+def alreadyProcessed(img_path):
+    image = cv2.imread(img_path)
+    hash = dhash(image)
+    existed = ImageNeo.nodes.get_or_none(hash=hash)
+
+    return True if existed else False
