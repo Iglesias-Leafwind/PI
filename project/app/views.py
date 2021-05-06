@@ -132,7 +132,8 @@ def createIndex(request):
     return render(request, 'insert_es.html')
 
 def search(request):
-    tags = request.GET.get("tags")
+    tags = [request.GET.get("tags")]
+    tags = [ splited for tag in tags for splited in tag.split(',') ]
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags],
           minimum_should_match=1)
 
