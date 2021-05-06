@@ -30,9 +30,3 @@ def getFolders():
             # print(os.path.join(root, dir))
     return results
 
-def main():
-    result_list = getFolders()                
-    for elem in result_list:
-        print(elem)
-
-main()

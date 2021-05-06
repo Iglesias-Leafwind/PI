@@ -12,6 +12,7 @@ from app.models import ImageES, ImageNeo
 from app.processing import getOCR, getExif, dhash, findSimilarImages
 from app.object_extraction import ObjectExtract
 from manage import es
+from scripts.pathsPC import getFolders
 
 obj_extr = ObjectExtract()
 frr = FaceRecognition()
@@ -19,15 +20,16 @@ frr = FaceRecognition()
 def index(request):
     folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
 
+
     if request.method == 'POST':
         query = SearchForm(request.POST)
         image = SearchForImageForm(request.POST, request.FILES)
         pathf = EditFoldersForm(request.POST)
         names = PersonsForm(request.POST)
 
-        fileset = ['opcao 1', 'opcao 2', 'opcao 3']  # fileset = NomedoFicheiro.cenas()
+        fileset = getFolders()  # fileset = NomedoFicheiro.cenas()
         pathf.fields['path'] = forms.ChoiceField(
-            widget=forms.Select(choices=tuple([(choice, choice) for choice in fileset])))
+            widget=forms.Select(choices=tuple([(choice, ".../" + choice.split("/")[-2:].join("/")) for choice in fileset]))) # value, label
 
         if query.is_valid() and not query.cleaned_data['query'] == '':  # search bar input was valid and not null
             query_array = query.cleaned_data['query']
@@ -93,7 +95,7 @@ def index(request):
         pathf = EditFoldersForm()
         names = PersonsForm()
 
-        fileset = ['opcao 1', 'opcao 2', 'opcao 3']  # fileset = NomedoFicheiro.cenas()
+        fileset = getFolders()  # fileset = NomedoFicheiro.cenas()
         pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
             choices=tuple([(choice, choice) for choice in fileset])))
 
