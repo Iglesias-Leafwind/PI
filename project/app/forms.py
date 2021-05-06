@@ -20,7 +20,7 @@ class SearchForImageForm(forms.Form):
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.CharField(label="Add new folder:", widget=forms.Select(choices=tuple([(choice, choice) for choice in ['ola', 'adeus']])))
+    path = forms.CharField(label="Add new folder:", widget=forms.Select(choices=tuple([(choice, choice) for choice in ['ola', 'adeus']]), attrs={'style': 'width:180px'}))
 
 
 class PersonsForm(forms.Form):

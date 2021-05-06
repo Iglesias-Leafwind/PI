@@ -29,7 +29,7 @@ def index(request):
 
         fileset = getFolders()  # fileset = NomedoFicheiro.cenas()
         pathf.fields['path'] = forms.ChoiceField(
-            widget=forms.Select(choices=tuple([(choice, ".../" + choice.split("/")[-2:].join("/")) for choice in fileset]))) # value, label
+            widget=forms.Select(choices=tuple([(choice, choice.split("/")[-1]) for choice in fileset]))) # value, label
 
         if query.is_valid() and not query.cleaned_data['query'] == '':  # search bar input was valid and not null
             query_array = query.cleaned_data['query']
@@ -97,7 +97,7 @@ def index(request):
 
         fileset = getFolders()  # fileset = NomedoFicheiro.cenas()
         pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-            choices=tuple([(choice, choice) for choice in fileset])))
+            choices=tuple([(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
 
         return render(request, 'index.html',
                       {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names,
