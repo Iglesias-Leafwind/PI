@@ -20,9 +20,13 @@ import re
 from nltk.corpus import stopwords, words
 from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
+from app.VGG_ import VGGNet
+
 features = []
 imageFeatures = []
 fs = SimpleFileSystemManager()
+model = VGGNet()
+
 
 # used in getOCR
 east = "frozen_east_text_detection.pb"
@@ -162,6 +166,20 @@ def alreadyProcessed(img_path):
     existed = ImageNeo.nodes.get_or_none(hash=hash)
 
     return True if existed else False
+
+def findSimilarImages(uri):
+    norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
+    feats = np.array(features)
+    scores = np.dot(norm_feat, feats.T)
+    rank = np.argsort(scores)[::-1]
+    rank_score = scores[rank]
+
+    maxres = 40  # 40 imagens com maiores scores
+
+    imlist = []
+    for i, index in enumerate(rank[0:maxres]):
+        imlist.append(imageFeatures[index])
+        print("image names: " + str(imageFeatures[index].name) + " scores: %f" % rank_score[i])
 
 
 def getPlaces(img_path):

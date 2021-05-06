@@ -148,3 +148,8 @@ def alreadyProcessed(img_path):
     existed = ImageNeo.nodes.get_or_none(hash=hash)
 
     return True if existed else False
+
+def findSimilar(request):
+    get = request.GET.get("path")
+    findSimilarImages(get)
+    return render(request, 'index.html')
