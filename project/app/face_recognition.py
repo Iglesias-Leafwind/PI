@@ -38,12 +38,15 @@ class FaceRecognition:
 
         matches = {}
         unknown = 0
+        # print(exp)
         for k in self.name2encodings:
             # lista de booleanos com os encodings q ele achou parecidos
-            listt = fr.compare_faces(self.name2encodings[k], encoding)
-            listt = [any(i) for i in listt]
+            listt = fr.compare_faces(self.name2encodings[k], encoding, tolerance=0.2)
+            listt = [True if all(i) else False for i in listt]
             print(listt)
             # sum(listt) vai ser o nr de 'Trues' da funcao de cima
+            # aqui o sum nao sei se devia ser uma percentagem ou nao...
+            # mas para casos em q so tem 1 imagem n ia correr mt bem isso
             matches[sum(listt)] = k
             unknown += len(listt) - sum(listt)
 
@@ -55,7 +58,6 @@ class FaceRecognition:
         maxx = max(matches.keys())
         name = 'unknown' if unknown>maxx else matches[maxx]
         return name
-
 """
 def teste():
     print('tá a correr o teste!')
@@ -91,7 +93,7 @@ def teste():
     print('acabou de treinar nas da mariana.')
 
     # por fim, testar!
-    foto_teste = '/home/mar/Documents/UA/6-semester/PI/learning/face-rec/examples/teste3.jpg'
+    foto_teste = '/home/mar/Documents/UA/6-semester/PI/learning/face-rec/examples/teste6.jpg'
     image, boxes = frr.getFaceBoxes(foto_teste)
     i = 0
     print('hm')
@@ -102,6 +104,5 @@ def teste():
     print('//')
 
 teste()
-
-
 """
+
