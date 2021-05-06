@@ -6,9 +6,11 @@ from elasticsearch_dsl import Index, Search, Q
 from django import forms
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo
-from app.processing import getOCR, getExif, dhash
+from app.processing import getOCR, getExif, dhash, findSimilarImages
+from app.object_extraction import ObjectExtract
 from manage import es
 
+obj_extr = ObjectExtract()
 
 def index(request):
     folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
@@ -153,3 +155,8 @@ def findSimilar(request):
     get = request.GET.get("path")
     findSimilarImages(get)
     return render(request, 'index.html')
+
+def objectExtraction(request):
+    get = request.GET.get("path")
+    res = obj_extr.get_objects(get)
+    return render(request, 'objextr.html', {'res': res})

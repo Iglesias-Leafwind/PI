@@ -25,4 +25,6 @@ urlpatterns = [
     path('exif', views.exif, name='exif'),
     path('es', views.createIndex, name='createIndexES'),
     path('searches', views.search, name='searchIndexES'),
+    path('objextr', views.objectExtraction, name='objExtr'),
+
 ]
