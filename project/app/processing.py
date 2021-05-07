@@ -5,7 +5,6 @@ import random
 
 import numpy as np
 from numpyencoder import NumpyEncoder
-
 from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
@@ -102,13 +101,21 @@ def uploadImages(uri):
                 # if the current image's folder is different
                 existed.folder.connect(folderNeoNode)
             else:
+                tags = []
+
                 # extract infos
                 norm_feat, height, width = model.vgg_extract_feat(img_path)
                 f = json.dumps(norm_feat, cls=NumpyEncoder)
                 i.features = f
                 iJson = json.dumps(i.__dict__)
 
-                image = ImageNeo(folder_uri=os.path.split(img_path)[0], name=img_name, processing=iJson, format=img_name.split(".")[1], width=width, height=height, hash=hash).save()
+                image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                 name=img_name,
+                                 processing=iJson,
+                                 format=img_name.split(".")[1],
+                                 width=width,
+                                 height=height,
+                                 hash=hash).save()
 
                 image.folder.connect(folderNeoNode)
 
@@ -116,8 +123,9 @@ def uploadImages(uri):
 
                 for object in res["name"]:
                     tag = Tag.nodes.get_or_none(name=object)
-                    if tag == None:
+                    if tag is None:
                         tag = Tag(name=object).save()
+                        tags.append(object)
 
                     image.tag.connect(tag)
 
@@ -129,19 +137,18 @@ def uploadImages(uri):
                     p = Person.nodes.get_or_none(name=name) # TODO : get icon
                     if p is None:
                         p = Person(name=name).save()
+                        tags.append(name)
                     image.person.connect(p, {'coordinates': [c for c in b[1]]})
 
                 places = getPlaces(img_path)
                 if places:
                     places = places.split("/")
                     for place in places:
-                        p = ""
-                        for x in place.split("_"):
-                            p += x + " "
-
-                        t = Tag.nodes.get_or_none(name=p.strip())
+                        p = " ".join(place.split("_")).strip()
+                        t = Tag.nodes.get_or_none(name=p)
                         if t is None:
-                            t = Tag(name=p.strip()).save()
+                            t = Tag(name=p).save()
+                            tags.append(p)
                         image.tag.connect(t)
 
                 wordList = getOCR(read_image)
@@ -150,6 +157,7 @@ def uploadImages(uri):
                         t = Tag.nodes.get_or_none(name=word)
                         if t is None:
                             t = Tag(name=word).save()
+                            tags.append(word)
                         image.tag.connect(t)
 
                 l = Location.nodes.get_or_none(name="UA")
@@ -174,6 +182,8 @@ def uploadImages(uri):
                 features.append(norm_feat)
                 i.features = norm_feat
                 imageFeatures.append(i)
+
+                ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
 
             print("extracting feature from image %s " % (img_path))
 
@@ -449,13 +459,8 @@ def setUp():
         features.append(i.features)
         imageFeatures.append(i)
 
-        tags = []
-        for tag in image.tag:
-            tags.append(tag.name)
-
-        persons = []
-        for p in image.person:
-            persons.append(p.name)
+        tags = [tag.name for tag in image.tag]
+        persons = [p.name for p in image.person]
 
         locations = set()
         for l in image.location:
@@ -469,8 +474,17 @@ def setUp():
 
         locations = list(locations)
 
+        tags.extend(persons)
+        tags.extend(locations)
+
         uri = join(image.folder_uri, image.name)
-        ImageES(meta={'id': uri}, uri=uri, tags=tags, locations=locations, persons=persons).save(using=es)
+        savedImage = ImageES.get(using=es, id=image.hash)
+
+        if savedImage:
+            savedImage.update(using=es, tags=tags)
+            savedImage.save()
+        else:
+            ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
 
     loadCatgoriesPlaces()
     loadFileSystemManager()

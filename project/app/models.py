@@ -13,9 +13,8 @@ config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
 # for elastic search ↓
 class ImageES(Document):
     uri = Text(required=True)
-    persons = Text()
-    locations = Text()
-    tags = Keyword()
+    hash = IntegerProperty()
+    tags = Text()
 
     class Index:
         name = 'image'
@@ -57,7 +56,7 @@ class ImageNeo(StructuredNode):
     format = StringProperty()
     width = IntegerProperty()
     height = IntegerProperty()
-    hash = StringProperty(index=True)
+    hash = IntegerProperty(index=True)
     tag = RelationshipTo("Tag", HasA.rel, model=HasA, cardinality=OneOrMore)
     person = RelationshipTo("Person", DisplayA.rel, model=DisplayA, cardinality=ZeroOrMore)
     location = RelationshipTo("Location", WasTakenIn.rel, model=WasTakenIn)
