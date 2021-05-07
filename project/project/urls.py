@@ -21,4 +21,11 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('ocr', views.ocr, name='ocr'),
+    path('exif', views.exif, name='exif'),
+    path('es', views.createIndex, name='createIndexES'),
+    path('searches', views.search, name='searchIndexES'),
+    path('objextr', views.objectExtraction, name='objExtr'),
+    path('upload', views.uploadFolder, name='uploadFolder'),
+    path('test', views.teste, name='teste'),
 ]

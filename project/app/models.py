@@ -1,26 +1,25 @@
 # Create your features here.
 import random
-
-#from elasticsearch_dsl import Document, Text, Keyword
+from elasticsearch_dsl import Document, Text, Keyword
 from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerProperty, config, \
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty
 from neomodel import db
-#from manage import es
+from manage import es
 
 config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
 
 
 # for elastic search ↓
-#class ImageES(Document):
-#    uri = Text(required=True)
-#    persons = Text()
-#    locations = Text()
-#    tags = Keyword()
+class ImageES(Document):
+    uri = Text(required=True)
+    persons = Text()
+    locations = Text()
+    tags = Keyword()
 
-#    class Index:
-#        name = 'image'
+    class Index:
+        name = 'image'
 
-#ImageES.init(using=es)
+ImageES.init(using=es)
 
 
 # for neo4j ↓
