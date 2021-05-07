@@ -4,7 +4,7 @@ import numpy as np
 from numpyencoder import NumpyEncoder
 
 from app.fileSystemManager import SimpleFileSystemManager
-from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder
+from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.utils import ImageFeature, getImagesPerUri
 import torch
 from torch.autograd import Variable as V
@@ -21,6 +21,7 @@ from nltk.corpus import stopwords, words
 from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
+from manage import es
 
 features = []
 imageFeatures = []
@@ -99,13 +100,7 @@ def uploadImages(uri):
                 i.features = f
                 iJson = json.dumps(i.__dict__)
 
-                image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                 name=img_name,
-                                 processing=iJson,
-                                 format=img_name.split(".")[1],
-                                 width=width,
-                                 height=height,
-                                 hash=hash).save()
+                image = ImageNeo(folder_uri=os.path.split(img_path)[0], name=img_name, processing=iJson, format=img_name.split(".")[1], width=width, height=height, hash=hash).save()
 
                 image.folder.connect(folderNeoNode)
 
@@ -197,7 +192,7 @@ def getPlaces(img_path):
 
 def getOCR(image):
     # load installed tesseract-ocr from users pc
-    pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+    pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
     custom_config = r'--oem 3 --psm 6'
     min_confidence = 0.6
     results = []
@@ -453,12 +448,30 @@ def setUp():
         locations = list(locations)
 
         uri = join(image.folder_uri, image.name)
-        #ImageES(meta={'id': uri}, uri=uri,
-         #       tags=tags, locations=locations, persons=persons) \
-          #  .save(using=es)
+        ImageES(meta={'id': uri}, uri=uri, tags=tags, locations=locations, persons=persons).save(using=es)
 
     loadCatgoriesPlaces()
     loadFileSystemManager()
+
+def generateThumbnail(imagepath):
+    thumbnailH = 225
+    thumbnailW = 225
+
+    # load the input image
+    image = cv2.imread(imagepath)
+    w,h, = image.shape
+    ratio = w/h
+    thumbnailW = int(thumbnailH * ratio)
+    dim = (thumbnailH,thumbnailW)
+
+    # resize image
+    resized = cv2.resize(image, dim, interpolation = cv2.INTERAREA)
+    saving = "/thumbnails/" + re.split("[\\\/]+", imagepath)[-1]
+    cv2.imwrite(saving , resized,  [cv2.IMWRITE_JPEG_QUALITY, 25])
+    # 83 087 673
+    # 00 288 957
+    # 99,65 %
+    return(saving)
 
 
 setUp()

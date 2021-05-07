@@ -1,3 +1,4 @@
+import os
 import re
 from app.models import *
 from app.utils import getRandomNumber
@@ -210,3 +211,19 @@ class SimpleFileSystemManager:
 
             cy.delete()
             l.delete()
+
+    def getAllUris(self):
+        uris = []
+
+        def buildUri(current, uri):
+            for folder in current.children:
+                path = os.path.join(uri, folder)
+                nextNode = current.children[folder]
+                if nextNode.terminated:
+                    uris.append(path)
+                buildUri(nextNode, path)
+
+        for node in self.trees.keys():
+            buildUri(self.trees[node], node)
+
+        return uris

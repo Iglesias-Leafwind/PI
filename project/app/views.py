@@ -9,7 +9,7 @@ from django import forms
 from app.face_recognition import FaceRecognition
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo
-from app.processing import getOCR, getExif, dhash, findSimilarImages
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs
 from app.object_extraction import ObjectExtract
 from manage import es
 from scripts.pathsPC import getFolders
@@ -18,10 +18,8 @@ from app.nlpFilterSearch import processQuery
 obj_extr = ObjectExtract()
 frr = FaceRecognition()
 
-
 def index(request):
-    folders = ["pasta/pasta1", "desktop/", "transferencias/"]  # folders should be Folder.objects.all()
-    print(request.GET.get("query"))
+    folders = fs.getAllUris()
     if request.method == 'POST':
         query = SearchForm(request.POST)
         image = SearchForImageForm(request.POST, request.FILES)
@@ -34,9 +32,9 @@ def index(request):
             image = SearchForImageForm()
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#imagetag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#imagetag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
         elif pathf.is_valid() and pathf.cleaned_data["path"]:  # if path of new folder has a name, then it exists
-            # new = Folder(url = pathf.path)
-            # new.save()
+            uploadImages(pathf.cleaned_data["path"])
             pathf = EditFoldersForm()
+            # chamar a funcao do wei
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#folderstag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#folderstag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
         elif names.is_valid() and names.has_changed():  # if names changed
             i = 0
@@ -66,9 +64,11 @@ def index(request):
 
         query_text = request.GET.get("query")
         query_array = processQuery(query_text)
-        print(query_array)
-        # for tag in query_array:
-        #    pesquisar na BD
+        r = search(query_array)
+        print(r)
+
+        results = {}
+
 
         return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#querytag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#querytag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
 
@@ -120,18 +120,10 @@ def createIndex(request):
     return render(request, 'insert_es.html')
 
 
-def search(request):
-    tags = [request.GET.get("tags")]
-    tags = [splited for tag in tags for splited in tag.split(',')]
-    q = Q('bool', should=[Q('term', tags=tag) for tag in tags],
-          minimum_should_match=1)
-
+def search(tags):
+    q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
-    r = s.execute()
-    for hit in r:
-        print("score: %s, uri: %s, tags: %s" % (hit.meta.score, hit.uri, hit.tags))
-
-    return render(request, 'es.html', {'r': r})
+    return s.execute()
 
 
 def alreadyProcessed(img_path):
