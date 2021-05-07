@@ -3,7 +3,6 @@ from collections import defaultdict
 import cv2
 import face_recognition as fr
 
-# ainda n tá acabado, n tá a dar o q devia
 
 class FaceRecognition:
     def __init__(self):
