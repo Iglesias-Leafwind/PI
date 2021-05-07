@@ -1,10 +1,15 @@
 import json
+import string
 from os.path import join
+import random
+
 import numpy as np
 from numpyencoder import NumpyEncoder
 
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
+from app.object_extraction import ObjectExtract
 from app.utils import ImageFeature, getImagesPerUri
 import torch
 from torch.autograd import Variable as V
@@ -22,6 +27,9 @@ from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
+
+obj_extr = ObjectExtract()
+frr = FaceRecognition()
 
 features = []
 imageFeatures = []
@@ -104,10 +112,24 @@ def uploadImages(uri):
 
                 image.folder.connect(folderNeoNode)
 
-                p = Person.nodes.get_or_none(name="wei")
-                if p is None:
-                    p = Person(name="wei").save()
-                image.person.connect(p, {'coordinates': 0.0})
+                res = obj_extr.get_objects(img_path)
+
+                for object in res["name"]:
+                    tag = Tag.nodes.get_or_none(name=object)
+                    if tag == None:
+                        tag = Tag(name=object).save()
+
+                    image.tag.connect(tag)
+
+                openimage, boxes = frr.getFaceBoxes(img_path)
+                for b in boxes:
+                    name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+                    frr.saveFaceIdentification(openimage, b, name)
+
+                    p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                    if p is None:
+                        p = Person(name=name).save()
+                    image.person.connect(p, {'coordinates': [c for c in b[1]]})
 
                 places = getPlaces(img_path)
                 if places:

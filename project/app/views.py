@@ -1,3 +1,4 @@
+
 import json
 import os
 
@@ -6,17 +7,12 @@ from django.shortcuts import render
 from elasticsearch_dsl import Index, Search, Q
 from django import forms
 
-from app.face_recognition import FaceRecognition
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs
-from app.object_extraction import ObjectExtract
 from manage import es
 from scripts.pathsPC import getFolders
 from app.nlpFilterSearch import processQuery
-
-obj_extr = ObjectExtract()
-frr = FaceRecognition()
 
 def index(request):
     folders = fs.getAllUris()
@@ -34,7 +30,7 @@ def index(request):
         elif pathf.is_valid() and pathf.cleaned_data["path"]:  # if path of new folder has a name, then it exists
             uploadImages(pathf.cleaned_data["path"])
             pathf = EditFoldersForm()
-            # chamar a funcao do wei
+            folders = fs.getAllUris()
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#folderstag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#folderstag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
         elif names.is_valid() and names.has_changed():  # if names changed
             i = 0
@@ -64,13 +60,15 @@ def index(request):
 
         query_text = request.GET.get("query")
         query_array = processQuery(query_text)
-        r = search(query_array)
-        print(r)
+        tag = "#" + " #".join(query_array)
 
-        results = {}
+        result_paths = list(map(lambda x: x.uri, search(query_array)))
+        results = {tag: []}
+        for path in result_paths:
+            img = ImageNeo.nodes.get_or_none(folder_uri="/".join(path.split("/")[:-1]), name=path.split("/")[-1])
+            results[tag].append(img)
 
-
-        return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#querytag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#querytag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
+        return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 
     else:  # first time in the page - no forms filled
         form = SearchForm()
@@ -140,31 +138,14 @@ def findSimilar(request):
     return render(request, 'index.html')
 
 
-def objectExtraction(request):
-    get = request.GET.get("path")
-    res = obj_extr.get_objects(get)
-    return render(request, 'objextr.html', {'res': res})
 
 
-def uploadFolder(request):
-    print('tá a correr o teste!')
-    get = request.GET.get("path")
-    l = [get + f for f in os.listdir(get) if f[-4:] == '.jpg']
-
-    for foto in l:
-        image, boxes = frr.getFaceBoxes(foto)
-        for b in boxes:
-            frr.saveFaceIdentification(image, b, 'Diogo')
-        print('foto no.')
-    print('acabou de treinar nas do diogo.')
-
-
-def teste(request):
-    foto_teste = request.GET.get("path")
-    image, boxes = frr.getFaceBoxes(foto_teste)
-    i = 0
-    print('hm')
-    for b in boxes:
-        name = frr.getTheNameOf(image, b)
-        print(i, 'Encontrou ' + name + '!!')
-        i += 1
+#def teste(request):
+#    foto_teste = request.GET.get("path")
+#    image, boxes = frr.getFaceBoxes(foto_teste)
+#    i = 0
+#    print('hm')
+#    for b in boxes:
+#        name = frr.getTheNameOf(image, b)
+#        print(i, 'Encontrou ' + name + '!!')
+#        i += 1

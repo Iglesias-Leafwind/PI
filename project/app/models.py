@@ -2,7 +2,8 @@
 import random
 from elasticsearch_dsl import Document, Text, Keyword
 from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerProperty, config, \
-    DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty
+    DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty, \
+    ArrayProperty
 from neomodel import db
 from manage import es
 
@@ -43,7 +44,7 @@ class HasA(StructuredRel):
 
 class DisplayA(StructuredRel):
     rel = 'Display a'
-    coordinates = FloatProperty()
+    coordinates = ArrayProperty()
 
 
 # Nodes
