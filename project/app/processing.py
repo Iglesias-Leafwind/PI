@@ -93,6 +93,7 @@ def uploadImages(uri):
             if read_image is None:
                 continue
             hash = dhash(read_image)
+            generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
             i.hash = hash
@@ -208,9 +209,9 @@ def findSimilarImages(uri):
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
-        imlist.append(imageFeatures[index])
-        print("image names: " + str(imageFeatures[index].name) + " scores: %f" % rank_score[i])
+        imlist.append(str(imageFeatures[index].hash) )
 
+    return imlist
 
 def getPlaces(img_path):
     # load the test image
@@ -493,21 +494,22 @@ def setUp():
     loadCatgoriesPlaces()
     loadFileSystemManager()
 
-def generateThumbnail(imagepath):
+def generateThumbnail(imagepath, hash):
     thumbnailH = 225
     thumbnailW = 225
 
     # load the input image
     image = cv2.imread(imagepath)
-    w,h, = image.shape
+    w,h,p = image.shape
     ratio = w/h
     thumbnailW = int(thumbnailH * ratio)
     dim = (thumbnailH,thumbnailW)
 
     # resize image
-    resized = cv2.resize(image, dim, interpolation = cv2.INTERAREA)
-    saving = "/thumbnails/" + re.split("[\\\/]+", imagepath)[-1]
-    cv2.imwrite(saving , resized,  [cv2.IMWRITE_JPEG_QUALITY, 25])
+    resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
+    saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
+    cv2.imwrite(saving, resized, [cv2.IMWRITE_JPEG_QUALITY, 25])
+    image = cv2.imread(saving)
     # 83 087 673
     # 00 288 957
     # 99,65 %

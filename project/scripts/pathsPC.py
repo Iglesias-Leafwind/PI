@@ -2,7 +2,7 @@ import os
 
 def getFolders():
     results = []
-    for root, dirs, files in os.walk('/home/anth0nypereira'):
+    for root, dirs, files in os.walk('/home/alexis'):
         array = []
         root_parts = root.split("/")
 
