@@ -192,7 +192,8 @@ def getPlaces(img_path):
 
 def getOCR(image):
     # load installed tesseract-ocr from users pc
-    pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+    #r'/usr/bin/tesseract'
+    pytesseract.pytesseract.tesseract_cmd = r'D:\\Programs\\tesseract-OCR'
     custom_config = r'--oem 3 --psm 6'
     min_confidence = 0.6
     results = []

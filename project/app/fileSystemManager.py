@@ -82,9 +82,9 @@ class SimpleFileSystemManager:
             node = self.trees[root]
 
             for i in range(1, len(folders)):
-                folder = folders[i]
-                if folder in node.children:
-                    node = node.children[folder]
+                f = folders[i]
+                if f in node.children:
+                    node = node.children[f]
 
             newNode = Node(folder, id)
             newNode.terminated = True
