@@ -26,15 +26,15 @@ def getImagesPerUri(pathName):
 def getRandomNumber():
     return random.randint(1, 1 << 63)
 
-def getFaceThumbnail(img_path, box, save_in=None):
+def getFaceThumbnail(img, box, save_in=None):
     top, right, bottom, left= box
-    img = cv2.imread(img_path)
+    # img = cv2.imread(img_path)
     cropimg = img[top:bottom, left:right]
     if save_in is not None:
         # assumindo que a imagem tem sempre uma extensao no fim
         # (ou seja, tem um '.png' ou '.'+ qq outra extensao no fim
-        new_path = img_path.split('.')[-2] + '_face.' + img_path.split('.')[-1]
-        cv2.imwrite(new_path, cropimg)
+        # new_path = img_path.split('.')[-2] + '_face.' + img_path.split('.')[-1]
+        cv2.imwrite(save_in, cropimg)
     return cropimg
 
 

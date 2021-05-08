@@ -30,12 +30,14 @@ class FaceRecognition:
         self.name2encodings[name].append(face_encoding)
 
         # ver o que retornar aqui para q seja guardado
+        return face_encoding
 
     def getTheNameOf(self, image, box):
         encoding = fr.face_encodings(image, [box])[0] # a len vai ser smp 1
 
         matches = {}
         unknown = 0
+        unknown_list = []
         # print(exp)
         for k in self.name2encodings:
             # lista de booleanos com os encodings q ele achou parecidos
@@ -46,7 +48,11 @@ class FaceRecognition:
             # aqui o sum nao sei se devia ser uma percentagem ou nao...
             # mas para casos em q so tem 1 imagem n ia correr mt bem isso
             matches[sum(listt)] = k
-            unknown += len(listt) - sum(listt)
+            unknown_list.append(len(listt) - sum(listt))
+            # unknown += len(listt) - sum(listt)
+
+        # experimentar outra estratégia
+        unknown = max(unknown_list)
 
         # definir qual é o criterio..
         # quando é que aparece unknown? quando nenhum encoding
@@ -54,7 +60,7 @@ class FaceRecognition:
 
         # neste momento está a dar unknown se for mais q 50%
         maxx = max(matches.keys())
-        name = 'unknown' if unknown>maxx else matches[maxx]
+        name = None if unknown>maxx else matches[maxx]
         return name
 """
 def teste():

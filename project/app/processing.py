@@ -1,5 +1,6 @@
 import json
 import string
+import time
 from os.path import join
 import random
 import imghdr
@@ -27,6 +28,7 @@ from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
+import app.utils
 
 obj_extr = ObjectExtract()
 frr = FaceRecognition()
@@ -35,6 +37,8 @@ features = []
 imageFeatures = []
 fs = SimpleFileSystemManager()
 model = VGGNet()
+
+faceimageindex=0
 
 
 # used in getOCR
@@ -134,14 +138,23 @@ def uploadImages(uri):
 
                 openimage, boxes = frr.getFaceBoxes(img_path)
                 for b in boxes:
-                    name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-                    frr.saveFaceIdentification(openimage, b, name)
+                    name = frr.getTheNameOf(openimage, b)
+                    if name is None:
+                        # esta verificacao terá de ser alterada para algo mais preciso
+                        # por exemplo, definir um grau de certeza
+                        name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+                    encodings = frr.saveFaceIdentification(openimage, b, name)
 
                     p = Person.nodes.get_or_none(name=name) # TODO : get icon
                     if p is None:
                         p = Person(name=name).save()
                         tags.append(name)
-                    image.person.connect(p, {'coordinates': list(b)})
+
+                    face_thumb_path = 'static/face-thumbnails/'+str(int(round(time.time() * 1000)))+'.jpg'
+                    face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=face_thumb_path)
+                    # image.person.connect(p, {'coordinates': list(b)})
+                    # CHECK THIS!!
+                    image.person.connect(p, {'coordinates': list(b), 'encodings':encodings, 'icon': face_thumb_path})
 
                 places = getPlaces(img_path)
                 if places:
