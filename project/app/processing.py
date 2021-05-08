@@ -150,7 +150,7 @@ def uploadImages(uri):
                         p = Person(name=name).save()
                         tags.append(name)
 
-                    face_thumb_path = 'static/face-thumbnails/'+str(int(round(time.time() * 1000)))+'.jpg'
+                    face_thumb_path = os.path.join('static/face-thumbnails/', str(int(round(time.time() * 1000)))+'.jpg')
                     face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=face_thumb_path)
                     # image.person.connect(p, {'coordinates': list(b)})
                     # CHECK THIS!!
