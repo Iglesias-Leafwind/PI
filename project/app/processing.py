@@ -2,6 +2,7 @@ import json
 import string
 from os.path import join
 import random
+import imghdr
 
 import numpy as np
 from numpyencoder import NumpyEncoder
@@ -89,6 +90,8 @@ def uploadImages(uri):
             i = ImageFeature()
 
             read_image = cv2.imread(img_path)
+            if read_image is None:
+                continue
             hash = dhash(read_image)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
@@ -138,7 +141,7 @@ def uploadImages(uri):
                     if p is None:
                         p = Person(name=name).save()
                         tags.append(name)
-                    image.person.connect(p, {'coordinates': [c for c in b[1]]})
+                    image.person.connect(p, {'coordinates': list(b)})
 
                 places = getPlaces(img_path)
                 if places:
@@ -211,7 +214,7 @@ def findSimilarImages(uri):
 
 def getPlaces(img_path):
     # load the test image
-    img = Image.open(img_path)
+    img = Image.open(img_path).convert('RGB')
     input_img = V(centre_crop(img).unsqueeze(0))
 
     # forward pass
@@ -478,13 +481,14 @@ def setUp():
         tags.extend(locations)
 
         uri = join(image.folder_uri, image.name)
-        savedImage = ImageES.get(using=es, id=image.hash)
-
-        if savedImage:
-            savedImage.update(using=es, tags=tags)
+        try:
+            savedImage = ImageES.get(using=es, index='image', id=image.hash)
+            savedImage.update(using=es, index='image', tags=tags)
             savedImage.save()
-        else:
-            ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
+
+        except:
+            savedImage = ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
+
 
     loadCatgoriesPlaces()
     loadFileSystemManager()

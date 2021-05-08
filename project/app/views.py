@@ -117,7 +117,6 @@ def createIndex(request):
 
     return render(request, 'insert_es.html')
 
-
 def search(tags):
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
