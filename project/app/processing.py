@@ -1,10 +1,15 @@
 import json
+import string
 from os.path import join
+import random
+import imghdr
+
 import numpy as np
 from numpyencoder import NumpyEncoder
-
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
+from app.object_extraction import ObjectExtract
 from app.utils import ImageFeature, getImagesPerUri
 import torch
 from torch.autograd import Variable as V
@@ -22,6 +27,9 @@ from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
+
+obj_extr = ObjectExtract()
+frr = FaceRecognition()
 
 features = []
 imageFeatures = []
@@ -82,6 +90,8 @@ def uploadImages(uri):
             i = ImageFeature()
 
             read_image = cv2.imread(img_path)
+            if read_image is None:
+                continue
             hash = dhash(read_image)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
@@ -94,32 +104,54 @@ def uploadImages(uri):
                 # if the current image's folder is different
                 existed.folder.connect(folderNeoNode)
             else:
+                tags = []
+
                 # extract infos
                 norm_feat, height, width = model.vgg_extract_feat(img_path)
                 f = json.dumps(norm_feat, cls=NumpyEncoder)
                 i.features = f
                 iJson = json.dumps(i.__dict__)
 
-                image = ImageNeo(folder_uri=os.path.split(img_path)[0], name=img_name, processing=iJson, format=img_name.split(".")[1], width=width, height=height, hash=hash).save()
+                image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                 name=img_name,
+                                 processing=iJson,
+                                 format=img_name.split(".")[1],
+                                 width=width,
+                                 height=height,
+                                 hash=hash).save()
 
                 image.folder.connect(folderNeoNode)
 
-                p = Person.nodes.get_or_none(name="wei")
-                if p is None:
-                    p = Person(name="wei").save()
-                image.person.connect(p, {'coordinates': 0.0})
+                res = obj_extr.get_objects(img_path)
+
+                for object in res["name"]:
+                    tag = Tag.nodes.get_or_none(name=object)
+                    if tag is None:
+                        tag = Tag(name=object).save()
+                        tags.append(object)
+
+                    image.tag.connect(tag)
+
+                openimage, boxes = frr.getFaceBoxes(img_path)
+                for b in boxes:
+                    name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+                    frr.saveFaceIdentification(openimage, b, name)
+
+                    p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                    if p is None:
+                        p = Person(name=name).save()
+                        tags.append(name)
+                    image.person.connect(p, {'coordinates': list(b)})
 
                 places = getPlaces(img_path)
                 if places:
                     places = places.split("/")
                     for place in places:
-                        p = ""
-                        for x in place.split("_"):
-                            p += x + " "
-
-                        t = Tag.nodes.get_or_none(name=p.strip())
+                        p = " ".join(place.split("_")).strip()
+                        t = Tag.nodes.get_or_none(name=p)
                         if t is None:
-                            t = Tag(name=p.strip()).save()
+                            t = Tag(name=p).save()
+                            tags.append(p)
                         image.tag.connect(t)
 
                 wordList = getOCR(read_image)
@@ -128,6 +160,7 @@ def uploadImages(uri):
                         t = Tag.nodes.get_or_none(name=word)
                         if t is None:
                             t = Tag(name=word).save()
+                            tags.append(word)
                         image.tag.connect(t)
 
                 l = Location.nodes.get_or_none(name="UA")
@@ -152,6 +185,8 @@ def uploadImages(uri):
                 features.append(norm_feat)
                 i.features = norm_feat
                 imageFeatures.append(i)
+
+                ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
 
             print("extracting feature from image %s " % (img_path))
 
@@ -179,7 +214,7 @@ def findSimilarImages(uri):
 
 def getPlaces(img_path):
     # load the test image
-    img = Image.open(img_path)
+    img = Image.open(img_path).convert('RGB')
     input_img = V(centre_crop(img).unsqueeze(0))
 
     # forward pass
@@ -427,13 +462,8 @@ def setUp():
         features.append(i.features)
         imageFeatures.append(i)
 
-        tags = []
-        for tag in image.tag:
-            tags.append(tag.name)
-
-        persons = []
-        for p in image.person:
-            persons.append(p.name)
+        tags = [tag.name for tag in image.tag]
+        persons = [p.name for p in image.person]
 
         locations = set()
         for l in image.location:
@@ -447,8 +477,18 @@ def setUp():
 
         locations = list(locations)
 
+        tags.extend(persons)
+        tags.extend(locations)
+
         uri = join(image.folder_uri, image.name)
-        ImageES(meta={'id': uri}, uri=uri, tags=tags, locations=locations, persons=persons).save(using=es)
+        try:
+            savedImage = ImageES.get(using=es, index='image', id=image.hash)
+            savedImage.update(using=es, index='image', tags=tags)
+            savedImage.save()
+
+        except:
+            savedImage = ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
+
 
     loadCatgoriesPlaces()
     loadFileSystemManager()
