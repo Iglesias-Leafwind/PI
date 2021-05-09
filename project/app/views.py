@@ -37,6 +37,7 @@ def index(request):
                     results["results"] += [getresult]
             image = SearchForImageForm()
 
+
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif pathf.is_valid() and pathf.cleaned_data["path"]:  # if path of new folder has a name, then it exists
             uploadImages(pathf.cleaned_data["path"])
@@ -45,7 +46,10 @@ def index(request):
             results = {}
             for tag in Tag.nodes.all():
                 results["#" + tag.name] = tag.image.all()
-
+                count = 0
+                for lstImage in results["#" + tag.name]:
+                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+                    count += 1
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif names.is_valid() and names.has_changed():  # if names changed
             i = 0
