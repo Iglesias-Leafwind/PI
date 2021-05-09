@@ -11,7 +11,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -34,8 +34,7 @@ import logging
 obj_extr = ObjectExtract()
 #frr = FaceRecognition()
 
-features = []
-imageFeatures = []
+ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
 model = VGGNet()
 
@@ -107,8 +106,6 @@ def processing(dirFiles):
             if read_image is None:
                 continue
             hash = dhash(read_image)
-            propertiesdict = getExif(img_path)
-            generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
             i.hash = hash
@@ -130,6 +127,16 @@ def processing(dirFiles):
                 f = json.dumps(norm_feat, cls=NumpyEncoder)
                 i.features = f
                 iJson = json.dumps(i.__dict__)
+
+                if ImageNeo.nodes.get_or_none(hash=hash):
+                    if existed.folder_uri != dir:
+                        # if the current image's folder is different
+                        existed.folder.connect(folderNeoNode)
+                    continue
+
+                propertiesdict = getExif(img_path)
+                generateThumbnail(img_path, hash)
+
                 if "datetime" in propertiesdict:
                     image = ImageNeo(folder_uri=os.path.split(img_path)[0],
                                      name=img_name,
@@ -150,9 +157,6 @@ def processing(dirFiles):
                                      hash=hash,
                                      insertion_date=datetime.now())
 
-                if ImageNeo.nodes.get_or_none(hash=hash):
-                    continue
-
                 image.save()
 
                 if "latitude" in propertiesdict and "longitude" in propertiesdict:
@@ -161,6 +165,7 @@ def processing(dirFiles):
                     else:
                         location = Location(name=propertiesdict["location"]).save()
 
+                    tags.append(location)
                     image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
                     if not City.nodes.get(name=propertiesdict["city"]) is None:
@@ -168,6 +173,7 @@ def processing(dirFiles):
                     else:
                         city = City(name=propertiesdict["city"]).save()
 
+                    tags.append(city)
                     location.city.connect(city)
 
                     if not Country.nodes.get(name=propertiesdict["country"]) is None:
@@ -175,6 +181,7 @@ def processing(dirFiles):
                     else:
                         country = Country(name=propertiesdict["country"]).save()
 
+                    tags.append(country)
                     city.country.connect(country)
 
                 image.folder.connect(folderNeoNode)
@@ -185,7 +192,7 @@ def processing(dirFiles):
                     tag = Tag.nodes.get_or_none(name=object)
                     if tag is None:
                         tag = Tag(name=object).save()
-                        tags.append(object)
+                    tags.append(object)
 
                     image.tag.connect(tag)
 
@@ -199,7 +206,7 @@ def processing(dirFiles):
                         t = Tag.nodes.get_or_none(name=p)
                         if t is None:
                             t = Tag(name=p).save()
-                            tags.append(p)
+                        tags.append(p)
                         image.tag.connect(t)
 
                 wordList = getOCR(read_image)
@@ -208,13 +215,13 @@ def processing(dirFiles):
                         t = Tag.nodes.get_or_none(name=word)
                         if t is None:
                             t = Tag(name=word).save()
-                            tags.append(word)
+                        tags.append(word)
                         image.tag.connect(t)
 
                 # add features to "cache"
-                features.append(norm_feat)
+                ftManager.npFeatures.append(norm_feat)
                 i.features = norm_feat
-                imageFeatures.append(i)
+                ftManager.imageFeatures.append(i)
 
                 ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
@@ -228,7 +235,7 @@ def divideTaskInTwo(dirFiles):
     taskTwo = {}
 
     for k in dirFiles.keys():
-        if i < int(l / 2):
+        if i < l:
             taskOne[k] = dirFiles[k]
         else:
             taskTwo[k] = dirFiles[k]
@@ -243,9 +250,25 @@ def alreadyProcessed(img_path):
 
     return existed
 
+def deleteFolder(uri):
+    deletedImages = fs.deleteFolderFromFs(uri)
+    if None or len(deletedImages) == 0:
+        return
+
+    imgfs = set(ftManager.imageFeatures)
+    for di in deletedImages:
+        imgfs.remove(di)
+
+    ftManager.imageFeatures = list(imgfs)
+    f = []
+    for i in ftManager.imageFeatures:
+        f.append(i.features)
+
+    ftManager.npFeatures = f
+
 def findSimilarImages(uri):
     norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
-    feats = np.array(features)
+    feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
     rank_score = scores[rank]
@@ -254,7 +277,7 @@ def findSimilarImages(uri):
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
-        imlist.append(str(imageFeatures[index].hash) )
+        imlist.append(str(ftManager.imageFeatures[index].hash) )
 
     return imlist
 
@@ -502,36 +525,26 @@ def getExif(img_path):
         returning["height"] = H
         returning["width"] = W
     return returning
-def findSimilarImages(uri):
-    norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
-    feats = np.array(features)
-    scores = np.dot(norm_feat, feats.T)
-    rank = np.argsort(scores)[::-1]
-    rank_score = scores[rank]
-
-    maxres = 40  # 40 imagens com maiores scores
-
-    imlist = []
-    for i, index in enumerate(rank[0:maxres]):
-        imlist.append(str(imageFeatures[index].hash) )
-
-    return imlist
 
 
 # load all images to memory
 def setUp():
     images = ImageNeo.nodes.all()
+    npfeatures = []
+    imageFeatures = []
 
     for image in images:
         i = ImageFeature(**json.loads(image.processing))
         if i.features is None:
             continue
         i.features = np.array(json.loads(i.features))
-        features.append(i.features)
+        npfeatures.append(i.features)
         imageFeatures.append(i)
 
     loadCatgoriesPlaces()
     loadFileSystemManager()
+    ftManager.npFeatures = npfeatures
+    ftManager.imageFeatures = imageFeatures
 
 def generateThumbnail(imagepath, hash):
     thumbnailH = 225
