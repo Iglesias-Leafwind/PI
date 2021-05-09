@@ -155,6 +155,7 @@
     <p>{{ tag_cluster.0 }}</p>
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
           {% for image in tag_cluster.1 %}
+              {% if image is not None %}
         <div class="col">
           <div class="card shadow-sm">
             {% with 'thumbnails'|add:'/'|add:image.hash|add:'.jpg' as image_static %}
@@ -184,6 +185,7 @@
       <div class="modal-body">
           {% with '../../../../../../../'|add:"/"|add:image.folder_uri|add:"/"|add:image.name as imgPath %}
                 <img src="{% static imgPath %}">
+              <p>{{ image.creation_date }}</p>
           {% endwith %}
       </div>
         <div class="modal-footer">
@@ -193,6 +195,7 @@
     </div>
   </div>
 </div>
+              {% endif %}
               {% endfor %}
       </div> <!--row-->
     </div>

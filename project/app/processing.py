@@ -1,9 +1,11 @@
 import json
 import string
 import sys
+from datetime import datetime
 from os.path import join
 import random
 import numpy as np
+import requests
 from numpyencoder import NumpyEncoder
 #from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
@@ -105,6 +107,7 @@ def processing(dirFiles):
             if read_image is None:
                 continue
             hash = dhash(read_image)
+            propertiesdict = getExif(img_path)
             generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
@@ -127,14 +130,52 @@ def processing(dirFiles):
                 f = json.dumps(norm_feat, cls=NumpyEncoder)
                 i.features = f
                 iJson = json.dumps(i.__dict__)
+                if "datetime" in propertiesdict:
+                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                     name=img_name,
+                                     processing=iJson,
+                                     format=img_name.split(".")[1],
+                                     width=width,
+                                     height=height,
+                                     hash=hash,
+                                     creation_date=propertiesdict["datetime"],
+                                     insertion_date=datetime.now())
+                else:
+                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                     name=img_name,
+                                     processing=iJson,
+                                     format=img_name.split(".")[1],
+                                     width=width,
+                                     height=height,
+                                     hash=hash,
+                                     insertion_date=datetime.now())
 
-                image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                 name=img_name,
-                                 processing=iJson,
-                                 format=img_name.split(".")[1],
-                                 width=width,
-                                 height=height,
-                                 hash=hash).save()
+                if ImageNeo.nodes.get_or_none(hash=hash):
+                    continue
+
+                image.save()
+
+                if "latitude" in propertiesdict and "longitude" in propertiesdict:
+                    if not Location.nodes.get(name=propertiesdict["location"]) is None:
+                        location = Location.nodes.get(name=propertiesdict["location"])
+                    else:
+                        location = Location(name=propertiesdict["location"]).save()
+
+                    image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
+
+                    if not City.nodes.get(name=propertiesdict["city"]) is None:
+                        city = City.nodes.get(name=propertiesdict["city"])
+                    else:
+                        city = City(name=propertiesdict["city"]).save()
+
+                    location.city.connect(city)
+
+                    if not Country.nodes.get(name=propertiesdict["country"]) is None:
+                        country = Country.nodes.get(name=propertiesdict["country"])
+                    else:
+                        country = Country(name=propertiesdict["country"]).save()
+
+                    city.country.connect(country)
 
                 image.folder.connect(folderNeoNode)
 
@@ -148,16 +189,7 @@ def processing(dirFiles):
 
                     image.tag.connect(tag)
 
-               # openimage, boxes = frr.getFaceBoxes(img_path)
-               # for b in boxes:
-               #     name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-               #     frr.saveFaceIdentification(openimage, b, name)
-
                #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
-               #     if p is None:
-               #         p = Person(name=name).save()
-               #         tags.append(name)
-               #     image.person.connect(p, {'coordinates': list(b)})
 
                 places = getPlaces(img_path)
                 if places:
@@ -178,24 +210,6 @@ def processing(dirFiles):
                             t = Tag(name=word).save()
                             tags.append(word)
                         image.tag.connect(t)
-
-                l = Location.nodes.get_or_none(name="UA")
-                if l is None:
-                    l = Location(name="UA").save()
-
-                image.location.connect(l, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
-
-                c = City.nodes.get_or_none(name="Aveiro")
-                if c is None:
-                    c = City(name="Aveiro").save()
-
-                l.city.connect(c, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
-
-                ct = Country.nodes.get_or_none(name="PT")
-                if ct is None:
-                    ct = Country(name="PT").save()
-
-                c.country.connect(ct, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
 
                 # add features to "cache"
                 features.append(norm_feat)
@@ -472,6 +486,14 @@ def getExif(img_path):
                     returning["latitude"] = current_image.gps_latitude
                 if ("gps_longitude" in current_image.list_all()):
                     returning["longitude"] = current_image.gps_longitude
+
+                if 'latitude' in returning and 'longitude' in returning:
+                    geoInfos = requests.get(
+                        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
+                        + returning["latitude"] + "&longitude=" + returning["longitude"]).json()
+                    returning['location'] = geoInfos['city']
+                    returning['city'] = geoInfos['city']
+                    returning['country'] = geoInfos['countryName']
             else:
                 raise Exception("No exif")
     except Exception as e:
@@ -480,6 +502,20 @@ def getExif(img_path):
         returning["height"] = H
         returning["width"] = W
     return returning
+def findSimilarImages(uri):
+    norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
+    feats = np.array(features)
+    scores = np.dot(norm_feat, feats.T)
+    rank = np.argsort(scores)[::-1]
+    rank_score = scores[rank]
+
+    maxres = 40  # 40 imagens com maiores scores
+
+    imlist = []
+    for i, index in enumerate(rank[0:maxres]):
+        imlist.append(str(imageFeatures[index].hash) )
+
+    return imlist
 
 
 # load all images to memory

@@ -15,7 +15,7 @@ from app.nlpFilterSearch import processQuery
 
 
 
-future = do(getFolders)
+#future = do(getFolders)
 
 def index(request):
     fileset = None
@@ -34,14 +34,8 @@ def index(request):
             for i in image_array:
                 getresult = ImageNeo.nodes.get_or_none(hash=i)
                 if getresult:
-                    results["results"] += getresult
+                    results["results"] += [getresult]
             image = SearchForImageForm()
-
-            fileset = getFileSet(fileset)
-
-            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-                choices=tuple(
-                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
 
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif pathf.is_valid() and pathf.cleaned_data["path"]:  # if path of new folder has a name, then it exists
@@ -51,13 +45,6 @@ def index(request):
             results = {}
             for tag in Tag.nodes.all():
                 results["#" + tag.name] = tag.image.all()
-
-            fileset = getFileSet(fileset)
-
-            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-                choices=tuple(
-                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in
-                     fileset])))
 
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif names.is_valid() and names.has_changed():  # if names changed
@@ -70,11 +57,6 @@ def index(request):
                     # profile.name = fname
                     # profile.save()
 
-            fileset = getFileSet(fileset)
-
-            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-                choices=tuple(
-                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
 
             names = PersonsForm()
 
@@ -89,11 +71,6 @@ def index(request):
             image = SearchForImageForm()
             pathf = EditFoldersForm()
             names = PersonsForm()
-
-            fileset = getFileSet(fileset)
-            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-                choices=tuple(
-                    [(choice, ".../" + re.split("[\\\/:]+", choice)[-2] + "/" + re.split("[\\\/:]+", choice)[-1]) for choice in fileset])))
 
             results = {}
             for tag in Tag.nodes.all():
@@ -117,27 +94,24 @@ def index(request):
             img = ImageNeo.nodes.get_or_none(folder_uri="/".join(path.split("/")[:-1]), name=path.split("/")[-1])
             results[tag].append(img)
 
-        fileset = getFileSet(fileset)
-
-        pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-            choices=tuple(
-                [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
         return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 
     else:  # first time in the page - no forms filled
         form = SearchForm()
         image = SearchForImageForm()
         names = PersonsForm()
+        pathf = EditFoldersForm()
+
         results = {}
         for tag in Tag.nodes.all():
             results["#" + tag.name] = tag.image.all()
-        return render(request, 'index.html', {'form': form, 'image_form': image, 'folders': folders, 'names_form': names, 'results': results})
+        return render(request, 'index.html', {'form': form, 'path_form': pathf, 'image_form': image, 'folders': folders, 'names_form': names, 'results': results})
 
 
-def getFileSet(fileset):
-    if not fileset:
-        fileset = future.result()
-    return fileset
+#def getFileSet(fileset):
+#    if not fileset:
+#        fileset = future.result()
+#    return fileset
 
 
 # OCR
