@@ -1,6 +1,8 @@
 import os
 import random
+from threading import Lock
 
+lock = Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
@@ -29,10 +31,15 @@ def getRandomNumber():
 class ImageFeature:
     def __init__(self, features=None, hash=None):
         self.features = features
-        self.hash = hash
+        self.hash = int(hash) if hash else None
 
     def __hash__(self):
-        return hash(self.hash)
+        return self.hash
 
     def __eq__(self, other):
         return self.hash == other.hash
+
+class ImageFeaturesManager:
+    def __init__(self):
+        self.imageFeatures = []
+        self.npFeatures = []

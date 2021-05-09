@@ -8,7 +8,7 @@ from django import forms
 
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo, Tag
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
 from manage import es
 from scripts.pathsPC import getFolders, do
 from app.nlpFilterSearch import processQuery
@@ -167,4 +167,18 @@ def alreadyProcessed(img_path):
 def upload(request):
     data = json.loads(request.body)
     uploadImages(data["path"])
+    return render(request, 'index.html')
+
+def searchtag(request):
+    get = [request.GET.get('tag')]
+    q = Q('bool', should=[Q('term', tags=tag) for tag in get], minimum_should_match=1)
+    s = Search(using=es, index='image').query(q)
+    execute = s.execute()
+    for i in execute:
+        print(i)
+    return render(request, 'index.html')
+
+
+def delete(request):
+    deleteFolder(request.GET.get("path"))
     return render(request, 'index.html')
