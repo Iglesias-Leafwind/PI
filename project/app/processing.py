@@ -1,12 +1,11 @@
 import json
 import string
+import sys
 from os.path import join
 import random
-import imghdr
-
 import numpy as np
 from numpyencoder import NumpyEncoder
-from app.face_recognition import FaceRecognition
+#from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -27,9 +26,11 @@ from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
+from scripts.pathsPC import do
+import logging
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
+#frr = FaceRecognition()
 
 features = []
 imageFeatures = []
@@ -60,6 +61,8 @@ centre_crop = trn.Compose([
 ])
 
 
+logging.basicConfig(level=logging.INFO)
+
 def filterSentence(sentence):
     english_vocab = set(w.lower() for w in words.words())
     stop_words = set(w.lower() for w in stopwords.words('english'))
@@ -75,6 +78,15 @@ def uploadImages(uri):
     print("----------------------------------------------")
 
     dirFiles = getImagesPerUri(uri)
+    taskOne, taskTwo = divideTaskInTwo(dirFiles)
+
+    do(processing, taskOne)
+    print("------------------task 1------------------")
+    do(processing, taskTwo)
+    print("------------------task 2------------------")
+
+
+def processing(dirFiles):
     for dir in dirFiles.keys():
         img_list = dirFiles[dir]
 
@@ -93,11 +105,15 @@ def uploadImages(uri):
             if read_image is None:
                 continue
             hash = dhash(read_image)
+            generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
             i.hash = hash
 
             if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
+
+                logging.info("Image " + img_path + " has already been processed")
+
                 if existed.folder_uri == dir:
                     continue
 
@@ -132,16 +148,16 @@ def uploadImages(uri):
 
                     image.tag.connect(tag)
 
-                openimage, boxes = frr.getFaceBoxes(img_path)
-                for b in boxes:
-                    name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-                    frr.saveFaceIdentification(openimage, b, name)
+               # openimage, boxes = frr.getFaceBoxes(img_path)
+               # for b in boxes:
+               #     name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+               #     frr.saveFaceIdentification(openimage, b, name)
 
-                    p = Person.nodes.get_or_none(name=name) # TODO : get icon
-                    if p is None:
-                        p = Person(name=name).save()
-                        tags.append(name)
-                    image.person.connect(p, {'coordinates': list(b)})
+               #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
+               #     if p is None:
+               #         p = Person(name=name).save()
+               #         tags.append(name)
+               #     image.person.connect(p, {'coordinates': list(b)})
 
                 places = getPlaces(img_path)
                 if places:
@@ -186,16 +202,32 @@ def uploadImages(uri):
                 i.features = norm_feat
                 imageFeatures.append(i)
 
-                ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
+                ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
             print("extracting feature from image %s " % (img_path))
+
+
+def divideTaskInTwo(dirFiles):
+    l = int(len(dirFiles) / 2)
+    i = 0
+    taskOne = {}
+    taskTwo = {}
+
+    for k in dirFiles.keys():
+        if i < int(l / 2):
+            taskOne[k] = dirFiles[k]
+        else:
+            taskTwo[k] = dirFiles[k]
+        i += 1
+
+    return taskOne, taskTwo
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
     hash = dhash(image)
     existed = ImageNeo.nodes.get_or_none(hash=hash)
 
-    return True if existed else False
+    return existed
 
 def findSimilarImages(uri):
     norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
@@ -208,9 +240,9 @@ def findSimilarImages(uri):
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
-        imlist.append(imageFeatures[index])
-        print("image names: " + str(imageFeatures[index].name) + " scores: %f" % rank_score[i])
+        imlist.append(str(imageFeatures[index].hash) )
 
+    return imlist
 
 def getPlaces(img_path):
     # load the test image
@@ -227,7 +259,7 @@ def getPlaces(img_path):
 
 def getOCR(image):
     # load installed tesseract-ocr from users pc
-    pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+    pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
     custom_config = r'--oem 3 --psm 6'
     min_confidence = 0.6
     results = []
@@ -462,52 +494,25 @@ def setUp():
         features.append(i.features)
         imageFeatures.append(i)
 
-        tags = [tag.name for tag in image.tag]
-        persons = [p.name for p in image.person]
-
-        locations = set()
-        for l in image.location:
-            locations.add(l.name)
-
-            for c in l.city:
-                locations.add(c.name)
-
-                for ct in c.country:
-                    locations.add(ct.name)
-
-        locations = list(locations)
-
-        tags.extend(persons)
-        tags.extend(locations)
-
-        uri = join(image.folder_uri, image.name)
-        try:
-            savedImage = ImageES.get(using=es, index='image', id=image.hash)
-            savedImage.update(using=es, index='image', tags=tags)
-            savedImage.save()
-
-        except:
-            savedImage = ImageES(meta={'id': image.hash}, uri=uri, tags=tags, hash=image.hash).save(using=es)
-
-
     loadCatgoriesPlaces()
     loadFileSystemManager()
 
-def generateThumbnail(imagepath):
+def generateThumbnail(imagepath, hash):
     thumbnailH = 225
     thumbnailW = 225
 
     # load the input image
     image = cv2.imread(imagepath)
-    w,h, = image.shape
+    w,h,p = image.shape
     ratio = w/h
     thumbnailW = int(thumbnailH * ratio)
     dim = (thumbnailH,thumbnailW)
 
     # resize image
-    resized = cv2.resize(image, dim, interpolation = cv2.INTERAREA)
-    saving = "/thumbnails/" + re.split("[\\\/]+", imagepath)[-1]
-    cv2.imwrite(saving , resized,  [cv2.IMWRITE_JPEG_QUALITY, 25])
+    resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
+    saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
+    cv2.imwrite(saving, resized, [cv2.IMWRITE_JPEG_QUALITY, 25])
+    image = cv2.imread(saving)
     # 83 087 673
     # 00 288 957
     # 99,65 %

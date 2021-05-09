@@ -1,8 +1,20 @@
 import os
+from concurrent.futures.thread import ThreadPoolExecutor
+
+pool = ThreadPoolExecutor(max_workers=2)
+
+def do(fc, args=None):
+    if args:
+        future = pool.submit(fc, args)
+    else:
+        future = pool.submit(fc)
+    return future
+
+
 
 def getFolders():
     results = []
-    for root, dirs, files in os.walk('/home/anth0nypereira'):
+    for root, dirs, files in os.walk('D:'):
         array = []
         root_parts = root.split("/")
 
