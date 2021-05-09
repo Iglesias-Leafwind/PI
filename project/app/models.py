@@ -8,7 +8,7 @@ from neomodel import db
 from manage import es
 
 #'bolt://neo4j:a12345a@localhost:7687'
-config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
+config.DATABASE_URL = 'bolt://neo4j:pass@localhost:7687'
 
 
 # for elastic search ↓

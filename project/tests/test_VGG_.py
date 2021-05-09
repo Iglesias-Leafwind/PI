@@ -11,5 +11,5 @@ class BGGTestCase(TestCase):
 
     def test_vgg_extract(self):
         vgg = VGGNet()
-        result = vgg.vgg_extract_feat(dir_path + "\\face.jpg")
+        result = vgg.vgg_extract_feat(dir_path + "/face.jpg")
         self.assertEquals(result is None, False)

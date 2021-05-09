@@ -1,7 +1,8 @@
 from django.test import TestCase
-from app.models import ImageNeo
 from app.fileSystemManager import SimpleFileSystemManager
 import os
+import re
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 filesistem = SimpleFileSystemManager()
 
@@ -9,12 +10,12 @@ class FSTestCase(TestCase):
 
     def setUp(self):
         print("\n\\|/Testing File System Manager")
-        filesistem.addFullPathUri(dir_path,[0,1,2,3,4,5,6,7])
+        filesistem.addFullPathUri(dir_path, range(len(re.split("[\\\/]+", dir_path))))
     def test_exists(self):
         self.assertTrue(filesistem.exist(dir_path))
     def test_expand(self):
         filesistem.expandUri(dir_path,"expanding",8)
-        self.assertTrue(filesistem.exist(dir_path+"\\expanding"))
+        self.assertTrue(filesistem.exist(dir_path+"/expanding"))
     def test_get_lastN(self):
         node = filesistem.getLastNode(dir_path)
         self.assertEquals(str(node), "tests")

@@ -3,7 +3,7 @@ from app.models import ImageNeo
 from app.processing import *
 import cv2
 import os
-img_path = os.path.dirname(os.path.realpath(__file__)) + "\\face.jpg"
+img_path = os.path.dirname(os.path.realpath(__file__)) + "/face.jpg"
 class ProcessingTestCase(TestCase):
 
     def setUp(self):
@@ -26,7 +26,9 @@ class ProcessingTestCase(TestCase):
         self.assertEquals(expected,exif)
 
     def test_thumbnail(self):
-        thumbnailPath = generateThumbnail(img_path)
+        read_image = cv2.imread(img_path)
+        hash = dhash(read_image)
+        thumbnailPath = generateThumbnail(img_path, hash)
         self.assertTrue(cv2.imread(thumbnailPath) is not None)
         os.remove(thumbnailPath)
         self.assertTrue(cv2.imread(thumbnailPath) is None)
