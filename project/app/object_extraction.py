@@ -15,5 +15,4 @@ class ObjectExtract:
         results = self.model(image_path)
 
         res = results.pandas().xyxy[0][['confidence', 'name']]
-        print(res)
         return res
