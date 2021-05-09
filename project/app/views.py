@@ -79,7 +79,10 @@ def index(request):
             results = {}
             for tag in Tag.nodes.all():
                 results["#" + tag.name] = tag.image.all()
-
+                count = 0
+                for lstImage in results["#" + tag.name]:
+                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+                    count += 1
             return render(request, 'index.html', {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})
 
     elif request.method == 'GET' and 'query' in request.GET:
@@ -106,9 +109,13 @@ def index(request):
         names = PersonsForm()
         pathf = EditFoldersForm()
 
-        results = {}
+        results={}
         for tag in Tag.nodes.all():
             results["#" + tag.name] = tag.image.all()
+            count = 0
+            for lstImage in results["#" + tag.name]:
+                results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+                count += 1
         return render(request, 'index.html', {'form': form, 'path_form': pathf, 'image_form': image, 'folders': folders, 'names_form': names, 'results': results})
 
 
