@@ -1,6 +1,8 @@
 import os
 import random
+from threading import Lock
 
+lock = Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)

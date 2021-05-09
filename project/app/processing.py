@@ -11,7 +11,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -42,6 +42,10 @@ model = VGGNet()
 # used in getOCR
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
+
+# load installed tesseract-ocr from users pc
+pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
 arch = 'resnet18'  # th architecture to use
@@ -188,6 +192,7 @@ def processing(dirFiles):
 
                 res = obj_extr.get_objects(img_path)
 
+                print(img_path + "     " + " objtct")
                 for object in res["name"]:
                     tag = Tag.nodes.get_or_none(name=object)
                     if tag is None:
@@ -208,6 +213,7 @@ def processing(dirFiles):
                             t = Tag(name=p).save()
                         tags.append(p)
                         image.tag.connect(t)
+                print(img_path + "     " + " places")
 
                 wordList = getOCR(read_image)
                 if wordList and len(wordList) > 0:
@@ -217,7 +223,7 @@ def processing(dirFiles):
                             t = Tag(name=word).save()
                         tags.append(word)
                         image.tag.connect(t)
-
+                print(img_path + "     " + " ocr")
                 # add features to "cache"
                 ftManager.npFeatures.append(norm_feat)
                 i.features = norm_feat
@@ -295,9 +301,6 @@ def getPlaces(img_path):
 
 
 def getOCR(image):
-    # load installed tesseract-ocr from users pc
-    pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
-    custom_config = r'--oem 3 --psm 6'
     min_confidence = 0.6
     results = []
     # These must be multiple of 32
@@ -326,9 +329,10 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
-
+    lock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
+    lock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
