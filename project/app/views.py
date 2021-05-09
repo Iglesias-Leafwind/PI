@@ -50,7 +50,7 @@ def index(request):
             folders = fs.getAllUris()
             results = {}
             for tag in Tag.nodes.all():
-                results[tag.name] = tag.image.all()
+                results["#" + tag.name] = tag.image.all()
 
             fileset = getFileSet(fileset)
 
@@ -77,7 +77,12 @@ def index(request):
                     [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
 
             names = PersonsForm()
-            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#namestag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#namestag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
+
+            results = {}
+            for tag in Tag.nodes.all():
+                results["#" + tag.name] = tag.image.all()
+
+            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 
         else:  # the form filled had a mistake
             form = SearchForm()
@@ -90,8 +95,11 @@ def index(request):
                 choices=tuple(
                     [(choice, ".../" + re.split("[\\\/:]+", choice)[-2] + "/" + re.split("[\\\/:]+", choice)[-1]) for choice in fileset])))
 
+            results = {}
+            for tag in Tag.nodes.all():
+                results["#" + tag.name] = tag.image.all()
 
-            return render(request, 'index.html', {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#errortag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#errortag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})
+            return render(request, 'index.html', {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})
 
     elif request.method == 'GET' and 'query' in request.GET:
         form = SearchForm()
@@ -114,7 +122,6 @@ def index(request):
         pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
             choices=tuple(
                 [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
-
         return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 
     else:  # first time in the page - no forms filled
@@ -123,7 +130,7 @@ def index(request):
         names = PersonsForm()
         results = {}
         for tag in Tag.nodes.all():
-            results[tag.name] = tag.image.all()
+            results["#" + tag.name] = tag.image.all()
         return render(request, 'index.html', {'form': form, 'image_form': image, 'folders': folders, 'names_form': names, 'results': results})
 
 
