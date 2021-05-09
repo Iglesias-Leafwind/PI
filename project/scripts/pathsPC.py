@@ -14,7 +14,8 @@ def do(fc, args=None):
 
 def getFolders():
     results = []
-    for root, dirs, files in os.walk('D:'):
+    for root, dirs, files in os.walk('/home/mar/Documents/UA/6-semester/PI/learning'):
+        print('here')
         array = []
         root_parts = root.split("/")
 
