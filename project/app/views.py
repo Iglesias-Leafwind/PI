@@ -1,6 +1,5 @@
-
 import json
-import os
+import re
 
 import cv2
 from django.shortcuts import render
@@ -8,14 +7,20 @@ from elasticsearch_dsl import Index, Search, Q
 from django import forms
 
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
-from app.models import ImageES, ImageNeo
+from app.models import ImageES, ImageNeo, Tag
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs
 from manage import es
-from scripts.pathsPC import getFolders
+from scripts.pathsPC import getFolders, do
 from app.nlpFilterSearch import processQuery
 
+
+
+future = do(getFolders)
+
 def index(request):
+    fileset = None
     folders = fs.getAllUris()
+
     if request.method == 'POST':
         query = SearchForm(request.POST)
         image = SearchForImageForm(request.POST, request.FILES)
@@ -23,15 +28,38 @@ def index(request):
         names = PersonsForm(request.POST)
 
         if image.is_valid() and image.cleaned_data["image"]:  # if search by image file exists
-            image = image.cleaned_data["image"]
-            # use the image to process image and look for similar images in model
+            imagepath = image.cleaned_data["image"]
+            image_array = findSimilarImages(imagepath)
+            results = {"results": []}
+            for i in image_array:
+                getresult = ImageNeo.nodes.get_or_none(hash=i)
+                if getresult:
+                    results["results"] += getresult
             image = SearchForImageForm()
-            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#imagetag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#imagetag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
+
+            fileset = getFileSet(fileset)
+
+            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
+                choices=tuple(
+                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
+
+            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif pathf.is_valid() and pathf.cleaned_data["path"]:  # if path of new folder has a name, then it exists
             uploadImages(pathf.cleaned_data["path"])
             pathf = EditFoldersForm()
             folders = fs.getAllUris()
-            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#folderstag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#folderstag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
+            results = {}
+            for tag in Tag.nodes.all():
+                results[tag.name] = tag.image.all()
+
+            fileset = getFileSet(fileset)
+
+            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
+                choices=tuple(
+                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in
+                     fileset])))
+
+            return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
         elif names.is_valid() and names.has_changed():  # if names changed
             i = 0
             for field in names.declared_fields:
@@ -42,6 +70,12 @@ def index(request):
                     # profile.name = fname
                     # profile.save()
 
+            fileset = getFileSet(fileset)
+
+            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
+                choices=tuple(
+                    [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
+
             names = PersonsForm()
             return render(request, "index.html", {'form': query, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#namestag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#namestag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})  # return new index with results this time and cleaned form
 
@@ -50,6 +84,13 @@ def index(request):
             image = SearchForImageForm()
             pathf = EditFoldersForm()
             names = PersonsForm()
+
+            fileset = getFileSet(fileset)
+            pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
+                choices=tuple(
+                    [(choice, ".../" + re.split("[\\\/:]+", choice)[-2] + "/" + re.split("[\\\/:]+", choice)[-1]) for choice in fileset])))
+
+
             return render(request, 'index.html', {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#errortag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#errortag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})
 
     elif request.method == 'GET' and 'query' in request.GET:
@@ -68,20 +109,28 @@ def index(request):
             img = ImageNeo.nodes.get_or_none(folder_uri="/".join(path.split("/")[:-1]), name=path.split("/")[-1])
             results[tag].append(img)
 
+        fileset = getFileSet(fileset)
+
+        pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
+            choices=tuple(
+                [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
+
         return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 
     else:  # first time in the page - no forms filled
         form = SearchForm()
         image = SearchForImageForm()
-        pathf = EditFoldersForm()
         names = PersonsForm()
+        results = {}
+        for tag in Tag.nodes.all():
+            results[tag.name] = tag.image.all()
+        return render(request, 'index.html', {'form': form, 'image_form': image, 'folders': folders, 'names_form': names, 'results': results})
 
-        fileset = getFolders()  # fileset = NomedoFicheiro.cenas()
-        pathf.fields['path'] = forms.CharField(label="New Path:", widget=forms.Select(
-            choices=tuple(
-                [(choice, ".../" + choice.split("/")[-2] + "/" + choice.split("/")[-1]) for choice in fileset])))
 
-        return render(request, 'index.html', {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': {'#indextag1': ['isto é uma imagem', 'isto é outra', 'cenas', 'e mais cenas'], '#indextag2': ['isto é uma segunda imagem', 'isto é outra ultima imagem']}})
+def getFileSet(fileset):
+    if not fileset:
+        fileset = future.result()
+    return fileset
 
 
 # OCR
@@ -130,21 +179,7 @@ def alreadyProcessed(img_path):
 
     return True if existed else False
 
-
-def findSimilar(request):
-    get = request.GET.get("path")
-    findSimilarImages(get)
+def upload(request):
+    data = json.loads(request.body)
+    uploadImages(data["path"])
     return render(request, 'index.html')
-
-
-
-
-#def teste(request):
-#    foto_teste = request.GET.get("path")
-#    image, boxes = frr.getFaceBoxes(foto_teste)
-#    i = 0
-#    print('hm')
-#    for b in boxes:
-#        name = frr.getTheNameOf(image, b)
-#        print(i, 'Encontrou ' + name + '!!')
-#        i += 1
