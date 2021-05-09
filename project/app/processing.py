@@ -145,16 +145,16 @@ def uploadImages(uri):
                         name = ''.join(random.choice(string.ascii_letters) for i in range(10))
                     encodings = frr.saveFaceIdentification(openimage, b, name)
 
+                    face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+                    face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=face_thumb_path)
+
                     p = Person.nodes.get_or_none(name=name) # TODO : get icon
                     if p is None:
-                        p = Person(name=name).save()
+                        p = Person(name=name, icon=face_icon).save()
                         tags.append(name)
 
-                    face_thumb_path = os.path.join('static/face-thumbnails/', str(int(round(time.time() * 1000)))+'.jpg')
-                    face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=face_thumb_path)
-                    # image.person.connect(p, {'coordinates': list(b)})
-                    # CHECK THIS!!
-                    image.person.connect(p, {'coordinates': list(b), 'encodings':encodings, 'icon': face_thumb_path})
+                    # encodings falta
+                    image.person.connect(p, {'coordinates': list(b), 'encodings': encodings, 'icon':face_icon})
 
                 places = getPlaces(img_path)
                 if places:
