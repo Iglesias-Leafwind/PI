@@ -460,14 +460,14 @@ def generateThumbnail(imagepath):
 
     # load the input image
     image = cv2.imread(imagepath)
-    w,h, = image.shape
+    w,h,_ = image.shape
     ratio = w/h
     thumbnailW = int(thumbnailH * ratio)
     dim = (thumbnailH,thumbnailW)
 
     # resize image
-    resized = cv2.resize(image, dim, interpolation = cv2.INTERAREA)
-    saving = "/thumbnails/" + re.split("[\\\/]+", imagepath)[-1]
+    resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
+    saving = "app/static/thumbnails/" + re.split("[\\\/]+", imagepath)[-1]
     cv2.imwrite(saving , resized,  [cv2.IMWRITE_JPEG_QUALITY, 25])
     # 83 087 673
     # 00 288 957

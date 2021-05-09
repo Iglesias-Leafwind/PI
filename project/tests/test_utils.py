@@ -7,7 +7,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class BGGTestCase(TestCase):
 
     def setUp(self):
-        print("starting")
+        print("\n\\|/Testing utils")
 
     def test_random_num(self):
         self.assertTrue(1 <= getRandomNumber() <= (1 << 63))

@@ -7,7 +7,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class BGGTestCase(TestCase):
 
     def setUp(self):
-        print("starting")
+        print("\n\\|/Testing VGG")
 
     def test_vgg_extract(self):
         vgg = VGGNet()

@@ -7,7 +7,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class FaceRecogTestCase(TestCase):
 
     def setUp(self):
-        print("starting")
+        print("\n\\|/Testing Face Recognition")
 
     def test_get_box(self):
         faceRecog = FaceRecognition()

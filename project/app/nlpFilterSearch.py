@@ -84,7 +84,7 @@ def processQuery(query):
     words_with_tags_ = transformTagging(words_with_tags)
     lemmatized_words = lemmatizationMethod(words_with_tags_)
 
-    return lemmatized_words + [query]
+    return lemmatized_words
 
 
 
