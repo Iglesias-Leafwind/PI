@@ -132,12 +132,6 @@ def processing(dirFiles):
                 i.features = f
                 iJson = json.dumps(i.__dict__)
 
-                if ImageNeo.nodes.get_or_none(hash=hash):
-                    if existed.folder_uri != dir:
-                        # if the current image's folder is different
-                        existed.folder.connect(folderNeoNode)
-                    continue
-
                 propertiesdict = getExif(img_path)
                 generateThumbnail(img_path, hash)
 
@@ -161,8 +155,16 @@ def processing(dirFiles):
                                      hash=hash,
                                      insertion_date=datetime.now())
 
-                image.save()
+                lock.acquire()
+                if ImageNeo.nodes.get_or_none(hash=hash):
+                    if existed.folder_uri != dir:
+                        # if the current image's folder is different
+                        existed.folder.connect(folderNeoNode)
+                    continue
 
+                image.save()
+                lock.release()
+                
                 if "latitude" in propertiesdict and "longitude" in propertiesdict:
                     if not Location.nodes.get(name=propertiesdict["location"]) is None:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -192,7 +194,6 @@ def processing(dirFiles):
 
                 res = obj_extr.get_objects(img_path)
 
-                print(img_path + "     " + " objtct")
                 for object in res["name"]:
                     tag = Tag.nodes.get_or_none(name=object)
                     if tag is None:
@@ -213,7 +214,6 @@ def processing(dirFiles):
                             t = Tag(name=p).save()
                         tags.append(p)
                         image.tag.connect(t)
-                print(img_path + "     " + " places")
 
                 wordList = getOCR(read_image)
                 if wordList and len(wordList) > 0:
@@ -223,7 +223,7 @@ def processing(dirFiles):
                             t = Tag(name=word).save()
                         tags.append(word)
                         image.tag.connect(t)
-                print(img_path + "     " + " ocr")
+
                 # add features to "cache"
                 ftManager.npFeatures.append(norm_feat)
                 i.features = norm_feat
