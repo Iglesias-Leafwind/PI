@@ -160,31 +160,33 @@ def processing(dirFiles):
                     if existed.folder_uri != dir:
                         # if the current image's folder is different
                         existed.folder.connect(folderNeoNode)
+                    lock.release()
                     continue
-
-                image.save()
-                lock.release()
+                try:
+                    image.save()
+                except Exception as e:
+                    print(e)
+                    continue
+                finally:
+                    lock.release()
 
                 if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                    if not Location.nodes.get(name=propertiesdict["location"]) is None:
-                        location = Location.nodes.get(name=propertiesdict["location"])
-                    else:
+                    location = Location.nodes.get(name=propertiesdict["location"])
+                    if location is None:
                         location = Location(name=propertiesdict["location"]).save()
 
                     tags.append(location)
                     image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
-                    if not City.nodes.get(name=propertiesdict["city"]) is None:
-                        city = City.nodes.get(name=propertiesdict["city"])
-                    else:
+                    city = City.nodes.get(name=propertiesdict["city"])
+                    if city is None:
                         city = City(name=propertiesdict["city"]).save()
 
                     tags.append(city)
                     location.city.connect(city)
 
-                    if not Country.nodes.get(name=propertiesdict["country"]) is None:
-                        country = Country.nodes.get(name=propertiesdict["country"])
-                    else:
+                    country = Country.nodes.get(name=propertiesdict["country"])
+                    if country is None:
                         country = Country(name=propertiesdict["country"]).save()
 
                     tags.append(country)
@@ -505,7 +507,7 @@ def getExif(img_path):
             # check if it has a exif
             if (current_image.has_exif):
                 if ("datetime" in current_image.list_all()):
-                    returning["datetime"] = current_image.datetime
+                    returning["datetime"] = datetime.strptime(current_image.datetime, '%Y-%m-%d %H:%M:%S.%f')
                 if ("pixel_x_dimension" in current_image.list_all()):
                     returning["width"] = current_image.pixel_x_dimension
                 if ("pixel_y_dimension" in current_image.list_all()):

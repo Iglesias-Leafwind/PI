@@ -5,13 +5,10 @@ import re
 import cv2
 from django.shortcuts import render
 from elasticsearch_dsl import Index, Search, Q
-from django import forms
-
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
 from app.models import ImageES, ImageNeo, Tag
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
 from manage import es
-from scripts.pathsPC import getFolders, do
 from app.nlpFilterSearch import processQuery
 
 
@@ -100,6 +97,9 @@ def index(request):
         results = {tag: []}
         for hash in result_hashs:
             img = ImageNeo.nodes.get_or_none(hash=hash)
+            if img is None:
+                continue
+
             tags = img.tag.all()
             results[tag].append((img, tags))
 
