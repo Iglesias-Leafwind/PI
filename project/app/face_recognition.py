@@ -42,8 +42,6 @@ class FaceRecognition:
         unknown_list = []
         # print(exp)
         for k in self.name2encodings:
-            print('entrou loop')
-
             # lista de booleanos com os encodings q ele achou parecidos
             if len(self.name2encodings[k]) <10:
                 continue

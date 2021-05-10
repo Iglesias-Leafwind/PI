@@ -129,7 +129,11 @@
       <div class="modal-body modal-body1">
             {% csrf_token %}
             {% for nfield in names_form.get_interest_fields %}
+                      <div style="display: grid">
+
                 {{ nfield }}
+                      </div>
+
             {% endfor %}
       </div>
         <div>

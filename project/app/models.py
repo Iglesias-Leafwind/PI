@@ -9,7 +9,6 @@ from manage import es
 
 config.DATABASE_URL = 'bolt://neo4j:password@localhost:7687'
 
-
 # for elastic search ↓
 class ImageES(Document):
     uri = Text(required=True)
@@ -62,8 +61,8 @@ class ImageNeo(StructuredNode):
     width = IntegerProperty()
     height = IntegerProperty()
     hash = StringProperty(index=True)
-    tag = RelationshipTo("Tag", HasA.rel, model=HasA, cardinality=OneOrMore)
-    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA, cardinality=ZeroOrMore)
+    tag = RelationshipTo("Tag", HasA.rel, model=HasA) #, cardinality=OneOrMore)
+    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA) #, cardinality=ZeroOrMore)
     location = RelationshipTo("Location", WasTakenIn.rel, model=WasTakenIn)
     folder = RelationshipTo("Folder", IsIn.rel, model=IsIn)
 
@@ -71,13 +70,13 @@ class ImageNeo(StructuredNode):
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
     quantity = IntegerProperty(default=1)
-    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA, cardinality=OneOrMore)
+    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA) # , cardinality=OneOrMore)
 
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
     icon = StringProperty(required=True)
-    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA, cardinality=OneOrMore)
+    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA) # , cardinality=OneOrMore)
 
 
 class Country(StructuredNode):
