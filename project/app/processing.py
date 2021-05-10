@@ -1,15 +1,17 @@
 import json
 import string
 import sys
+from datetime import datetime
 from os.path import join
 import random
 import numpy as np
+import requests
 from numpyencoder import NumpyEncoder
 #from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -32,8 +34,7 @@ import logging
 obj_extr = ObjectExtract()
 #frr = FaceRecognition()
 
-features = []
-imageFeatures = []
+ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
 model = VGGNet()
 
@@ -41,6 +42,10 @@ model = VGGNet()
 # used in getOCR
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
+
+# load installed tesseract-ocr from users pc
+pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
 arch = 'resnet18'  # th architecture to use
@@ -105,7 +110,6 @@ def processing(dirFiles):
             if read_image is None:
                 continue
             hash = dhash(read_image)
-            generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
             i.hash = hash
@@ -128,13 +132,63 @@ def processing(dirFiles):
                 i.features = f
                 iJson = json.dumps(i.__dict__)
 
-                image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                 name=img_name,
-                                 processing=iJson,
-                                 format=img_name.split(".")[1],
-                                 width=width,
-                                 height=height,
-                                 hash=hash).save()
+                propertiesdict = getExif(img_path)
+                generateThumbnail(img_path, hash)
+
+                if "datetime" in propertiesdict:
+                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                     name=img_name,
+                                     processing=iJson,
+                                     format=img_name.split(".")[1],
+                                     width=width,
+                                     height=height,
+                                     hash=hash,
+                                     creation_date=propertiesdict["datetime"],
+                                     insertion_date=datetime.now())
+                else:
+                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                     name=img_name,
+                                     processing=iJson,
+                                     format=img_name.split(".")[1],
+                                     width=width,
+                                     height=height,
+                                     hash=hash,
+                                     insertion_date=datetime.now())
+
+                lock.acquire()
+                if ImageNeo.nodes.get_or_none(hash=hash):
+                    if existed.folder_uri != dir:
+                        # if the current image's folder is different
+                        existed.folder.connect(folderNeoNode)
+                    continue
+
+                image.save()
+                lock.release()
+
+                if "latitude" in propertiesdict and "longitude" in propertiesdict:
+                    if not Location.nodes.get(name=propertiesdict["location"]) is None:
+                        location = Location.nodes.get(name=propertiesdict["location"])
+                    else:
+                        location = Location(name=propertiesdict["location"]).save()
+
+                    tags.append(location)
+                    image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
+
+                    if not City.nodes.get(name=propertiesdict["city"]) is None:
+                        city = City.nodes.get(name=propertiesdict["city"])
+                    else:
+                        city = City(name=propertiesdict["city"]).save()
+
+                    tags.append(city)
+                    location.city.connect(city)
+
+                    if not Country.nodes.get(name=propertiesdict["country"]) is None:
+                        country = Country.nodes.get(name=propertiesdict["country"])
+                    else:
+                        country = Country(name=propertiesdict["country"]).save()
+
+                    tags.append(country)
+                    city.country.connect(country)
 
                 image.folder.connect(folderNeoNode)
 
@@ -144,20 +198,11 @@ def processing(dirFiles):
                     tag = Tag.nodes.get_or_none(name=object)
                     if tag is None:
                         tag = Tag(name=object).save()
-                        tags.append(object)
+                    tags.append(object)
 
                     image.tag.connect(tag)
 
-               # openimage, boxes = frr.getFaceBoxes(img_path)
-               # for b in boxes:
-               #     name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-               #     frr.saveFaceIdentification(openimage, b, name)
-
                #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
-               #     if p is None:
-               #         p = Person(name=name).save()
-               #         tags.append(name)
-               #     image.person.connect(p, {'coordinates': list(b)})
 
                 places = getPlaces(img_path)
                 if places:
@@ -167,7 +212,7 @@ def processing(dirFiles):
                         t = Tag.nodes.get_or_none(name=p)
                         if t is None:
                             t = Tag(name=p).save()
-                            tags.append(p)
+                        tags.append(p)
                         image.tag.connect(t)
 
                 wordList = getOCR(read_image)
@@ -176,31 +221,13 @@ def processing(dirFiles):
                         t = Tag.nodes.get_or_none(name=word)
                         if t is None:
                             t = Tag(name=word).save()
-                            tags.append(word)
+                        tags.append(word)
                         image.tag.connect(t)
 
-                l = Location.nodes.get_or_none(name="UA")
-                if l is None:
-                    l = Location(name="UA").save()
-
-                image.location.connect(l, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
-
-                c = City.nodes.get_or_none(name="Aveiro")
-                if c is None:
-                    c = City(name="Aveiro").save()
-
-                l.city.connect(c, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
-
-                ct = Country.nodes.get_or_none(name="PT")
-                if ct is None:
-                    ct = Country(name="PT").save()
-
-                c.country.connect(ct, {"latitude": 10.0, "longitude": 20.0, "altitude": 30.0})
-
                 # add features to "cache"
-                features.append(norm_feat)
+                ftManager.npFeatures.append(norm_feat)
                 i.features = norm_feat
-                imageFeatures.append(i)
+                ftManager.imageFeatures.append(i)
 
                 ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
@@ -208,13 +235,14 @@ def processing(dirFiles):
 
 
 def divideTaskInTwo(dirFiles):
-    l = int(len(dirFiles) / 2)
+    l = int(len(dirFiles) / 2) # numero de pastas
     i = 0
     taskOne = {}
     taskTwo = {}
 
+    # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, .jpg
     for k in dirFiles.keys():
-        if i < int(l / 2):
+        if i < l:
             taskOne[k] = dirFiles[k]
         else:
             taskTwo[k] = dirFiles[k]
@@ -229,18 +257,34 @@ def alreadyProcessed(img_path):
 
     return existed
 
+def deleteFolder(uri):
+    deletedImages = fs.deleteFolderFromFs(uri)
+    if None or len(deletedImages) == 0:
+        return
+
+    imgfs = set(ftManager.imageFeatures)
+    for di in deletedImages:
+        imgfs.remove(di)
+
+    ftManager.imageFeatures = list(imgfs)
+    f = []
+    for i in ftManager.imageFeatures:
+        f.append(i.features)
+
+    ftManager.npFeatures = f
+
 def findSimilarImages(uri):
     norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
-    feats = np.array(features)
+    feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
     rank_score = scores[rank]
 
-    maxres = 40  # 40 imagens com maiores scores
+    maxres = 42  # 42 imagens com maiores scores
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
-        imlist.append(str(imageFeatures[index].hash) )
+        imlist.append(str(ftManager.imageFeatures[index].hash) )
 
     return imlist
 
@@ -258,9 +302,6 @@ def getPlaces(img_path):
 
 
 def getOCR(image):
-    # load installed tesseract-ocr from users pc
-    pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
-    custom_config = r'--oem 3 --psm 6'
     min_confidence = 0.6
     results = []
     # These must be multiple of 32
@@ -289,9 +330,10 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
-
+    lock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
+    lock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
@@ -472,6 +514,14 @@ def getExif(img_path):
                     returning["latitude"] = current_image.gps_latitude
                 if ("gps_longitude" in current_image.list_all()):
                     returning["longitude"] = current_image.gps_longitude
+
+                if 'latitude' in returning and 'longitude' in returning:
+                    geoInfos = requests.get(
+                        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
+                        + returning["latitude"] + "&longitude=" + returning["longitude"]).json()
+                    returning['location'] = geoInfos['city']
+                    returning['city'] = geoInfos['city']
+                    returning['country'] = geoInfos['countryName']
             else:
                 raise Exception("No exif")
     except Exception as e:
@@ -485,17 +535,21 @@ def getExif(img_path):
 # load all images to memory
 def setUp():
     images = ImageNeo.nodes.all()
+    npfeatures = []
+    imageFeatures = []
 
     for image in images:
         i = ImageFeature(**json.loads(image.processing))
         if i.features is None:
             continue
         i.features = np.array(json.loads(i.features))
-        features.append(i.features)
+        npfeatures.append(i.features)
         imageFeatures.append(i)
 
     loadCatgoriesPlaces()
     loadFileSystemManager()
+    ftManager.npFeatures = npfeatures
+    ftManager.imageFeatures = imageFeatures
 
 def generateThumbnail(imagepath, hash):
     thumbnailH = 225
