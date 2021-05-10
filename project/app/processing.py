@@ -101,139 +101,141 @@ def processing(dirFiles):
             lastNode = fs.getLastNode(dir)
 
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
+        try:
+            for index, img_name in enumerate(img_list):
+                img_path = os.path.join(dir, img_name)
+                i = ImageFeature()
 
-        for index, img_name in enumerate(img_list):
-            img_path = os.path.join(dir, img_name)
-            i = ImageFeature()
-
-            read_image = cv2.imread(img_path)
-            if read_image is None:
-                continue
-            hash = dhash(read_image)
-
-            existed = ImageNeo.nodes.get_or_none(hash=hash)
-            i.hash = hash
-
-            if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
-
-                logging.info("Image " + img_path + " has already been processed")
-
-                if existed.folder_uri == dir:
+                read_image = cv2.imread(img_path)
+                if read_image is None:
                     continue
+                hash = dhash(read_image)
 
-                # if the current image's folder is different
-                existed.folder.connect(folderNeoNode)
-            else:
-                tags = []
+                existed = ImageNeo.nodes.get_or_none(hash=hash)
+                i.hash = hash
 
-                # extract infos
-                norm_feat, height, width = model.vgg_extract_feat(img_path)
-                f = json.dumps(norm_feat, cls=NumpyEncoder)
-                i.features = f
-                iJson = json.dumps(i.__dict__)
+                if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
 
-                propertiesdict = getExif(img_path)
-                generateThumbnail(img_path, hash)
+                    logging.info("Image " + img_path + " has already been processed")
 
-                if "datetime" in propertiesdict:
-                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                     name=img_name,
-                                     processing=iJson,
-                                     format=img_name.split(".")[1],
-                                     width=width,
-                                     height=height,
-                                     hash=hash,
-                                     creation_date=propertiesdict["datetime"],
-                                     insertion_date=datetime.now())
+                    if existed.folder_uri == dir:
+                        continue
+
+                    # if the current image's folder is different
+                    existed.folder.connect(folderNeoNode)
                 else:
-                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                     name=img_name,
-                                     processing=iJson,
-                                     format=img_name.split(".")[1],
-                                     width=width,
-                                     height=height,
-                                     hash=hash,
-                                     insertion_date=datetime.now())
+                    tags = []
 
-                lock.acquire()
-                if ImageNeo.nodes.get_or_none(hash=hash):
-                    if existed.folder_uri != dir:
-                        # if the current image's folder is different
-                        existed.folder.connect(folderNeoNode)
-                    lock.release()
-                    continue
-                try:
-                    image.save()
-                except Exception as e:
-                    print(e)
-                    continue
-                finally:
-                    lock.release()
+                    # extract infos
+                    norm_feat, height, width = model.vgg_extract_feat(img_path)
+                    f = json.dumps(norm_feat, cls=NumpyEncoder)
+                    i.features = f
+                    iJson = json.dumps(i.__dict__)
 
-                if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                    location = Location.nodes.get(name=propertiesdict["location"])
-                    if location is None:
-                        location = Location(name=propertiesdict["location"]).save()
+                    propertiesdict = getExif(img_path)
+                    generateThumbnail(img_path, hash)
 
-                    tags.append(location)
-                    image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
+                    if "datetime" in propertiesdict:
+                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                         name=img_name,
+                                         processing=iJson,
+                                         format=img_name.split(".")[1],
+                                         width=width,
+                                         height=height,
+                                         hash=hash,
+                                         creation_date=propertiesdict["datetime"],
+                                         insertion_date=datetime.now())
+                    else:
+                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                         name=img_name,
+                                         processing=iJson,
+                                         format=img_name.split(".")[1],
+                                         width=width,
+                                         height=height,
+                                         hash=hash,
+                                         insertion_date=datetime.now())
 
-                    city = City.nodes.get(name=propertiesdict["city"])
-                    if city is None:
-                        city = City(name=propertiesdict["city"]).save()
+                    lock.acquire()
+                    if ImageNeo.nodes.get_or_none(hash=hash):
+                        if existed.folder_uri != dir:
+                            # if the current image's folder is different
+                            existed.folder.connect(folderNeoNode)
+                        lock.release()
+                        continue
+                    try:
+                        image.save()
+                    except Exception as e:
+                        print(e)
+                        continue
+                    finally:
+                        lock.release()
 
-                    tags.append(city)
-                    location.city.connect(city)
+                    if "latitude" in propertiesdict and "longitude" in propertiesdict:
+                        location = Location.nodes.get(name=propertiesdict["location"])
+                        if location is None:
+                            location = Location(name=propertiesdict["location"]).save()
 
-                    country = Country.nodes.get(name=propertiesdict["country"])
-                    if country is None:
-                        country = Country(name=propertiesdict["country"]).save()
+                        tags.append(location)
+                        image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
-                    tags.append(country)
-                    city.country.connect(country)
+                        city = City.nodes.get(name=propertiesdict["city"])
+                        if city is None:
+                            city = City(name=propertiesdict["city"]).save()
 
-                image.folder.connect(folderNeoNode)
+                        tags.append(city)
+                        location.city.connect(city)
 
-                res = obj_extr.get_objects(img_path)
+                        country = Country.nodes.get(name=propertiesdict["country"])
+                        if country is None:
+                            country = Country(name=propertiesdict["country"]).save()
 
-                for object in res["name"]:
-                    tag = Tag.nodes.get_or_none(name=object)
-                    if tag is None:
-                        tag = Tag(name=object).save()
-                    tags.append(object)
+                        tags.append(country)
+                        city.country.connect(country)
 
-                    image.tag.connect(tag)
+                    image.folder.connect(folderNeoNode)
 
-               #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                    res = obj_extr.get_objects(img_path)
 
-                places = getPlaces(img_path)
-                if places:
-                    places = places.split("/")
-                    for place in places:
-                        p = " ".join(place.split("_")).strip()
-                        t = Tag.nodes.get_or_none(name=p)
-                        if t is None:
-                            t = Tag(name=p).save()
-                        tags.append(p)
-                        image.tag.connect(t)
+                    for object in res["name"]:
+                        tag = Tag.nodes.get_or_none(name=object)
+                        if tag is None:
+                            tag = Tag(name=object).save()
+                        tags.append(object)
 
-                wordList = getOCR(read_image)
-                if wordList and len(wordList) > 0:
-                    for word in wordList:
-                        t = Tag.nodes.get_or_none(name=word)
-                        if t is None:
-                            t = Tag(name=word).save()
-                        tags.append(word)
-                        image.tag.connect(t)
+                        image.tag.connect(tag)
 
-                # add features to "cache"
-                ftManager.npFeatures.append(norm_feat)
-                i.features = norm_feat
-                ftManager.imageFeatures.append(i)
+                   #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
 
-                ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
+                    places = getPlaces(img_path)
+                    if places:
+                        places = places.split("/")
+                        for place in places:
+                            p = " ".join(place.split("_")).strip()
+                            t = Tag.nodes.get_or_none(name=p)
+                            if t is None:
+                                t = Tag(name=p).save()
+                            tags.append(p)
+                            image.tag.connect(t)
 
-            print("extracting feature from image %s " % (img_path))
+                    wordList = getOCR(read_image)
+                    if wordList and len(wordList) > 0:
+                        for word in wordList:
+                            t = Tag.nodes.get_or_none(name=word)
+                            if t is None:
+                                t = Tag(name=word).save()
+                            tags.append(word)
+                            image.tag.connect(t)
+
+                    # add features to "cache"
+                    ftManager.npFeatures.append(norm_feat)
+                    i.features = norm_feat
+                    ftManager.imageFeatures.append(i)
+
+                    ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
+
+                print("extracting feature from image %s " % (img_path))
+        except Exception as e:
+            print(e)
 
 
 def divideTaskInTwo(dirFiles):
@@ -507,7 +509,7 @@ def getExif(img_path):
             # check if it has a exif
             if (current_image.has_exif):
                 if ("datetime" in current_image.list_all()):
-                    returning["datetime"] = datetime.strptime(current_image.datetime, '%Y-%m-%d %H:%M:%S.%f')
+                    returning["datetime"] = current_image.datetime
                 if ("pixel_x_dimension" in current_image.list_all()):
                     returning["width"] = current_image.pixel_x_dimension
                 if ("pixel_y_dimension" in current_image.list_all()):
