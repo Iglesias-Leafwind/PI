@@ -33,14 +33,20 @@ class FaceRecognition:
         return face_encoding
 
     def getTheNameOf(self, image, box):
+        print('entrou 1')
+        if self.name2encodings == {}:
+            return None
         encoding = fr.face_encodings(image, [box])[0] # a len vai ser smp 1
-
         matches = {}
         unknown = 0
         unknown_list = []
         # print(exp)
         for k in self.name2encodings:
+            print('entrou loop')
+
             # lista de booleanos com os encodings q ele achou parecidos
+            if len(self.name2encodings[k]) <10:
+                continue
             listt = fr.compare_faces(self.name2encodings[k], encoding, tolerance=0.2)
             listt = [True if all(i) else False for i in listt]
             print(listt)
@@ -51,6 +57,9 @@ class FaceRecognition:
             unknown_list.append(len(listt) - sum(listt))
             # unknown += len(listt) - sum(listt)
 
+        if matches == {}:
+            return None
+
         # experimentar outra estratégia
         unknown = max(unknown_list)
 
@@ -59,6 +68,7 @@ class FaceRecognition:
         # é parecido? ou quando não chega a uma percentagem?
 
         # neste momento está a dar unknown se for mais q 50%
+        print('fim')
         maxx = max(matches.keys())
         name = None if unknown>maxx else matches[maxx]
         return name

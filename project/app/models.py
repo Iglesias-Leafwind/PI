@@ -47,7 +47,7 @@ class HasA(StructuredRel):
 class DisplayA(StructuredRel):
     rel = 'Display a'
     coordinates = ArrayProperty()
-    encodings = ArrayProperty()
+    # encodings = ArrayProperty()
     icon = StringProperty()
 
 

@@ -154,8 +154,10 @@ def processing(dirFiles):
                         tags.append(object)
 
                     image.tag.connect(tag)
-
+                # """
+                print("--- comeca a parte de face rec ---")
                 openimage, boxes = frr.getFaceBoxes(img_path)
+
                 for b in boxes:
                     name = frr.getTheNameOf(openimage, b)
                     if name is None:
@@ -164,17 +166,18 @@ def processing(dirFiles):
                         name = ''.join(random.choice(string.ascii_letters) for i in range(10))
                     encodings = frr.saveFaceIdentification(openimage, b, name)
 
-                    face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
-                    face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=face_thumb_path)
-
-                    p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                    # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+                    face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+                    face_icon = app.utils.getFaceThumbnail(openimage, b, save_in= os.path.join('app', face_thumb_path))
+                    p = Person.nodes.get_or_none(name=name)
                     if p is None:
-                        p = Person(name=name, icon=face_icon).save()
+                        p = Person(name=name, icon=face_thumb_path).save()
                         tags.append(name)
 
                     # encodings falta
-                    image.person.connect(p, {'coordinates': list(b), 'encodings': encodings, 'icon':face_icon})
-
+                    image.person.connect(p, {'coordinates': list(b), 'icon':face_thumb_path})
+                    # """
+                    print("-- face rec end --")
 
                 places = getPlaces(img_path)
                 if places:

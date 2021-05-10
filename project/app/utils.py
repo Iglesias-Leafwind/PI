@@ -30,6 +30,7 @@ def getFaceThumbnail(img, box, save_in=None):
     top, right, bottom, left= box
     # img = cv2.imread(img_path)
     cropimg = img[top:bottom, left:right]
+    cropimg = cv2.resize(cropimg, (50,50))
     if save_in is not None:
         # assumindo que a imagem tem sempre uma extensao no fim
         # (ou seja, tem um '.png' ou '.'+ qq outra extensao no fim
