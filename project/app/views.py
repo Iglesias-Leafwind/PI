@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import cv2
@@ -34,7 +35,7 @@ def index(request):
             for i in image_array:
                 getresult = ImageNeo.nodes.get_or_none(hash=i)
                 if getresult:
-                    results["results"] += [getresult]
+                    results["results"].append((getresult, getresult.tag.all()))
             image = SearchForImageForm()
 
 
@@ -95,11 +96,12 @@ def index(request):
         query_array = processQuery(query_text)
         tag = "#" + " #".join(query_array)
 
-        result_paths = list(map(lambda x: x.uri, search(query_array)))
+        result_hashs = list(map(lambda x: x.hash, search(query_array)))
         results = {tag: []}
-        for path in result_paths:
-            img = ImageNeo.nodes.get_or_none(folder_uri="/".join(path.split("/")[:-1]), name=path.split("/")[-1])
-            results[tag].append(img)
+        for hash in result_hashs:
+            img = ImageNeo.nodes.get_or_none(hash=hash)
+            tags = img.tag.all()
+            results[tag].append((img, tags))
 
         return render(request, "index.html", {'form': form, 'image_form': image, 'path_form': pathf, 'folders': folders, 'names_form': names, 'results': results})  # return new index with results this time and cleaned form
 

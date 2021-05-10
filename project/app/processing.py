@@ -164,7 +164,7 @@ def processing(dirFiles):
 
                 image.save()
                 lock.release()
-                
+
                 if "latitude" in propertiesdict and "longitude" in propertiesdict:
                     if not Location.nodes.get(name=propertiesdict["location"]) is None:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -235,11 +235,12 @@ def processing(dirFiles):
 
 
 def divideTaskInTwo(dirFiles):
-    l = int(len(dirFiles) / 2)
+    l = int(len(dirFiles) / 2) # numero de pastas
     i = 0
     taskOne = {}
     taskTwo = {}
 
+    # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, .jpg
     for k in dirFiles.keys():
         if i < l:
             taskOne[k] = dirFiles[k]
@@ -279,7 +280,7 @@ def findSimilarImages(uri):
     rank = np.argsort(scores)[::-1]
     rank_score = scores[rank]
 
-    maxres = 40  # 40 imagens com maiores scores
+    maxres = 42  # 42 imagens com maiores scores
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
