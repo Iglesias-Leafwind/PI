@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-project/venv
-
-=======
-
 # Created by https://www.toptal.com/developers/gitignore/api/django
 # Edit at https://www.toptal.com/developers/gitignore?templates=django
 
@@ -29,4 +24,6 @@ project/venv
 */pythonenv*
 
 # End of https://www.toptal.com/developers/gitignore/api/django
->>>>>>> develop
+
+*/face-thumbnails
+*/thumbnails
