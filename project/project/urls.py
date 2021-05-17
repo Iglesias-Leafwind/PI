@@ -21,6 +21,7 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('folders', views.managefolders, name='managefolders'),
     path('ocr', views.ocr, name='ocr'),
     path('exif', views.exif, name='exif'),
     path('es', views.createIndex, name='createIndexES'),

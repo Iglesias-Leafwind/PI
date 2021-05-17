@@ -11,10 +11,6 @@ from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImag
 from manage import es
 from app.nlpFilterSearch import processQuery
 
-
-
-#future = do(getFolders)
-
 def index(request):
     fileset = None
     folders = fs.getAllUris()
@@ -191,3 +187,9 @@ def searchtag(request):
 def delete(request):
     deleteFolder(request.GET.get("path"))
     return render(request, 'index.html')
+
+
+def managefolders(request):
+    form = SearchForm()
+    folders = fs.getAllUris()
+    return render(request, 'managefolders.html', {'form': form, 'folders': folders})

@@ -1,0 +1,50 @@
+{% extends 'topbar.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="center-small">
+        <h2 class="left fit full">Source folders</h2>
+        <table>
+            <tbody>
+                {% for folder in folders %}
+                <tr>
+                    <td class="f1">
+                        <i class="fa fa-folder-open"></i>
+                        <i class="fas fa-folder"></i>
+                    </td>
+                    <td class="f2">
+                        <p>{{folder}}</p>
+                    </td>
+                    <td class="f3">
+                        <a href="#" class="delete-btn"><i class="fas fa-trash c40"></i> <!-- TODO : Call delete view here --></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            <tr>
+                    <td class="f1">
+                        <i class="fa fa-folder-open"></i>
+                        <i class="fas fa-folder"></i>
+                    </td>
+                    <td class="f2">
+                        <p>home/alexis/Downloads</p>
+                    </td>
+                    <td class="f3">
+                        <a href="#" class="delete-btn"><i class="fas fa-trash c40"></i> <!-- TODO : Call delete view here --></a>
+                    </td>
+                </tr>
+            <tr>
+                    <td class="f1">
+                        <i class="fa fa-folder-open"></i>
+                        <i class="fas fa-folder"></i>
+                    </td>
+                    <td class="f2">
+                        <p>home/alexis/Desktop/other</p>
+                    </td>
+                    <td class="f3">
+                        <a href="#" class="delete-btn"><i class="fas fa-trash c40"></i> <!-- TODO : Call delete view here --></a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
