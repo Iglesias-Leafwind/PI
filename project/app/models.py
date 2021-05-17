@@ -53,7 +53,7 @@ class DisplayA(StructuredRel):
 class ImageNeo(StructuredNode):
     folder_uri = StringProperty(unique_index=True, required=True)
     name = StringProperty(required=True)
-    creation_date = DateTimeProperty(default_now=False)
+    creation_date = StringProperty()
     insertion_date = DateTimeProperty(default_now=True)
     processing = StringProperty()
     format = StringProperty()

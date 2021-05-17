@@ -101,137 +101,141 @@ def processing(dirFiles):
             lastNode = fs.getLastNode(dir)
 
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
+        try:
+            for index, img_name in enumerate(img_list):
+                img_path = os.path.join(dir, img_name)
+                i = ImageFeature()
 
-        for index, img_name in enumerate(img_list):
-            img_path = os.path.join(dir, img_name)
-            i = ImageFeature()
-
-            read_image = cv2.imread(img_path)
-            if read_image is None:
-                continue
-            hash = dhash(read_image)
-
-            existed = ImageNeo.nodes.get_or_none(hash=hash)
-            i.hash = hash
-
-            if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
-
-                logging.info("Image " + img_path + " has already been processed")
-
-                if existed.folder_uri == dir:
+                read_image = cv2.imread(img_path)
+                if read_image is None:
                     continue
+                hash = dhash(read_image)
 
-                # if the current image's folder is different
-                existed.folder.connect(folderNeoNode)
-            else:
-                tags = []
+                existed = ImageNeo.nodes.get_or_none(hash=hash)
+                i.hash = hash
 
-                # extract infos
-                norm_feat, height, width = model.vgg_extract_feat(img_path)
-                f = json.dumps(norm_feat, cls=NumpyEncoder)
-                i.features = f
-                iJson = json.dumps(i.__dict__)
+                if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
 
-                propertiesdict = getExif(img_path)
-                generateThumbnail(img_path, hash)
+                    logging.info("Image " + img_path + " has already been processed")
 
-                if "datetime" in propertiesdict:
-                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                     name=img_name,
-                                     processing=iJson,
-                                     format=img_name.split(".")[1],
-                                     width=width,
-                                     height=height,
-                                     hash=hash,
-                                     creation_date=propertiesdict["datetime"],
-                                     insertion_date=datetime.now())
+                    if existed.folder_uri == dir:
+                        continue
+
+                    # if the current image's folder is different
+                    existed.folder.connect(folderNeoNode)
                 else:
-                    image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                     name=img_name,
-                                     processing=iJson,
-                                     format=img_name.split(".")[1],
-                                     width=width,
-                                     height=height,
-                                     hash=hash,
-                                     insertion_date=datetime.now())
+                    tags = []
 
-                lock.acquire()
-                if ImageNeo.nodes.get_or_none(hash=hash):
-                    if existed.folder_uri != dir:
-                        # if the current image's folder is different
-                        existed.folder.connect(folderNeoNode)
-                    continue
+                    # extract infos
+                    norm_feat, height, width = model.vgg_extract_feat(img_path)
+                    f = json.dumps(norm_feat, cls=NumpyEncoder)
+                    i.features = f
+                    iJson = json.dumps(i.__dict__)
 
-                image.save()
-                lock.release()
+                    propertiesdict = getExif(img_path)
+                    generateThumbnail(img_path, hash)
 
-                if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                    if not Location.nodes.get(name=propertiesdict["location"]) is None:
+                    if "datetime" in propertiesdict:
+                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                         name=img_name,
+                                         processing=iJson,
+                                         format=img_name.split(".")[1],
+                                         width=width,
+                                         height=height,
+                                         hash=hash,
+                                         creation_date=propertiesdict["datetime"],
+                                         insertion_date=datetime.now())
+                    else:
+                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                                         name=img_name,
+                                         processing=iJson,
+                                         format=img_name.split(".")[1],
+                                         width=width,
+                                         height=height,
+                                         hash=hash,
+                                         insertion_date=datetime.now())
+
+                    lock.acquire()
+                    if ImageNeo.nodes.get_or_none(hash=hash):
+                        if existed.folder_uri != dir:
+                            # if the current image's folder is different
+                            existed.folder.connect(folderNeoNode)
+                        lock.release()
+                        continue
+                    try:
+                        image.save()
+                    except Exception as e:
+                        print(e)
+                        continue
+                    finally:
+                        lock.release()
+
+                    if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         location = Location.nodes.get(name=propertiesdict["location"])
-                    else:
-                        location = Location(name=propertiesdict["location"]).save()
+                        if location is None:
+                            location = Location(name=propertiesdict["location"]).save()
 
-                    tags.append(location)
-                    image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
+                        tags.append(location)
+                        image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
-                    if not City.nodes.get(name=propertiesdict["city"]) is None:
                         city = City.nodes.get(name=propertiesdict["city"])
-                    else:
-                        city = City(name=propertiesdict["city"]).save()
+                        if city is None:
+                            city = City(name=propertiesdict["city"]).save()
 
-                    tags.append(city)
-                    location.city.connect(city)
+                        tags.append(city)
+                        location.city.connect(city)
 
-                    if not Country.nodes.get(name=propertiesdict["country"]) is None:
                         country = Country.nodes.get(name=propertiesdict["country"])
-                    else:
-                        country = Country(name=propertiesdict["country"]).save()
+                        if country is None:
+                            country = Country(name=propertiesdict["country"]).save()
 
-                    tags.append(country)
-                    city.country.connect(country)
+                        tags.append(country)
+                        city.country.connect(country)
 
-                image.folder.connect(folderNeoNode)
+                    image.folder.connect(folderNeoNode)
 
-                res = obj_extr.get_objects(img_path)
+                    res = obj_extr.get_objects(img_path)
 
-                for object in res["name"]:
-                    tag = Tag.nodes.get_or_none(name=object)
-                    if tag is None:
-                        tag = Tag(name=object).save()
-                    tags.append(object)
+                    for object in res["name"]:
+                        tag = Tag.nodes.get_or_none(name=object)
+                        if tag is None:
+                            tag = Tag(name=object).save()
+                        tags.append(object)
 
-                    image.tag.connect(tag)
+                        image.tag.connect(tag)
 
-               #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                   #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
 
-                places = getPlaces(img_path)
-                if places:
-                    places = places.split("/")
-                    for place in places:
-                        p = " ".join(place.split("_")).strip()
-                        t = Tag.nodes.get_or_none(name=p)
-                        if t is None:
-                            t = Tag(name=p).save()
-                        tags.append(p)
-                        image.tag.connect(t)
+                    places = getPlaces(img_path)
+                    if places:
+                        places = places.split("/")
+                        for place in places:
+                            p = " ".join(place.split("_")).strip()
+                            t = Tag.nodes.get_or_none(name=p)
+                            if t is None:
+                                t = Tag(name=p).save()
+                            tags.append(p)
+                            image.tag.connect(t)
 
-                wordList = getOCR(read_image)
-                if wordList and len(wordList) > 0:
-                    for word in wordList:
-                        t = Tag.nodes.get_or_none(name=word)
-                        if t is None:
-                            t = Tag(name=word).save()
-                        tags.append(word)
-                        image.tag.connect(t)
+                    wordList = getOCR(read_image)
+                    if wordList and len(wordList) > 0:
+                        for word in wordList:
+                            t = Tag.nodes.get_or_none(name=word)
+                            if t is None:
+                                t = Tag(name=word).save()
+                            tags.append(word)
+                            image.tag.connect(t)
 
-                # add features to "cache"
-                ftManager.npFeatures.append(norm_feat)
-                i.features = norm_feat
-                ftManager.imageFeatures.append(i)
+                    # add features to "cache"
+                    ftManager.npFeatures.append(norm_feat)
+                    i.features = norm_feat
+                    ftManager.imageFeatures.append(i)
 
-                ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
+                    ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
-            print("extracting feature from image %s " % (img_path))
+                print("extracting feature from image %s " % (img_path))
+        except Exception as e:
+            print(e)
 
 
 def divideTaskInTwo(dirFiles):

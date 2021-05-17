@@ -1,6 +1,7 @@
 import os
 import random
 from threading import Lock
+import imghdr
 
 lock = Lock()
 
@@ -16,7 +17,7 @@ def getImagesPerUri(pathName):
             if os.path.isdir(f):
                 dirsAndFiles.update(getImagesPerUri(f))
 
-            elif f.endswith(".jpg") or f.endswith(".png"):
+            elif f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png'):
                 if pathName in dirsAndFiles.keys():
                     dirsAndFiles[pathName].append(os.path.basename(f))
                 else:
