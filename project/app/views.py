@@ -186,10 +186,11 @@ def searchtag(request):
 
 def delete(request):
     deleteFolder(request.GET.get("path"))
-    return render(request, 'index.html')
+    return render(request, 'managefolders.html')
 
 
 def managefolders(request):
     form = SearchForm()
     folders = fs.getAllUris()
-    return render(request, 'managefolders.html', {'form': form, 'folders': folders})
+    pathf = EditFoldersForm()
+    return render(request, 'managefolders.html', {'form': form, 'folders': folders, 'path_form': pathf})

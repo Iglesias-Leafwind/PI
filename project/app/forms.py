@@ -20,7 +20,7 @@ class SearchForImageForm(forms.Form):
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.CharField(label="Add new folder path:", required=False)
+    path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder...'}), required=False)
 
 
 class PersonsForm(forms.Form):

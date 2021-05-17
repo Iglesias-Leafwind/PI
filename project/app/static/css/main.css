@@ -344,6 +344,17 @@ legend {
   margin-top: 2vh;
 }
 
+.inner-path > input{
+  width: 50vw;
+  height: 7vh;
+  padding: 2.4%;
+  border-radius: 21px;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  margin: 6vh 20vh 6vh 20vh;
+}
+
 input:focus{
     outline: none;
 }
@@ -496,10 +507,6 @@ button:focus{
   width: 50%;
 }
 
-#id_path{
-  width: 15vw;
-}
-
 /* Hide scrollbar for Chrome, Safari and Opera */
 .folder-list::-webkit-scrollbar {
   display: none;
@@ -533,7 +540,7 @@ button:focus{
 }
 
 table{
-  margin-top: 3vh;
+  margin-top: 13vh;
   margin-left: auto;
   margin-right: auto;
   border-collapse: separate;
@@ -550,7 +557,21 @@ table{
 .f1 i{
   color: white;
   padding-right: 0% !important;
-  font-size: 140%
+  font-size: 140%;
+}
+
+.fa-redo{
+  background-color:#1E2832;
+  border-radius: 3px;
+  padding: 1.4vh 1.4vw;
+  text-align: center;
+  color: white;
+  font-size: 140%;
+}
+
+fa.redo:hover{
+  -webkit-animation: fa-spin 2s linear infinite;
+  animation: fa-spin 2s linear infinite;
 }
 
 .f1 .fa-folder-open{
@@ -595,10 +616,12 @@ table{
 
 .delete-btn{
   color: #1E2832;
+  border: none !important;
 }
 
 .delete-btn:hover{
   color: #0a58ca;
+  border: none !important;
 }
 
 
@@ -623,4 +646,21 @@ table{
     -webkit-transform: translateY(0);
     transform: translateY(0);
   }
+}
+
+@-webkit-keyframes rotational {
+  25%{
+    -ms-transform: rotate(25deg);
+  }
+  50%{
+    -ms-transform: rotate(50deg);
+
+  }
+  75%{
+    -ms-transform: rotate(75deg);
+  }
+  100%{
+    -ms-transform: rotate(100deg);
+  }
+
 }
