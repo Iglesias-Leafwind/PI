@@ -5,12 +5,19 @@ import numpy as np
 
 import face_recognition as fr
 
+from app.models import Person, DisplayA
 
 PEN_THRESHOLD = 50
 
 class FaceRecognition:
     def __init__(self):
-        self.name2encodings = defaultdict(list)
+        self.name2encodings = defaultdict(list) # [(face_encoding, conf, approved), ..]
+        all_people = Person.nodes.all()
+        for p in all_people:
+            # [(person.image.relationship(img), person) for person in people for img in persn.image.all()]
+            rels = [ p.image.relationship(img) for img in p.image.all() ]
+            self.name2encodings[p.name] = [ (r.encodings, r.confiance, r.approved) for r in rels ]
+
 
     def getFaceBoxes(self, open_img=None, image_path=None):
         # 'lê' a imagem (dependendo de como esta funcao é chamada, pode-se
@@ -31,14 +38,14 @@ class FaceRecognition:
         # once again, ver o q retornar dependendo do que é necessário
         return image, boxes
 
-    def saveFaceIdentification(self, image, box, name, conf=1, encoding=None):
+    def saveFaceIdentification(self, image, box, name, conf=1, encoding=None, approved=False):
         face_encoding = encoding
         if face_encoding is None:
             # dados numericos que representam aquela cara naquela imagem:
             face_encoding = fr.face_encodings(image, [box])
 
         # guardar esses dados associados ao seu nome
-        self.name2encodings[name].append((face_encoding, conf))
+        self.name2encodings[name].append((face_encoding, conf, approved))
 
         # ver o que retornar aqui para q seja guardado
         print('guardou nova cara!! : ', name)
@@ -65,13 +72,13 @@ class FaceRecognition:
             print('n : ', n)
 
 
-            listt = fr.face_distance([ a for (a, b) in self.name2encodings[k] ], encoding) #, tolerance=0.2)
+            listt = fr.face_distance([ a[0] for a in self.name2encodings[k] ], encoding) #, tolerance=0.2)
             listt = np.multiply(-1, np.add(listt, -1))
             # listt = [True if all(i) else False for i in listt]
             pen = 0 if n >= PEN_THRESHOLD else (PEN_THRESHOLD - n)/PEN_THRESHOLD
             print('pen : ', pen)
 
-            score = np.multiply(listt, 0.85) + np.multiply(0.15, np.array([ b for (a, b) in self.name2encodings[k] ]))
+            score = np.multiply(listt, 0.85) + np.multiply(0.15, np.array([ a[1] for a in self.name2encodings[k] ]))
             print('score1 : ', score)
 
             score = np.average(score) - pen * 0.1
@@ -89,7 +96,7 @@ class FaceRecognition:
 
         print('fim')
         maxx = max(matches.keys())
-        if maxx < 0.4:
+        if maxx < 0.35:
             return None, encoding, 1
         #name = None if unknown>maxx else matches[maxx]
         name = matches[maxx]
