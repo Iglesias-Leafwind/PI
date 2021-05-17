@@ -450,7 +450,7 @@ button:focus{
 }
 
 .modal-body select{
-  padding: 2% 4%;
+  padding: 2% 2% !important;
   border: none;
   border-radius: 5px;
   background-color: #dee0e2 !important;
@@ -469,13 +469,17 @@ button:focus{
 }
 
 .insert-btn select {
-  padding: 1vh 3vw !important;
+  padding: 1vh 1.3vw !important;
   margin-top: 3%;
 }
 
 .folder-list{
   float: left;
   width: 50%;
+}
+
+#id_path{
+  width: 15vw;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

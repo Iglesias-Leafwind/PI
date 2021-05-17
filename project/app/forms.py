@@ -16,11 +16,11 @@ class SearchForm(forms.Form):
 
 
 class SearchForImageForm(forms.Form):
-    image = forms.ImageField(label="", required=False)
+    image = forms.CharField(label="Insert image path:", required=False)
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.CharField(label="Add new folder:", widget=forms.Select(choices=tuple([(choice, choice) for choice in ['ola', 'adeus']])))
+    path = forms.CharField(label="Add new folder path:", required=False)
 
 
 class PersonsForm(forms.Form):

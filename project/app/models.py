@@ -1,26 +1,28 @@
 # Create your features here.
 import random
-
-#from elasticsearch_dsl import Document, Text, Keyword
+from elasticsearch_dsl import Document, Text, Keyword, Index
 from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerProperty, config, \
-    DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty
+    DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty, \
+    ArrayProperty
 from neomodel import db
-#from manage import es
+from manage import es
 
-config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
+config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
 
 
 # for elastic search ↓
-#class ImageES(Document):
-#    uri = Text(required=True)
-#    persons = Text()
-#    locations = Text()
-#    tags = Keyword()
+class ImageES(Document):
+    uri = Text(required=True)
+    hash = Text()
+    tags = Text()
 
-#    class Index:
-#        name = 'image'
+    class Index:
+        name = 'image'
 
-#ImageES.init(using=es)
+ImageES.init(using=es)
+i = Index(using=es, name=ImageES.Index.name)
+if not i.exists(using=es):
+    i.create()
 
 
 # for neo4j ↓
@@ -44,14 +46,14 @@ class HasA(StructuredRel):
 
 class DisplayA(StructuredRel):
     rel = 'Display a'
-    coordinates = FloatProperty()
+    coordinates = ArrayProperty()
 
 
 # Nodes
 class ImageNeo(StructuredNode):
     folder_uri = StringProperty(unique_index=True, required=True)
     name = StringProperty(required=True)
-    creation_date = DateTimeProperty(default_now=False)
+    creation_date = StringProperty()
     insertion_date = DateTimeProperty(default_now=True)
     processing = StringProperty()
     format = StringProperty()
