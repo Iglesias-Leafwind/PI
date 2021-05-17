@@ -1,17 +1,26 @@
 import os
 from collections import defaultdict
 import cv2
+import numpy as np
+
 import face_recognition as fr
+
+
+PEN_THRESHOLD = 50
 
 class FaceRecognition:
     def __init__(self):
         self.name2encodings = defaultdict(list)
 
-    def getFaceBoxes(self, image_path):
+    def getFaceBoxes(self, open_img=None, image_path=None):
         # 'lê' a imagem (dependendo de como esta funcao é chamada, pode-se
         # alterar o parametro para que já entre a imagem 'lida'
         # assim poupa-se tempo!
-        image = cv2.imread(image_path)
+        assert not (open_img is None and image_path is None)
+        if open_img is None:
+            image = cv2.imread(image_path)
+        else:
+            image = open_img
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # detect the (x, y) coordinates of the bounding boxes
@@ -22,54 +31,70 @@ class FaceRecognition:
         # once again, ver o q retornar dependendo do que é necessário
         return image, boxes
 
-    def saveFaceIdentification(self, image, box, name):
-        # dados numericos que representam aquela cara naquela imagem:
-        face_encoding = fr.face_encodings(image, [box])
+    def saveFaceIdentification(self, image, box, name, conf=1, encoding=None):
+        face_encoding = encoding
+        if face_encoding is None:
+            # dados numericos que representam aquela cara naquela imagem:
+            face_encoding = fr.face_encodings(image, [box])
 
         # guardar esses dados associados ao seu nome
-        self.name2encodings[name].append(face_encoding)
+        self.name2encodings[name].append((face_encoding, conf))
 
         # ver o que retornar aqui para q seja guardado
+        print('guardou nova cara!! : ', name)
         return face_encoding
 
     def getTheNameOf(self, image, box):
         print('entrou 1')
-        if self.name2encodings == {}:
-            return None
+
         encoding = fr.face_encodings(image, [box])[0] # a len vai ser smp 1
+
+        if self.name2encodings == {}:
+            return None, encoding, 1
         matches = {}
         unknown = 0
+
         unknown_list = []
         # print(exp)
         for k in self.name2encodings:
+            print('entrou no loop')
             # lista de booleanos com os encodings q ele achou parecidos
-            if len(self.name2encodings[k]) <10:
-                continue
-            listt = fr.compare_faces(self.name2encodings[k], encoding, tolerance=0.2)
-            listt = [True if all(i) else False for i in listt]
-            print(listt)
+            # if len(self.name2encodings[k]) <10:
+            #    continue
+            n = len(self.name2encodings[k])
+            print('n : ', n)
+
+
+            listt = fr.face_distance([ a for (a, b) in self.name2encodings[k] ], encoding) #, tolerance=0.2)
+            listt = np.multiply(-1, np.add(listt, -1))
+            # listt = [True if all(i) else False for i in listt]
+            pen = 0 if n >= PEN_THRESHOLD else (PEN_THRESHOLD - n)/PEN_THRESHOLD
+            print('pen : ', pen)
+
+            score = np.multiply(listt, 0.85) + np.multiply(0.15, np.array([ b for (a, b) in self.name2encodings[k] ]))
+            print('score1 : ', score)
+
+            score = np.average(score) - pen * 0.1
+            print('score2 : ', score)
+
             # sum(listt) vai ser o nr de 'Trues' da funcao de cima
-            # aqui o sum nao sei se devia ser uma percentagem ou nao...
-            # mas para casos em q so tem 1 imagem n ia correr mt bem isso
-            matches[sum(listt)] = k
+            #matches[sum(listt)] = k
+
+            matches[score] = k
             unknown_list.append(len(listt) - sum(listt))
             # unknown += len(listt) - sum(listt)
 
         if matches == {}:
-            return None
+            return None, encoding, 1
 
-        # experimentar outra estratégia
-        unknown = max(unknown_list)
-
-        # definir qual é o criterio..
-        # quando é que aparece unknown? quando nenhum encoding
-        # é parecido? ou quando não chega a uma percentagem?
-
-        # neste momento está a dar unknown se for mais q 50%
         print('fim')
         maxx = max(matches.keys())
-        name = None if unknown>maxx else matches[maxx]
-        return name
+        if maxx < 0.4:
+            return None, encoding, 1
+        #name = None if unknown>maxx else matches[maxx]
+        name = matches[maxx]
+        return name, encoding, maxx
+
 """
 def teste():
     print('tá a correr o teste!')

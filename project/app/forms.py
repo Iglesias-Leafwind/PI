@@ -33,24 +33,12 @@ class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         people = Person.nodes.all()
-        """
+        all_rels = [ (person.image.relationship(img), person) for person in people for img in person.image.all() ]
 
-        all_rels = [ (p2, p) for p in people for p2 in p.image.all()]
+        #pp = people[0].image.all()
+        #print(pp)
+        #print("hey", people[0].image.relationship(pp[0]).icon)
 
-        all_rels = []
-
-        definition = dict(node_class=Person, direction=match.EITHER, relation_type=DisplayA.rel, model=DisplayA)
-        for p in people:
-            relations_transversal = Traversal(p, Person.__label__, definition)
-            print(relations_transversal)
-            print(relations_transversal.all())
-            for rt in relations_transversal.all():
-                print('here!!')
-                all_rels.append((rt, p))
-        
-        print('all res', all_rels)
-        print("len people : ", len(people))
-        # people = DisplayA.nodes.all()
         for index, rel in enumerate(all_rels):
             field_name = 'person_image_%s' % (index,)
             field_image = 'person_name_%s' % (index,)
@@ -59,7 +47,7 @@ class PersonsForm(forms.Form):
 
             self.initial[field_image] = rel[0].icon
             # print(people[i].icon)
-            self.initial[field_name] = rel[1].name
+            self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
 
         """
         # for i in range(8): #
@@ -73,6 +61,7 @@ class PersonsForm(forms.Form):
             self.initial[field_image] = people[i].icon
             print(people[i].icon)
             self.initial[field_name] = people[i].name
+        """
 
     def get_interest_fields(self):
         for field_name in self.fields:

@@ -12,7 +12,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri
+from app.utils import ImageFeature, getImagesPerUri, get_and_save_thumbnail
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -43,7 +43,7 @@ fs = SimpleFileSystemManager()
 model = VGGNet()
 
 faceimageindex=0
-
+THUMBNAIL_PIXELS=100
 
 # used in getOCR
 east = "frozen_east_text_detection.pb"
@@ -92,6 +92,32 @@ def uploadImages(uri):
     do(processing, taskTwo)
     print("------------------task 2------------------")
 
+def face_rec_part(read_image, img_path, tags, image):
+    # image aberta -> read_image
+    print("--- comeca a parte de face rec ---")
+    openimage, boxes = frr.getFaceBoxes(open_img=read_image, image_path=img_path)
+
+    for b in boxes:
+        name, enc, conf = frr.getTheNameOf(openimage, b)
+        if name is None:
+            # esta verificacao terá de ser alterada para algo mais preciso
+            # por exemplo, definir um grau de certeza
+            name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+        frr.saveFaceIdentification(openimage, b, name, encoding = enc, conf=conf)
+
+        # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+        face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+        face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
+        p = Person.nodes.get_or_none(name=name)
+        if p is None:
+            p = Person(name=name, icon=face_thumb_path).save()
+            tags.append(name)
+
+        # encodings falta
+        image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
+        # """
+        print("-- face rec end --")
+
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -109,10 +135,22 @@ def processing(dirFiles):
             i = ImageFeature()
 
             read_image = cv2.imread(img_path)
+
+            # downscale images:
+            # isto pode ser melhor feito (definir um tamanho e dar rescale pra
+            # ficar td +- naquele tamanho, em vez de dar rescale nas fotos q ja sao pequenas)
+            scale_val = 0.6
+            new_dim = (int(read_image.shape[1]*scale_val), int(read_image.shape[0]*scale_val))
+            read_image = cv2.resize(read_image, new_dim)
+
+
             if read_image is None:
                 continue
             hash = dhash(read_image)
-            generateThumbnail(img_path, hash)
+            save_path = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
+
+            get_and_save_thumbnail(img_path, THUMBNAIL_PIXELS, save_path)
+            # generateThumbnail(img_path, hash)
 
             existed = ImageNeo.nodes.get_or_none(hash=hash)
             i.hash = hash
@@ -155,8 +193,12 @@ def processing(dirFiles):
 
                     image.tag.connect(tag)
                 # """
+
+                face_rec_part(read_image, img_path, tags, image)
+                """
+                # image aberta -> read_image
                 print("--- comeca a parte de face rec ---")
-                openimage, boxes = frr.getFaceBoxes(img_path)
+                openimage, boxes = frr.getFaceBoxes(open_img=read_image, image_path=img_path)
 
                 for b in boxes:
                     name = frr.getTheNameOf(openimage, b)
@@ -176,8 +218,9 @@ def processing(dirFiles):
 
                     # encodings falta
                     image.person.connect(p, {'coordinates': list(b), 'icon':face_thumb_path})
-                    # """
+                    # 
                     print("-- face rec end --")
+                    """
 
                 places = getPlaces(img_path)
                 if places:

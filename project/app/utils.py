@@ -1,6 +1,8 @@
 import os
 import random
 import cv2
+from PIL import Image
+
 
 
 def getImagesPerUri(pathName):
@@ -37,6 +39,21 @@ def getFaceThumbnail(img, box, save_in=None):
         # new_path = img_path.split('.')[-2] + '_face.' + img_path.split('.')[-1]
         cv2.imwrite(save_in, cropimg)
     return cropimg
+
+def get_and_save_thumbnail(img_path, side_pixels, save_path):
+    pil_img = Image.open(img_path)
+
+    crop_side = min(pil_img.size)
+    img_width, img_height = pil_img.size
+    thumb = pil_img.crop(((img_width - crop_side) // 2,
+                         (img_height - crop_side) // 2,
+                         (img_width + crop_side) // 2,
+                         (img_height + crop_side) // 2))
+    thumb = thumb.resize((side_pixels, side_pixels), Image.LANCZOS)
+    thumb.save(save_path)
+
+
+
 
 
 
