@@ -257,16 +257,21 @@ def searchtag(request):
     return render(request, 'index.html')
 
 
-def delete(request):
-    deleteFolder(request.GET.get("path"))
-    return render(request, 'managefolders.html')
+def delete(request, path):
+    form = SearchForm()
+    image = SearchForImageForm()
+    pathf = EditFoldersForm()
+    deleteFolder(path)
+    folders = fs.getAllUris()
+    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 
 def managefolders(request):
     form = SearchForm()
-    folders = fs.getAllUris()
+    image = SearchForImageForm()
     pathf = EditFoldersForm()
-    return render(request, 'managefolders.html', {'form': form, 'folders': folders, 'path_form': pathf})
+    folders = fs.getAllUris()
+    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 
 def managepeople(request):
