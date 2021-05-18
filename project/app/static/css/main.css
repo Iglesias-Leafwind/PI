@@ -474,8 +474,20 @@ button:focus{
     grid-column-gap: 4%;
 }
 
-.modal-body input[type="text"]{
+.modal-body > input[type="text"]{
   margin-bottom: 10%;
+  height: 7vh;
+  width: 100%;
+  padding: 2.4%;
+  border-radius: 21px;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  margin-top: 2vh;
+}
+
+.modal-body > label{
+  display: none;
 }
 
 .modal-body select{

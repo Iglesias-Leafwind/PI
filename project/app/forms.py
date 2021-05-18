@@ -16,11 +16,11 @@ class SearchForm(forms.Form):
 
 
 class SearchForImageForm(forms.Form):
-    image = forms.CharField(label="Insert image path:", required=False)
+    image = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert image path.'}), required=False)
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder...'}), required=False)
+    path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder.'}), label=" ", required=False)
 
 
 class PersonsForm(forms.Form):
