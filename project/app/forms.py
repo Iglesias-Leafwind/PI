@@ -28,7 +28,7 @@ class EditFoldersForm(forms.Form):
 class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        people = Person.objects.all()
+        people = Person.nodes.all()
         for i in range(len(people)):
             field_name = 'person_image_%s' % (i,)
             field_image = 'person_name_%s' % (i,)
