@@ -74,6 +74,7 @@ def delete(request, path):
     pathf = EditFoldersForm()
     deleteFolder(path)
     folders = fs.getAllUris()
+    folders = [ (f, re.sub("\\\\+|/+|:+", "", f)) for f in folders]
     return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 
@@ -84,12 +85,14 @@ def managefolders(request):
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
+        folders = [ (f, re.sub("\\\\+|/+|:+", "", f)) for f in folders]
         return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
     else:
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
+        folders = [ (f, re.sub("\\\\+|/+|:+", "", f)) for f in folders]
         return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 

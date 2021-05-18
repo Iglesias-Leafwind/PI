@@ -18,7 +18,7 @@
     <div>
         <table>
             <tbody>
-                {% for folder in folders %}
+                {% for folder, idName in folders %}
                 <tr>
                     <td class="f1">
                         <i class="fa fa-folder-open"></i>
@@ -28,10 +28,10 @@
                         <p>{{folder}}</p>
                     </td>
                     <td class="f3">
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem" class="delete-btn"><i class="fas fa-trash c40"></i></button>
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem{{ idName }}" class="delete-btn"><i class="fas fa-trash c40"></i></button>
                     </td>
                 </tr>
-                    <div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="deleteItem">
+                    <div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"  id="deleteItem{{ idName }}">
                       <div class="modal-dialog">
                         <div class="modal-content">
                           <div class="modal-header">
@@ -48,6 +48,7 @@
                         </div>
                       </div>
                     </div>
+
                 {% endfor %}
             </tbody>
         </table>

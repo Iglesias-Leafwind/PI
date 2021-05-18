@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+
 from app.models import *
 from app.utils import getRandomNumber, ImageFeature, lock
 
@@ -152,16 +154,22 @@ class SimpleFileSystemManager:
         if self.exist(uri):
             folders, root = self.__splitUriAndGetRoot__(uri)
 
-            node = self.trees.pop(root)
+            node = self.trees[root]
             for i in range(1, len(folders)):
                 folder = folders[i]
-                node = node.children.pop(folder)
+                node = node.children[folder]
 
-            folderstoBeDeleted = [Folder.nodes.get(id_=node.id)]
+            if node.parent:
+                node.parent.children.pop(folders[-1])
+
+            folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
 
             deletedImages = []
             while folderstoBeDeleted != []:
                 f = folderstoBeDeleted.pop()
+                if not f:
+                    continue
+
                 images = f.getImages()
 
                 if images is not None:
@@ -181,6 +189,9 @@ class SimpleFileSystemManager:
                                         break
                         else:
                             image.delete()
+                            thumbnail = os.path.join("app", "static", "thumbnails", str(image.hash)) + ".jpg"
+                            os.remove(thumbnail)
+
                             get = ImageES.get(using=es, index='image', id=image.hash)
                             get.delete(using=es)
                             deletedImages.append(ImageFeature(hash=image.hash))
@@ -191,7 +202,9 @@ class SimpleFileSystemManager:
                 f.delete()
 
             while node.parent:
-                parentFolder = Folder.nodes.get(id_=node.parent.id)
+                parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
+                if not parentFolder:
+                    continue
                 node = node.parent
                 children = parentFolder.getChildren()
                 if len(children) == 0 and not parentFolder.terminated:
@@ -249,6 +262,6 @@ class SimpleFileSystemManager:
                 buildUri(nextNode, path)
 
         for node in self.trees.keys():
-            buildUri(self.trees[node], node)
+            buildUri(self.trees[node], os.path.normpath(node + "//"))
 
         return uris
