@@ -204,7 +204,7 @@ def processing(dirFiles):
 
                         image.tag.connect(tag)
 
-                   #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                   #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
                     if places:

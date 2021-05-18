@@ -28,9 +28,6 @@ urlpatterns = [
     path('exif', views.exif, name='exif'),
     path('es', views.createIndex, name='createIndexES'),
     path('searches', views.search, name='searchIndexES'),
-    #path('objextr', views.objectExtraction, name='objExtr'),
     path('upload', views.upload, name='uploadFolder'),
-    #path('delete', views.delete, name='uploadDelete'),
     path('searchtag', views.searchtag, name='searchtag'),
-    #path('test', views.teste, name='teste'),
 ]

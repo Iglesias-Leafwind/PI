@@ -4,9 +4,9 @@
 {% block content %}
     <div class="center-small">
         <h2 style="float: left" class="left fit full">Source folders</h2>
-        <a style="float:right;" href="#"><i class="fas fa-redo"></i></a> <!-- TODO : Call function to reload folders-->
+        <a style="float:right;" href="#"><i class="fas fa-redo"></i></a> <!-- TODO : Call function to reload folders (WEI AND ANTHONY)-->
         <div style="width: 60vw">
-        <form>
+        <form method="get" action="{% url 'managefolders' %}"> <!-- TODO : Figure out why this doesnt work, at least on my PC -->
         <div class="inner-path">
             {{ path_form.path }}
         </div>
@@ -31,21 +31,19 @@
                         <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem" class="delete-btn"><i class="fas fa-trash c40"></i></button>
                     </td>
                 </tr>
-                    <div class="modal" tabindex="-1" role="dialog" id="deleteItem">
-                      <div class="modal-dialog" role="document">
+                    <div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="deleteItem">
+                      <div class="modal-dialog">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title">Delete {{ folder }}</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                              <span aria-hidden="true">&times;</span>
-                            </button>
+                            <h5 class="modal-title" id="exampleModalLabel">Delete {{ folder }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
                             <p>Are you sure you want to delete this folder from the system? If you want to add it back later, it will be reprocessed again, but all your manual customizations will be lost. </p>
                           </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                    <button type="button" class="btn btn-primary"><a  href="{% url 'uploadDelete' path=folder %}"></a>Delete</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary"><a href="{% url 'uploadDelete' path=folder %}"></a>Delete</button><!-- TODO : verify function and bootstrap because it doesnt work yet (WEI AND ALEXA)-->
                                 </div>
                         </div>
                       </div>

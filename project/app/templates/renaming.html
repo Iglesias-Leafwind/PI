@@ -3,84 +3,23 @@
 
 {% block content %}
     <div class="center-small">
-        <h2 style="float: left" class="left fit full">Source folders</h2>
-        <a style="float:right;" href="#"><i class="fas fa-redo"></i></a> <!-- TODO : Call function to reload folders-->
-        <div style="width: 60vw">
-        <form>
-        <div class="inner-path">
-            {{ path_form.path }}
+        <form action="." method="post" enctype="multipart/form-data">
+      <div class="">
+            {% csrf_token %}
+            {% for nfield in names_form.get_interest_fields %}
+                {{ nfield }}
+            {% endfor %}
+      </div>
+        <div>
+            {% for field in form %}
+			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
+            {% endfor %}
         </div>
-        {% for field in form %}
-            {% if field.errors %}<li class="white">{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-        {% endfor %}
-        </form>
-        </div>
-    <div>
-        <table>
-            <tbody>
-                {% for folder in folders %}
-                <tr>
-                    <td class="f1">
-                        <i class="fa fa-folder-open"></i>
-                        <i class="fas fa-folder"></i>
-                    </td>
-                    <td class="f2">
-                        <p>{{folder}}</p>
-                    </td>
-                    <td class="f3">
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem" class="delete-btn"><i class="fas fa-trash c40"></i></button>
-                    </td>
-                </tr>
-                    <div class="modal" tabindex="-1" role="dialog" id="deleteItem">
-                      <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">Delete {{ folder }}</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                              <span aria-hidden="true">&times;</span>
-                            </button>
-                          </div>
-                          <div class="modal-body">
-                            <p>Are you sure you want to delete this folder from the system? If you want to add it back later, it will be reprocessed again, but all your manual customizations will be lost. </p>
-                          </div>
-                            <form action="{% url 'index' %}">
-                                <div class="modal-footer">
-                            <button type="button" class="btn btn-primary">Delete</button>
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                          </div>
-                            </form>
-
-                        </div>
-                      </div>
-                    </div>
-                {% endfor %}
-            <tr>
-                    <td class="f1">
-                        <i class="fa fa-folder-open"></i>
-                        <i class="fas fa-folder"></i>
-                    </td>
-                    <td class="f2">
-                        <p>home/alexis/Downloads</p>
-                    </td>
-                    <td class="f3">
-                        <a href="#" class="delete-btn"><i class="fas fa-trash c40"></i> <!-- TODO : Call delete view here --></a>
-                    </td>
-                </tr>
-            <tr>
-                    <td class="f1">
-                        <i class="fa fa-folder-open"></i>
-                        <i class="fas fa-folder"></i>
-                    </td>
-                    <td class="f2">
-                        <p>home/alexis/Desktop/other</p>
-                    </td>
-                    <td class="f3">
-                        <a href="#" class="delete-btn"><i class="fas fa-trash c40"></i> <!-- TODO : Call delete view here --></a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+     </form>
     </div>
 
 {% endblock %}
