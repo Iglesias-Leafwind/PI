@@ -38,7 +38,7 @@ def stemmingMethod(real_word_tokens):
             stemmed_word = ls.stem(word)    # 2nd, let's try the LancasterStemmer
             if stemmed_word not in words.words() or not d.check(stemmed_word):
                 stemmed_word = word
-        stemmed_words.append(stemmed_word)
+        stemmed_words += [stemmed_word]
     
     return list(set(stemmed_words))
 
@@ -50,13 +50,13 @@ def transformTagging(words_with_tags):
     words_with_tags_ = []
     for tuple_ in words_with_tags:
         if tuple_[1].startswith("N"):
-            words_with_tags_.append((tuple_[0], wordnet.NOUN))
+            words_with_tags_ += [(tuple_[0], wordnet.NOUN)]
         elif tuple_[1].startswith("V"):
-            words_with_tags_.append((tuple_[0], wordnet.VERB))
+            words_with_tags_ += [(tuple_[0], wordnet.VERB)]
         elif tuple_[1].startswith("A"):
-            words_with_tags_.append((tuple_[0], wordnet.ADJ))
+            words_with_tags_ += [(tuple_[0], wordnet.ADJ)]
         elif tuple_[1].startswith("R"):
-            words_with_tags_.append((tuple_[0], wordnet.ADV))
+            words_with_tags_ += [(tuple_[0], wordnet.ADV)]
         else:
             continue
 
@@ -69,7 +69,7 @@ def lemmatizationMethod(words_with_tags_):
         word = tuple_[0]
         pos = tuple_[1]
         lemmatized_word = lemmatizer.lemmatize(word, pos)
-        lemmatized_words.append(lemmatized_word)
+        lemmatized_words += [lemmatized_word]
     
     return list(set(lemmatized_words))
 
