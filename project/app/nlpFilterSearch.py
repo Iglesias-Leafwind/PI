@@ -6,23 +6,21 @@ import string, enchant, time
 
 
 def tokenizeText(text):
-    word_tokens = word_tokenize(text)
-    return set(word_tokens)
+    return set(word_tokenize(text))
 
 def filterPunctuation(word_tokens):
     filtered_word_tokens = [w for w in word_tokens if w not in string.punctuation and all(c not in string.punctuation for c in w)]
     return set(filtered_word_tokens)
 
 def filterStopWords(filtered_word_tokens):
-    stop_words = set(stopwords.words('english'))
-    filtered_word_tokens_no_stop_words = [w for w in filtered_word_tokens if w not in stop_words]
-    return set(filtered_word_tokens_no_stop_words)
+    return set([w for w in filtered_word_tokens if w not in set(stopwords.words('english'))])
 
+'''
 def filteredDictWords(filtered_word_tokens_no_stop_words):
     english_vocab = set(w.lower() for w in words.words())
     real_word_tokens = [w for w in filtered_word_tokens_no_stop_words if w in english_vocab]
     return set(real_word_tokens)
-
+'''
 
 def stemmingMethod(real_word_tokens):
     ps = PorterStemmer()
@@ -39,11 +37,10 @@ def stemmingMethod(real_word_tokens):
                 stemmed_word = word
         stemmed_words |= {stemmed_word}
     
-    return list(set(stemmed_words))
+    return set(stemmed_words)
 
 def posTagging(stemmed_words):
-    words_with_tags = pos_tag(stemmed_words)
-    return set(words_with_tags)
+    return set(pos_tag(stemmed_words))
 
 def transformTagging(words_with_tags):
     words_with_tags_ = set()
@@ -63,42 +60,30 @@ def transformTagging(words_with_tags):
 
 def lemmatizationMethod(words_with_tags_):
     lemmatizer = WordNetLemmatizer()
-    words_with_no_tags = [tuple_ for tuple_ in words_with_tags_ if type(tuple_) is not tuple]
-    lemmatized_words = [lemmatizer.lemmatize(tuple_[0], tuple_[1]) for tuple_ in words_with_tags_ if type(tuple_) is tuple]
-    return set(lemmatized_words + words_with_no_tags)
+    return set([tuple_ for tuple_ in words_with_tags_ if type(tuple_) is not tuple] + [lemmatizer.lemmatize(tuple_[0], tuple_[1]) for tuple_ in words_with_tags_ if type(tuple_) is tuple])
 
 def getSynsets(lemmatized_words):
-    setResults = []
     synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
-    setResults = [elem.lemma_names()[:1][0].lower()  for lst in synsetLst for elem in lst[:5]]
-    return lemmatized_words | set(setResults)
+    return lemmatized_words | set([elem.lemma_names()[:1][0].lower()  for lst in synsetLst for elem in lst[:5]])
 
 
 def processQuery(text):
     text = text.lower()
     results = tokenizeText(text)
-    print(str(results) + "\n")
     results = filterPunctuation(results)
-    print(str(results) + "\n")
     results = filterStopWords(results)
-    print(str(results) + "\n")
     results = stemmingMethod(results)
-    print(str(results) + "\n")
     results = posTagging(results)
-    print(str(results) + "\n")
     results = transformTagging(results)
-    print(str(results) + "\n")
     results = lemmatizationMethod(results)
-    print(str(results) + "\n")
     results = getSynsets(results)
-    print(str(results) + "\n")
     return results
 
 
 text = "loving someone is something beautiful, just like the nature. I love the world."
 text2 = "Didn't I tell you? We're moving to Ovar?"
 beginning = time.time()
-print(processQuery(text2))
+print(processQuery(text))
 end = time.time()
 print(end-beginning)
 
