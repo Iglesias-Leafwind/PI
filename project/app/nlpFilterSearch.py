@@ -48,22 +48,6 @@ def stemmingMethod(real_word_tokens): # DO NOT CHANGE THIS ONE IG, THE PROBLEM I
 def posTagging(stemmed_words):
     return set(pos_tag(stemmed_words))
 
-def transformTagging(words_with_tags):
-    words_with_tags_ = set()
-    for tuple_ in words_with_tags:       
-        if tuple_[1].startswith("N"):
-            words_with_tags_ |= {(tuple_[0], wordnet.NOUN)}
-        elif tuple_[1].startswith("V"):
-            words_with_tags_ |= {(tuple_[0], wordnet.VERB)}
-        elif tuple_[1].startswith("A"):
-            words_with_tags_ |= {(tuple_[0], wordnet.ADJ)}
-        elif tuple_[1].startswith("R"):
-            words_with_tags_ |= {(tuple_[0], wordnet.ADV)}
-        else:
-            words_with_tags_ |= {tuple_[0]}
-
-    return words_with_tags_
-
 def lemmatizationMethod(words_with_tags):
     lemmatized_words = set()
     lemmatizer = WordNetLemmatizer()
