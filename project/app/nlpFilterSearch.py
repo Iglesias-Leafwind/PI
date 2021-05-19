@@ -69,19 +69,21 @@ def lemmatizationMethod(words_with_tags_):
         pos = tuple_[1]
         lemmatized_word = lemmatizer.lemmatize(word, pos)
         lemmatized_words |= {lemmatized_word}
-    
     return set(lemmatized_words)
 
 def getSynsets(lemmatized_words):
     setResults = []
     synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
     for lst in synsetLst:
-        for elem in lst:
-            print(elem)
-            res = elem.lemma_names()
-            print("Res: " + str(res))
+        length = len(lst)
+        if length <=3:
+            subLst = lst[:-1]
+        else:
+            subLst = lst[:2]
+        for elem in subLst:
+            res = elem.lemma_names()[:1]
             setResults += res
-    return setResults
+    return lemmatized_words | set(setResults)
 
 
 def processQuery(query):
