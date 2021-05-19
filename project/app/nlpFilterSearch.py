@@ -10,7 +10,7 @@ def tokenizeText(text):
     return set(word_tokens)
 
 def filterPunctuation(word_tokens):
-    filtered_word_tokens = [w for w in word_tokens if w not in string.punctuation]
+    filtered_word_tokens = [w for w in word_tokens if w not in string.punctuation and all(c not in string.punctuation for c in w)]
     return set(filtered_word_tokens)
 
 def filterStopWords(filtered_word_tokens):
@@ -57,19 +57,15 @@ def transformTagging(words_with_tags):
         elif tuple_[1].startswith("R"):
             words_with_tags_ |= {(tuple_[0], wordnet.ADV)}
         else:
-            continue
+            words_with_tags_ |= {tuple_[0]}
 
     return words_with_tags_
 
 def lemmatizationMethod(words_with_tags_):
     lemmatizer = WordNetLemmatizer()
-    lemmatized_words = set()
-    for tuple_ in words_with_tags_:
-        word = tuple_[0]
-        pos = tuple_[1]
-        lemmatized_word = lemmatizer.lemmatize(word, pos)
-        lemmatized_words |= {lemmatized_word}
-    return set(lemmatized_words)
+    words_with_no_tags = [tuple_ for tuple_ in words_with_tags_ if type(tuple_) is not tuple]
+    lemmatized_words = [lemmatizer.lemmatize(tuple_[0], tuple_[1]) for tuple_ in words_with_tags_ if type(tuple_) is tuple]
+    return set(lemmatized_words + words_with_no_tags)
 
 def getSynsets(lemmatized_words):
     setResults = []
@@ -81,19 +77,28 @@ def getSynsets(lemmatized_words):
 def processQuery(text):
     text = text.lower()
     results = tokenizeText(text)
+    print(str(results) + "\n")
     results = filterPunctuation(results)
+    print(str(results) + "\n")
     results = filterStopWords(results)
+    print(str(results) + "\n")
     results = stemmingMethod(results)
+    print(str(results) + "\n")
     results = posTagging(results)
+    print(str(results) + "\n")
     results = transformTagging(results)
+    print(str(results) + "\n")
     results = lemmatizationMethod(results)
+    print(str(results) + "\n")
     results = getSynsets(results)
+    print(str(results) + "\n")
     return results
 
 
 text = "loving someone is something beautiful, just like the nature. I love the world."
+text2 = "Didn't I tell you? We're moving to Ovar?"
 beginning = time.time()
-print(processQuery(text))
+print(processQuery(text2))
 end = time.time()
 print(end-beginning)
 
