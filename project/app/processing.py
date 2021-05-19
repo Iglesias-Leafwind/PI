@@ -44,7 +44,7 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 # load installed tesseract-ocr from users pc
-pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -204,7 +204,7 @@ def processing(dirFiles):
 
                         image.tag.connect(tag)
 
-                   #     p = Person.nodes.get_or_none(name=name) # TODO : get icon
+                   #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
                     if places:
@@ -262,8 +262,13 @@ def alreadyProcessed(img_path):
     return existed
 
 def deleteFolder(uri):
+
+    if sys.platform == 'linux':
+        if uri[0] != '/':
+            uri = '/' + uri
+
     deletedImages = fs.deleteFolderFromFs(uri)
-    if None or len(deletedImages) == 0:
+    if deletedImages is None or len(deletedImages) == 0:
         return
 
     imgfs = set(ftManager.imageFeatures)

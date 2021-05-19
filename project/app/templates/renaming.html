@@ -1,0 +1,25 @@
+{% extends 'topbar.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="center-small">
+        <form action="." method="post" enctype="multipart/form-data">
+      <div class="">
+            {% csrf_token %}
+            {% for nfield in names_form.get_interest_fields %}
+                {{ nfield }}
+            {% endfor %}
+      </div>
+        <div>
+            {% for field in form %}
+			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
+            {% endfor %}
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+     </form>
+    </div>
+
+{% endblock %}

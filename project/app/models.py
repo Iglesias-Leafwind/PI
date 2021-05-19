@@ -7,7 +7,7 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from manage import es
 
-config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
+config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
 
 
 # for elastic search ↓
@@ -60,8 +60,8 @@ class ImageNeo(StructuredNode):
     width = IntegerProperty()
     height = IntegerProperty()
     hash = StringProperty(index=True)
-    tag = RelationshipTo("Tag", HasA.rel, model=HasA, cardinality=OneOrMore)
-    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA, cardinality=ZeroOrMore)
+    tag = RelationshipTo("Tag", HasA.rel, model=HasA)
+    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA)
     location = RelationshipTo("Location", WasTakenIn.rel, model=WasTakenIn)
     folder = RelationshipTo("Folder", IsIn.rel, model=IsIn)
 
@@ -69,12 +69,12 @@ class ImageNeo(StructuredNode):
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
     quantity = IntegerProperty(default=1)
-    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA, cardinality=OneOrMore)
+    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA, cardinality=OneOrMore)
+    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
 
 class Country(StructuredNode):
