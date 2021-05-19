@@ -76,10 +76,12 @@ def getSynsets(lemmatized_words):
     synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
     for lst in synsetLst:
         length = len(lst)
-        if length <=3:
+        if length <=5:
             subLst = lst[:-1]
+            print(subLst)
         else:
-            subLst = lst[:2]
+            subLst = lst[:5]
+            print(subLst)
         for elem in subLst:
             res = elem.lemma_names()[:1]
             setResults += res
