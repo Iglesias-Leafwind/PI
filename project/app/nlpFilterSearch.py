@@ -3,6 +3,12 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, LancasterStemmer, WordNetLemmatizer
 from nltk.tag import pos_tag
 import string, enchant, time
+from collections import defaultdict
+
+tag_map = defaultdict(lambda : wordnet.NOUN)
+tag_map['J'] = wordnet.ADJ
+tag_map['V'] = wordnet.VERB
+tag_map['R'] = wordnet.ADV
 
 
 def tokenizeText(text):
@@ -22,7 +28,7 @@ def filteredDictWords(filtered_word_tokens_no_stop_words):
     return set(real_word_tokens)
 '''
 
-def stemmingMethod(real_word_tokens):
+def stemmingMethod(real_word_tokens): # DO NOT CHANGE THIS ONE IG, THE PROBLEM IS NOT HERE
     ps = PorterStemmer()
     ls = LancasterStemmer()
 
@@ -31,9 +37,9 @@ def stemmingMethod(real_word_tokens):
     d = enchant.Dict("en_UK")
     for word in real_word_tokens:
         stemmed_word = ps.stem(word)
-        if stemmed_word not in words.words() or not d.check(stemmed_word): # english vocabulary
+        if not d.check(stemmed_word): # english vocabulary
             stemmed_word = ls.stem(word)    # 2nd, let's try the LancasterStemmer
-            if stemmed_word not in words.words() or not d.check(stemmed_word):
+            if not d.check(stemmed_word):
                 stemmed_word = word
         stemmed_words |= {stemmed_word}
     
@@ -44,7 +50,7 @@ def posTagging(stemmed_words):
 
 def transformTagging(words_with_tags):
     words_with_tags_ = set()
-    for tuple_ in words_with_tags:
+    for tuple_ in words_with_tags:       
         if tuple_[1].startswith("N"):
             words_with_tags_ |= {(tuple_[0], wordnet.NOUN)}
         elif tuple_[1].startswith("V"):
@@ -58,9 +64,14 @@ def transformTagging(words_with_tags):
 
     return words_with_tags_
 
-def lemmatizationMethod(words_with_tags_):
+def lemmatizationMethod(words_with_tags):
+    lemmatized_words = set()
     lemmatizer = WordNetLemmatizer()
-    return set([tuple_ for tuple_ in words_with_tags_ if type(tuple_) is not tuple] + [lemmatizer.lemmatize(tuple_[0], tuple_[1]) for tuple_ in words_with_tags_ if type(tuple_) is tuple])
+    for token, tag in words_with_tags:
+        lemmatized_word = lemmatizer.lemmatize(token, tag_map[tag[0]])
+        lemmatized_words |= {lemmatized_word}
+
+    return lemmatized_words
 
 def getSynsets(lemmatized_words):
     synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
@@ -74,7 +85,6 @@ def processQuery(text):
     results = filterStopWords(results)
     results = stemmingMethod(results)
     results = posTagging(results)
-    results = transformTagging(results)
     results = lemmatizationMethod(results)
     results = getSynsets(results)
     return results
