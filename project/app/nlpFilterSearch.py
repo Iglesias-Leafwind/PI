@@ -74,12 +74,12 @@ def lemmatizationMethod(words_with_tags_):
 def getSynsets(lemmatized_words):
     setResults = []
     synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
-    setResults = [elem.lemma_names()[:1][0]  for lst in synsetLst for elem in lst[:5]]
+    setResults = [elem.lemma_names()[:1][0].lower()  for lst in synsetLst for elem in lst[:5]]
     return lemmatized_words | set(setResults)
 
 
-def processQuery(query):
-    text = query.lower()
+def processQuery(text):
+    text = text.lower()
     results = tokenizeText(text)
     results = filterPunctuation(results)
     results = filterStopWords(results)
