@@ -1,11 +1,8 @@
 from nltk.corpus import stopwords, words, wordnet
 from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer, LancasterStemmer
+from nltk.stem import PorterStemmer, LancasterStemmer, WordNetLemmatizer
 from nltk.tag import pos_tag
-from nltk.stem import WordNetLemmatizer
-import string
-import enchant
-import time
+import string, enchant, time
 
 
 def tokenizeText(text):
@@ -75,6 +72,17 @@ def lemmatizationMethod(words_with_tags_):
     
     return set(lemmatized_words)
 
+def getSynsets(lemmatized_words):
+    setResults = []
+    synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
+    for lst in synsetLst:
+        for elem in lst:
+            print(elem)
+            res = elem.lemma_names()
+            print("Res: " + str(res))
+            setResults += res
+    return setResults
+
 
 def processQuery(query):
     text = query.lower()
@@ -85,7 +93,7 @@ def processQuery(query):
     results = posTagging(results)
     results = transformTagging(results)
     results = lemmatizationMethod(results)
-
+    results = getSynsets(results)
     return results
 
 
