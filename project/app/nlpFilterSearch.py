@@ -75,7 +75,7 @@ def lemmatizationMethod(words_with_tags_):
 
 
 def processQuery(query):
-    text = query
+    text = query.lower()
     word_tokens = tokenizeText(text)
     filtered_word_tokens = filterPunctuation(word_tokens)
     filtered_word_tokens_no_stop_words = filterStopWords(filtered_word_tokens)
@@ -85,8 +85,6 @@ def processQuery(query):
     lemmatized_words = lemmatizationMethod(words_with_tags_)
 
     return lemmatized_words
-
-
 
     
 
