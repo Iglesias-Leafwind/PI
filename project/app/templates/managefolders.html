@@ -4,7 +4,7 @@
 {% block content %}
     <div class="center-small">
         <h2 style="float: left" class="left fit full">Source folders</h2>
-        <a style="float:right;" href="#"><i class="fas fa-redo"></i></a> <!-- TODO : Call function to reload folders (WEI AND ANTHONY)-->
+        <a style="float:right;" href="{% url 'updateFolders' %}"><i class="fas fa-redo"></i></a>
         <div style="width: 60vw">
         <form method="get" action="{% url 'managefolders' %}"> <!-- it doesnt work because I need barras. barras all over the place -->
         <div class="inner-path">

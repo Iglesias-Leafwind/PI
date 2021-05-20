@@ -179,3 +179,12 @@ def searchtag(request):
     for i in execute:
         print(i)
     return render(request, 'index.html')
+
+def updateFolders(request):
+    folders = fs.getAllUris()
+    for folder in folders:
+        uploadImages(folder)
+    form = SearchForm()
+    image = SearchForImageForm()
+    pathf = EditFoldersForm()
+    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})

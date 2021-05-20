@@ -23,6 +23,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('folders', views.managefolders, name='managefolders'),
     path('delete/<path:path>', views.delete, name='uploadDelete'),
+    path('update', views.updateFolders, name='updateFolders'),
     path('people', views.managepeople, name='managepeople'),
     path('ocr', views.ocr, name='ocr'),
     path('exif', views.exif, name='exif'),

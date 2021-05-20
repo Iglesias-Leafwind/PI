@@ -462,6 +462,7 @@ button:focus{
   padding-top: 15vh;
   margin-top: -1.2vh;
   background: url("../img/bg-texture.png") repeat;
+  min-height: 200vh;
 }
 
 .bg-mine{
