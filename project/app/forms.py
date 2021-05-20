@@ -10,6 +10,8 @@ from neomodel.match import Traversal
 import app.models
 from app.models import Person, DisplayA
 
+from app.models import Person
+
 
 class PictureWidget(forms.widgets.Widget):
     def render(self, name, value, attrs=None, **kwargs):
@@ -22,17 +24,18 @@ class SearchForm(forms.Form):
 
 
 class SearchForImageForm(forms.Form):
-    image = forms.ImageField(label="", required=False)
+    image = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert image path.'}), required=False)
 
 
 class EditFoldersForm(forms.Form):
-    path = forms.CharField(label="Add new folder:", widget=forms.Select(choices=tuple([(choice, choice) for choice in ['ola', 'adeus']]), attrs={'style': 'width:180px'}))
+    path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder.'}), label=" ", required=False)
 
 
 class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         people = Person.nodes.all()
+
         all_rels = [ (person.image.relationship(img), person) for person in people for img in person.image.all() ]
 
         #pp = people[0].image.all()
@@ -49,19 +52,7 @@ class PersonsForm(forms.Form):
             # print(people[i].icon)
             self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
 
-        """
-        # for i in range(8): #
-        for i in range(len(people)):
-            # if i>=len(people):
-            #    break
-            field_name = 'person_image_%s' % (i,)
-            field_image = 'person_name_%s' % (i,)
-            self.fields[field_image] = forms.ImageField(required=False, widget=PictureWidget)
-            self.fields[field_name] = forms.CharField(required=False)
-            self.initial[field_image] = people[i].icon
-            print(people[i].icon)
-            self.initial[field_name] = people[i].name
-        """
+
 
     def get_interest_fields(self):
         for field_name in self.fields:

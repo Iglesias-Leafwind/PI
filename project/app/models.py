@@ -56,15 +56,15 @@ class DisplayA(StructuredRel):
 class ImageNeo(StructuredNode):
     folder_uri = StringProperty(unique_index=True, required=True)
     name = StringProperty(required=True)
-    creation_date = DateTimeProperty(default_now=False)
+    creation_date = StringProperty()
     insertion_date = DateTimeProperty(default_now=True)
     processing = StringProperty()
     format = StringProperty()
     width = IntegerProperty()
     height = IntegerProperty()
     hash = StringProperty(index=True)
-    tag = RelationshipTo("Tag", HasA.rel, model=HasA) #, cardinality=OneOrMore)
-    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA) #, cardinality=ZeroOrMore)
+    tag = RelationshipTo("Tag", HasA.rel, model=HasA)
+    person = RelationshipTo("Person", DisplayA.rel, model=DisplayA)
     location = RelationshipTo("Location", WasTakenIn.rel, model=WasTakenIn)
     folder = RelationshipTo("Folder", IsIn.rel, model=IsIn)
 
@@ -72,13 +72,13 @@ class ImageNeo(StructuredNode):
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
     quantity = IntegerProperty(default=1)
-    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA) # , cardinality=OneOrMore)
+    image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    icon = StringProperty(required=True)
-    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA) # , cardinality=OneOrMore)
+    icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
+    image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
 
 class Country(StructuredNode):

@@ -262,6 +262,12 @@ legend {
   -webkit-padding-end: 0;
 }
 
+.btn-group-span{
+  position: absolute;
+  margin-top: 3vh;
+  margin-left: 12vh;
+}
+
 /*===============================
 =            Choices            =
 ===============================*/
@@ -292,20 +298,31 @@ legend {
   left:0;
   top:0;
   right:0;
-  text-align: center;
+  box-shadow: 0px 10px 6px #E0E0E0;
 }
 
 .our-title{
-  font-size: 5vh;
-  position: relative;
-  margin: 3.5vh;
+  font-size: 3vw;
+  position: absolute;
   color: #2D95DF;
+  top:2vh;
+  left: 2vw;
+}
+
+.links{
+  text-decoration: none;
+}
+
+.small{
+  display: inline-block;
 }
 
 /*global span*/
 
 .hovering {
   float: left;
+  margin-top: 2vh;
+  margin-left: -6vw;
 }
 .hovering:hover button{
   background-color: #2567F5;
@@ -318,11 +335,24 @@ legend {
 /* input search bar */
 .inner-form > input{
   width: 50vw;
-  height: 10vh;
+  height: 7vh;
   padding: 2.4%;
-  border-radius: 10px;
+  border-radius: 21px;
   border: 0px;
   float: left;
+  background-color: #E0E0E0;
+  margin-top: 2vh;
+}
+
+.inner-path > input{
+  width: 50vw;
+  height: 7vh;
+  padding: 2.4%;
+  border-radius: 21px;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  margin: 6vh 20vh 6vh 20vh;
 }
 
 input:focus{
@@ -342,19 +372,22 @@ button:focus{
 }
 
 .search-btn{
-  height: 9.98vh;
-  width: 8vw;
-  border-radius: 10px;
+  height: 7vh;
+  width: 6.5vw;
+  border-radius: 21px;
   border: 0px;
-  margin-top: 0.2%;
-  margin-left: -100%;
-  background-color: white;
+  background-color: #E0E0E0;
   vertical-align: center;
   text-align: center;
 }
 
-.fa-search{
-  font-size: 225%;
+.mar-left{
+  margin-left: 22vw;
+}
+
+.fa, .fas{
+  font-size: 200%;
+  margin-top: 0.1vh;
 }
 
 .fa-file-image-o {
@@ -365,22 +398,9 @@ button:focus{
   float: left;
 }
 
-.fa-folder-open {
-  font-size: 225%;
-  color: white;
-  padding-top: 5%;
-  margin-left: 3%;
-  float: left;
+.fa-user, .fa-folder-open{
+  padding-right: 10%;
 }
-
-.fa-user {
-  font-size: 225%;
-  color: white;
-  padding-top: 5%;
-  margin-left: 9%;
-  float: left;
-}
-
 
 .pointer{
   cursor: pointer;
@@ -438,6 +458,16 @@ button:focus{
   margin-top: 10%;
 }
 
+.main{
+  padding-top: 15vh;
+  margin-top: -1.2vh;
+  background: url("../img/bg-texture.png") repeat;
+}
+
+.bg-mine{
+  background-color: rgba(248, 249, 250, 0.5);
+}
+
 /* Rename Profiles Modal */
 .modal-body1{
     /*display: grid !important;*/
@@ -445,8 +475,20 @@ button:focus{
     grid-column-gap: 4%;
 }
 
-.modal-body input[type="text"]{
+.modal-body > input[type="text"]{
   margin-bottom: 10%;
+  height: 7vh;
+  width: 100%;
+  padding: 2.4%;
+  border-radius: 21px;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  margin-top: 2vh;
+}
+
+.modal-body > label{
+  display: none;
 }
 
 .modal-body select{
@@ -478,10 +520,6 @@ button:focus{
   width: 50%;
 }
 
-#id_path{
-  width: 15vw;
-}
-
 /* Hide scrollbar for Chrome, Safari and Opera */
 .folder-list::-webkit-scrollbar {
   display: none;
@@ -497,4 +535,145 @@ button:focus{
 .modal-footer{
   width: 100% !important;
   flex-flow: row;
+}
+
+/*===============================
+=       Folders MGMT Page       =
+===============================*/
+
+.center-small{
+    display: block;
+    background-color: white;
+    margin: 15vh auto;
+    padding: 20px;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #E0E0E0;
+    width: 80vw;
+}
+
+table{
+  margin-top: 13vh;
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: separate;
+}
+
+.f1{
+  background-color:#1E2832;
+  border-radius: 3px;
+  padding: 0% 1vw;
+  width: 5vw;
+  text-align: center;
+}
+
+.f1 i{
+  color: white;
+  padding-right: 0% !important;
+  font-size: 140%;
+}
+
+.fa-redo{
+  background-color:#1E2832;
+  border-radius: 3px;
+  padding: 1.4vh 1.4vw;
+  text-align: center;
+  color: white;
+  font-size: 140%;
+}
+
+fa.redo:hover{
+  -webkit-animation: fa-spin 2s linear infinite;
+  animation: fa-spin 2s linear infinite;
+}
+
+.f1 .fa-folder-open{
+  display: none;
+}
+
+.f1:hover .fa-folder-open{
+  display: inline;
+}
+
+.f1:hover .fa-folder{
+  display: none;
+  color: white;
+}
+
+.f1:hover{
+  /*-webkit-animation: swing 1s ease;
+  animation: swing 1s ease;
+  -webkit-animation-iteration-count: 1;
+  animation-iteration-count: 1;*/
+  cursor: pointer;
+}
+
+.f2{
+  padding: 2vh 2vw;
+  width: 50vw;
+  vertical-align: middle;
+}
+
+.f2 p{
+  margin-bottom: 0% !important;
+}
+
+.f3{
+  width: 8vw;
+  text-align: center;
+}
+
+.c40{
+  font-size: 140%;
+}
+
+.delete-btn{
+  color: #1E2832;
+  border: none !important;
+}
+
+.delete-btn:hover{
+  color: #0a58ca;
+  border: none !important;
+}
+
+
+/*===============================
+=       Buttons Animation       =
+===============================*/
+
+@-webkit-keyframes swing {
+  25% {
+    -webkit-transform: translateY(3px);
+    transform: translateY(3px);
+  }
+  50% {
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+  75% {
+    -webkit-transform: translateY(2px);
+    transform: translateY(2px);
+  }
+  100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+
+@-webkit-keyframes rotational {
+  25%{
+    -ms-transform: rotate(25deg);
+  }
+  50%{
+    -ms-transform: rotate(50deg);
+
+  }
+  75%{
+    -ms-transform: rotate(75deg);
+  }
+  100%{
+    -ms-transform: rotate(100deg);
+  }
+
 }

@@ -23,7 +23,8 @@
 */venv.bak/
 */pythonenv*
 
+*/face-thumbnails/*
+*/thumbnails/*
+
 # End of https://www.toptal.com/developers/gitignore/api/django
 
-*/face-thumbnails
-*/thumbnails

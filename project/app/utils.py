@@ -2,8 +2,10 @@ import os
 import random
 import cv2
 from PIL import Image
+from threading import Lock
+import imghdr
 
-
+lock = Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
@@ -17,7 +19,7 @@ def getImagesPerUri(pathName):
             if os.path.isdir(f):
                 dirsAndFiles.update(getImagesPerUri(f))
 
-            elif f.endswith(".jpg") or f.endswith(".png"):
+            elif f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png'):
                 if pathName in dirsAndFiles.keys():
                     dirsAndFiles[pathName].append(os.path.basename(f))
                 else:
@@ -60,10 +62,15 @@ def get_and_save_thumbnail(img_path, side_pixels, save_path):
 class ImageFeature:
     def __init__(self, features=None, hash=None):
         self.features = features
-        self.hash = hash
+        self.hash = int(hash) if hash else None
 
     def __hash__(self):
-        return hash(self.hash)
+        return self.hash
 
     def __eq__(self, other):
         return self.hash == other.hash
+
+class ImageFeaturesManager:
+    def __init__(self):
+        self.imageFeatures = []
+        self.npFeatures = []
