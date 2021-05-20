@@ -12,12 +12,14 @@ PEN_THRESHOLD = 50
 class FaceRecognition:
     def __init__(self):
         self.name2encodings = defaultdict(list) # [(face_encoding, conf, approved), ..]
+        self.update_data()
+
+    def update_data(self):
         all_people = Person.nodes.all()
         for p in all_people:
             # [(person.image.relationship(img), person) for person in people for img in persn.image.all()]
             rels = [ p.image.relationship(img) for img in p.image.all() ]
             self.name2encodings[p.name] = [ (r.encodings, r.confiance, r.approved) for r in rels ]
-
 
     def getFaceBoxes(self, open_img=None, image_path=None):
         # 'lê' a imagem (dependendo de como esta funcao é chamada, pode-se
