@@ -263,10 +263,6 @@ def alreadyProcessed(img_path):
 
 def deleteFolder(uri):
 
-    if sys.platform == 'linux':
-        if uri[0] != '/':
-            uri = '/' + uri
-
     deletedImages = fs.deleteFolderFromFs(uri)
     if deletedImages is None or len(deletedImages) == 0:
         return

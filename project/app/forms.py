@@ -41,3 +41,7 @@ class PersonsForm(forms.Form):
         for field_name in self.fields:
             if field_name.startswith('person_'):
                 yield self[field_name]
+
+
+class EditTagForm(forms.Form):
+    tagsForm = forms.CharField(widget=forms.Textarea)

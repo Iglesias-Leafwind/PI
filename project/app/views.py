@@ -1,15 +1,27 @@
 import json
-import os
-import re
 
 import cv2
 from django.shortcuts import render
 from elasticsearch_dsl import Index, Search, Q
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, EditTagForm
 from app.models import ImageES, ImageNeo, Tag, Person
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
+from app.utils import addTag, deleteTag
 from manage import es
 from app.nlpFilterSearch import processQuery
+
+
+def updateTags(request, hashcode):
+    newTags = request.GET.get("tags").split(r'\s\s+\t#')
+    print(newTags)
+    image = ImageNeo.nodes.get_or_none(hash=hashcode)
+    oldTags = [x.name for x in image.tags.all()]
+    print(oldTags)
+    for tag in newTags:
+        addTag(hashcode, tag)
+
+    for tag in oldTags:
+        deleteTag(hashcode, tag)
 
 
 def index(request):
@@ -39,7 +51,6 @@ def index(request):
         if 'query' in request.GET:
             query = SearchForm()    # cleaning this form
             image = SearchForImageForm()    # fetching the images form
-
             query_text = request.GET.get("query")   # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
@@ -188,3 +199,4 @@ def updateFolders(request):
     image = SearchForImageForm()
     pathf = EditFoldersForm()
     return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+
