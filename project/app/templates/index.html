@@ -34,15 +34,15 @@
         <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-    <form name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
+    <form id="imageDetailsForm" name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
       <div class="modal-body">
           {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
               <img src="{% static imgPath%}">
           {% endwith %}
-              <div id="tagsDiv">{% for elem in image.1 %}
+              <div id="tagsDiv{{ forloop.parentloop.counter }}{{forloop.counter}}">{% for elem in image.1 %}
               #{{ elem.name }}
-              {% endfor %} </div>
-              <input type="textarea" name="tagsTextarea" id="tagsTextarea" size="60%" value="{% for elem in image.1 %} #{{ elem.name }}{% endfor %}">
+              {% endfor %} <i onclick="divClicked({{ forloop.parentloop.counter }}, {{forloop.counter}})" class="fas fa-pencil-alt"></i> </div>
+              <input style="display: none" type="textarea" name="tagsTextarea" id="tagsTextarea{{ forloop.parentloop.counter }}{{forloop.counter}}" size="60%" value="{% for elem in image.1 %} #{{ elem.name }}{% endfor %}">
               Path: <span>{{ image.0.folder_uri }}/{{ image.0.name }}</span>
               <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
               {% if not image.0.creation_date is None %}
@@ -54,7 +54,6 @@
         <button type="submit" class="btn btn-primary">Save Changes</button>
       </div>
     </form>
-    <button id="editTag" onclick="divClicked()">Edit</button>
     </div>
   </div>
 </div>
@@ -66,10 +65,17 @@
     {% endfor %}
 </div>
     <script>
-    function divClicked() {
-        alert("hey");
-        document.getElementById("tagsDiv").setAttribute("style", "display: none");
-        document.getElementById("tagsTextarea").setAttribute("style", "display: block");
+    function divClicked(tagCounter, resultCounter) {
+        // concatenate numbers
+        var str = tagCounter.toString() + resultCounter.toString();
+
+        // get elements
+        var tagsDiv = document.getElementById("tagsDiv" + str);
+        var textArea = document.getElementById("tagsTextarea" + str);
+
+        // change display style
+        tagsDiv.style.display = "none";
+        textArea.style.display = "block";
     }
     </script>
 {% endblock %}
