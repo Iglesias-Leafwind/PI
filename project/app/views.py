@@ -9,19 +9,35 @@ from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImag
 from app.utils import addTag, deleteTag
 from manage import es
 from app.nlpFilterSearch import processQuery
+import re
 
-
-def updateTags(request, hashcode):
-    newTags = request.GET.get("tags").split(r'\s\s+\t#')
+def updateTags(request, hash):
+    newTagsString = request.POST.get("tagsTextarea")
+    newTags = re.split('\s|\s+|\t|#', newTagsString)
+    newTags = [tag for tag in newTags if tag != ""]
     print(newTags)
-    image = ImageNeo.nodes.get_or_none(hash=hashcode)
-    oldTags = [x.name for x in image.tags.all()]
+    image = ImageNeo.nodes.get_or_none(hash=hash)
+    oldTags = [x.name for x in image.tag.all()]
     print(oldTags)
     for tag in newTags:
-        addTag(hashcode, tag)
+        if tag not in oldTags:
+            addTag(hash, tag)
 
     for tag in oldTags:
-        deleteTag(hashcode, tag)
+        if tag not in newTags:
+            deleteTag(hash, tag)
+
+    query = SearchForm()
+    image = SearchForImageForm()
+    results = {}
+    for tag in Tag.nodes.all():
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+
+    return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
 
 
 def index(request):

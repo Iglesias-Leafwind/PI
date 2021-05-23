@@ -27,21 +27,22 @@
 
           </div> <!--card shadow-sm-->
         </div> <!--col-->
-<div class="modal fade" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade detailsModal" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-    <form action="{% url 'index' %}" method="post" enctype="multipart/form-data">
+    <form name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
       <div class="modal-body">
           {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
               <img src="{% static imgPath%}">
           {% endwith %}
-              <textarea>{% for elem in image.1 %}
+              <div id="tagsDiv">{% for elem in image.1 %}
               #{{ elem.name }}
-              {% endfor %} </textarea>
+              {% endfor %} </div>
+              <input type="textarea" name="tagsTextarea" id="tagsTextarea" size="60%" value="{% for elem in image.1 %} #{{ elem.name }}{% endfor %}">
               Path: <span>{{ image.0.folder_uri }}/{{ image.0.name }}</span>
               <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
               {% if not image.0.creation_date is None %}
@@ -53,6 +54,7 @@
         <button type="submit" class="btn btn-primary">Save Changes</button>
       </div>
     </form>
+    <button id="editTag" onclick="divClicked()">Edit</button>
     </div>
   </div>
 </div>
@@ -63,4 +65,11 @@
   </div>
     {% endfor %}
 </div>
+    <script>
+    function divClicked() {
+        alert("hey");
+        document.getElementById("tagsDiv").setAttribute("style", "display: none");
+        document.getElementById("tagsTextarea").setAttribute("style", "display: block");
+    }
+    </script>
 {% endblock %}

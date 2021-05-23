@@ -21,6 +21,7 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('updateTags/<int:hash>', views.updateTags, name='updateTags'),
     path('folders', views.managefolders, name='managefolders'),
     path('delete/<path:path>', views.delete, name='uploadDelete'),
     path('update', views.updateFolders, name='updateFolders'),

@@ -469,6 +469,11 @@ button:focus{
   background-color: rgba(248, 249, 250, 0.5);
 }
 
+#tagsTextarea {
+  display: none;
+}
+
+
 /* Rename Profiles Modal */
 .modal-body1{
     /*display: grid !important;*/
