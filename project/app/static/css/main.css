@@ -468,6 +468,20 @@ button:focus{
 .bg-mine{
   background-color: rgba(248, 249, 250, 0.5);
 }
+#editTagsIcon {
+  margin-left: 2%;
+  font-size: 100%;
+  color: #0d6efd;
+  cursor: pointer;
+}
+
+.imageThumbnail {
+  margin-bottom: 6%;
+}
+
+.imagePath {
+  margin: 2% 0%;
+}
 
 /* Rename Profiles Modal */
 .modal-body1{
