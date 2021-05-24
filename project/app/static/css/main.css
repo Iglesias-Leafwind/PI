@@ -652,6 +652,10 @@ fa.redo:hover{
   border: none !important;
 }
 
+.whiteLink, .whiteLink:hover{
+  color:white;
+  text-decoration: none;
+}
 
 /*===============================
 =       Buttons Animation       =
