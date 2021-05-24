@@ -344,6 +344,16 @@ legend {
   margin-top: 2vh;
 }
 
+.inner-textarea{
+  height: 10vh;
+  border-radius: 0.25rem;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  width: 98%;
+  margin-bottom: 4%;
+}
+
 .inner-path > input{
   width: 50vw;
   height: 7vh;
@@ -476,7 +486,7 @@ button:focus{
 }
 
 .imageThumbnail {
-  margin-bottom: 6%;
+  margin: 2% 25% 6% 25%;
 }
 
 .imagePath {
