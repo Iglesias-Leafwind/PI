@@ -262,6 +262,6 @@ class SimpleFileSystemManager:
                 buildUri(nextNode, path)
 
         for node in self.trees.keys():
-            buildUri(self.trees[node], os.path.normpath(node + "//"))
+            buildUri(self.trees[node], os.path.normpath(node + "/"))
 
         return uris
