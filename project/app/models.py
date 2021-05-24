@@ -47,6 +47,10 @@ class HasA(StructuredRel):
 class DisplayA(StructuredRel):
     rel = 'Display a'
     coordinates = ArrayProperty()
+    encodings = ArrayProperty()
+    icon = StringProperty()
+    confiance = FloatProperty()
+    approved = BooleanProperty()
 
 
 # Nodes
@@ -74,6 +78,7 @@ class Tag(StructuredNode):
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
+    icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
 

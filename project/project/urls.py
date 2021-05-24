@@ -32,4 +32,5 @@ urlpatterns = [
     path('searches', views.search, name='searchIndexES'),
     path('upload', views.upload, name='uploadFolder'),
     path('searchtag', views.searchtag, name='searchtag'),
+    path('update_faces', views.update_faces, name='update_faces')
 ]

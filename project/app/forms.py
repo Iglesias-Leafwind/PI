@@ -2,7 +2,15 @@ import os
 
 from django import forms
 from string import Template
+
+from django.forms import CheckboxInput, HiddenInput
 from django.utils.safestring import mark_safe
+from neomodel import match
+from neomodel.match import Traversal
+# from neomodel import Traversal
+
+import app.models
+from app.models import Person, DisplayA
 
 from app.models import Person
 
@@ -29,19 +37,44 @@ class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         people = Person.nodes.all()
-        for i in range(len(people)):
-            field_name = 'person_image_%s' % (i,)
-            field_image = 'person_name_%s' % (i,)
+
+        all_rels = [ (person.image.relationship(img), person, img) for person in people for img in person.image.all() ]
+
+        for index, rel in enumerate(all_rels):
+            field_name = 'person_name_%s' % (index,)
+            field_image = 'person_image_%s' % (index,)
+            field_verified = 'person_verified_%s' % (index,)
+            field_person_before = 'person_before_%s' % (index,)
+            field_image_id = 'person_image_id_%s' % (index,)
+
             self.fields[field_image] = forms.ImageField(required=False, widget=PictureWidget)
             self.fields[field_name] = forms.CharField(required=False)
-            self.initial[field_image] = people[i].icon
-            self.initial[field_name] = people[i].name
+            self.fields[field_verified] = forms.BooleanField(required=False, widget=CheckboxInput(
+                attrs={
+                    'data-toggle': 'toggle',
+                    'data-on': 'Verified',
+                    'data-off': 'Unverified',
+                    'data-onstyle' : 'primary',
+                    'data-offstyle': 'danger'
+                }
+            ))
+            self.fields[field_person_before] = forms.CharField(widget=HiddenInput)
+            self.fields[field_image_id] = forms.CharField(widget=HiddenInput)
+            # data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger"
+
+            self.initial[field_image] = rel[0].icon
+            self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
+            self.initial[field_person_before] = rel[1].name
+            self.initial[field_image_id] = rel[2].hash
+            self.initial[field_verified] = rel[0].approved
+            # self.initial[field_verified] = True if rel[0].confiance > 0.5 else False
+
+
 
     def get_interest_fields(self):
         for field_name in self.fields:
             if field_name.startswith('person_'):
                 yield self[field_name]
-
 
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)

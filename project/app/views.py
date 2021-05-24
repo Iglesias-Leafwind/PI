@@ -1,11 +1,14 @@
 import json
+import os
+import re
+from collections import defaultdict
 
 import cv2
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, EditTagForm
 from app.models import ImageES, ImageNeo, Tag, Person
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from app.utils import addTag, deleteTag
 from manage import es
 from app.nlpFilterSearch import processQuery
@@ -215,4 +218,74 @@ def updateFolders(request):
     image = SearchForImageForm()
     pathf = EditFoldersForm()
     return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+def update_faces(request):
+    if request.method != 'POST':
+        print('method not post!!!')
+        pass
+
+    form = PersonsForm(request.POST)
+    if not form.is_valid():
+        print('invalid form!!!')
+        # return or smth
+    print(form.cleaned_data)
+    data = form.cleaned_data
+
+    imgs = int(len(form.cleaned_data) / 5)
+    listt = []
+    for i in range(imgs):
+        if not data['person_verified_%s' % str(i)]:
+            continue
+        thumbname = data['person_image_%s' % str(i)]
+        new_personname = data['person_name_%s' % str(i)]
+
+        # retirar isto abaixo dps!!!
+        new_personname = new_personname.split(' ')[0]
+        old_personname = data['person_before_%s' % str(i)]
+
+        #if old_personname == new_personname:
+        #    continue
+
+        image_hash = data['person_image_id_%s' % str(i)]
+        image = ImageNeo.nodes.get_or_none(hash=image_hash)
+        if image is None:
+            print('IMAGE IS NONE')
+
+        new_person = Person.nodes.get_or_none(name=new_personname)
+        if new_person is None:
+            new_person = Person(name=new_personname, icon=thumbname).save()
+            print('new person was created')
+
+        old_person = Person.nodes.get_or_none(name=old_personname)
+        if old_person is None:
+            print('OLD PERSON IS NONE')
+
+        changeRelationship(image, new_person, old_person)
+
+    frr.update_data()
+    return redirect('/')
+
+def changeRelationship(img, new_person, old_person):
+    # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
+
+    existent_rel = old_person.image.relationship(img)
+    """
+    coordinates = ArrayProperty()
+    encodings = ArrayProperty()
+    icon = StringProperty()
+    confiance = FloatProperty()
+    approved = BooleanProperty()
+    """
+    relinfo = {
+        'coordinates' : existent_rel.coordinates,
+        'encodings' : existent_rel.encodings,
+        'icon' : existent_rel.icon,
+        'confiance' : 1.0,
+        'approved' : True
+    }
+
+    # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
+    old_person.image.disconnect(img)
+    img.person.connect(new_person, relinfo)
+
+
 

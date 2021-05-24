@@ -1,5 +1,7 @@
 import os
 import random
+import cv2
+from PIL import Image
 from threading import Lock
 import imghdr
 
@@ -69,7 +71,29 @@ def deleteESTag(hashcode, tag):
     a.tags = list(set(a.tags))
     a.update(using=es, tags=a.tags)
     a.save(using=es)
+def getFaceThumbnail(img, box, save_in=None):
+    top, right, bottom, left= box
+    # img = cv2.imread(img_path)
+    cropimg = img[top:bottom, left:right]
+    cropimg = cv2.resize(cropimg, (50,50))
+    if save_in is not None:
+        # assumindo que a imagem tem sempre uma extensao no fim
+        # (ou seja, tem um '.png' ou '.'+ qq outra extensao no fim
+        # new_path = img_path.split('.')[-2] + '_face.' + img_path.split('.')[-1]
+        cv2.imwrite(save_in, cropimg)
+    return cropimg
 
+def get_and_save_thumbnail(img_path, side_pixels, save_path):
+    pil_img = Image.open(img_path)
+
+    crop_side = min(pil_img.size)
+    img_width, img_height = pil_img.size
+    thumb = pil_img.crop(((img_width - crop_side) // 2,
+                         (img_height - crop_side) // 2,
+                         (img_width + crop_side) // 2,
+                         (img_height + crop_side) // 2))
+    thumb = thumb.resize((side_pixels, side_pixels), Image.LANCZOS)
+    thumb.save(save_path)
 
 class ImageFeature:
     def __init__(self, features=None, hash=None):
