@@ -108,14 +108,15 @@ def face_rec_part(read_image, img_path, tags, image):
             # esta verificacao terá de ser alterada para algo mais preciso
             # por exemplo, definir um grau de certeza
             name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-        frr.saveFaceIdentification(openimage, b, name, encoding = enc, conf=conf)
+        frr.saveFaceIdentification(name=name, encoding = enc, conf=conf, imghash=image.hash)
 
         # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
         p = Person.nodes.get_or_none(name=name)
         if p is None:
-            p = Person(name=name, icon=face_thumb_path).save()
+            #p = Person(name=name, icon=face_thumb_path).save()
+            p = Person(name=name).save()
             tags.append(name)
 
         # encodings falta
@@ -141,6 +142,7 @@ def processing(dirFiles):
 
                 read_image = cv2.imread(img_path)
                 if read_image is None:
+                    print('read img is none')
                     continue
                 hash = dhash(read_image)
 

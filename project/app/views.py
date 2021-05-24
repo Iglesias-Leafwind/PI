@@ -190,6 +190,10 @@ def update_faces(request):
     if not form.is_valid():
         print('invalid form!!!')
         # return or smth
+
+    if request.POST.get("close"):
+        print('close was called, do something!!') # TODO
+
     print(form.cleaned_data)
     data = form.cleaned_data
 
@@ -205,50 +209,16 @@ def update_faces(request):
         new_personname = new_personname.split(' ')[0]
         old_personname = data['person_before_%s' % str(i)]
 
-        #if old_personname == new_personname:
-        #    continue
-
+        # if old_personname != new_personname:
         image_hash = data['person_image_id_%s' % str(i)]
-        image = ImageNeo.nodes.get_or_none(hash=image_hash)
-        if image is None:
-            print('IMAGE IS NONE')
-
-        new_person = Person.nodes.get_or_none(name=new_personname)
-        if new_person is None:
-            new_person = Person(name=new_personname, icon=thumbname).save()
-            print('new person was created')
-
-        old_person = Person.nodes.get_or_none(name=old_personname)
-        if old_person is None:
-            print('OLD PERSON IS NONE')
-
-        changeRelationship(image, new_person, old_person)
+        frr.changeRelationship(image_hash, new_personname, old_personname)
 
     frr.update_data()
-    return redirect('/')
 
-def changeRelationship(img, new_person, old_person):
-    # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
+    if 'reload' in request.POST:
+        print('reload was called')
+        frr.reload()
 
-    existent_rel = old_person.image.relationship(img)
-    """
-    coordinates = ArrayProperty()
-    encodings = ArrayProperty()
-    icon = StringProperty()
-    confiance = FloatProperty()
-    approved = BooleanProperty()
-    """
-    relinfo = {
-        'coordinates' : existent_rel.coordinates,
-        'encodings' : existent_rel.encodings,
-        'icon' : existent_rel.icon,
-        'confiance' : 1.0,
-        'approved' : True
-    }
-
-    # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
-    old_person.image.disconnect(img)
-    img.person.connect(new_person, relinfo)
-
+    return redirect('/people')
 
 
