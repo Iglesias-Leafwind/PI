@@ -7,8 +7,7 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from manage import es
 
-config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
-
+config.DATABASE_URL = 'bolt://neo4j:password@localhost:7687'
 
 # for elastic search ↓
 class ImageES(Document):
@@ -47,6 +46,10 @@ class HasA(StructuredRel):
 class DisplayA(StructuredRel):
     rel = 'Display a'
     coordinates = ArrayProperty()
+    encodings = ArrayProperty()
+    icon = StringProperty()
+    confiance = FloatProperty()
+    approved = BooleanProperty()
 
 
 # Nodes
@@ -74,6 +77,7 @@ class Tag(StructuredNode):
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
+    icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
 

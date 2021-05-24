@@ -3,12 +3,22 @@
 
 {% block content %}
     <div class="center-small">
-        <form action="." method="post" enctype="multipart/form-data">
+        <form action="{% url 'update_faces' %}" method="post" enctype="multipart/form-data">
       <div class="">
             {% csrf_token %}
-            {% for nfield in names_form.get_interest_fields %}
+          {% for nfield in names_form.get_interest_fields %}
+
                 {{ nfield }}
+              {% if 'verified' in nfield.label %}
+                  <div></div> <!-- so pq dá um espacinho -->
+                <br>
+              {% endif %}
+              <!--
+          <input type="checkbox" unchecked data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger">
+          -->
+
             {% endfor %}
+
       </div>
         <div>
             {% for field in form %}

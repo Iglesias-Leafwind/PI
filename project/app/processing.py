@@ -1,5 +1,8 @@
 import json
 import string
+
+from app.face_recognition import FaceRecognition
+import time
 import sys
 from datetime import datetime
 from os.path import join
@@ -11,7 +14,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock, get_and_save_thumbnail
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -28,16 +31,20 @@ from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
+import app.utils
 from scripts.pathsPC import do
 import logging
 
+
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
+frr = FaceRecognition()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
 model = VGGNet()
 
+faceimageindex=0
+THUMBNAIL_PIXELS=100
 
 # used in getOCR
 east = "frozen_east_text_detection.pb"
@@ -89,6 +96,32 @@ def uploadImages(uri):
     print("------------------task 1------------------")
     do(processing, taskTwo)
     print("------------------task 2------------------")
+
+def face_rec_part(read_image, img_path, tags, image):
+    # image aberta -> read_image
+    print("--- comeca a parte de face rec ---")
+    openimage, boxes = frr.getFaceBoxes(open_img=read_image, image_path=img_path)
+
+    for b in boxes:
+        name, enc, conf = frr.getTheNameOf(openimage, b)
+        if name is None:
+            # esta verificacao terá de ser alterada para algo mais preciso
+            # por exemplo, definir um grau de certeza
+            name = ''.join(random.choice(string.ascii_letters) for i in range(10))
+        frr.saveFaceIdentification(openimage, b, name, encoding = enc, conf=conf)
+
+        # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+        face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+        face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
+        p = Person.nodes.get_or_none(name=name)
+        if p is None:
+            p = Person(name=name, icon=face_thumb_path).save()
+            tags.append(name)
+
+        # encodings falta
+        image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
+        # """
+        print("-- face rec end --")
 
 
 def processing(dirFiles):
@@ -204,7 +237,11 @@ def processing(dirFiles):
 
                         image.tag.connect(tag)
 
-                   #     p = Person.nodes.get_or_none(name=name)
+                    # !!!
+                    face_rec_part(read_image, img_path, tags, image)
+
+
+                    #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
                     if places:
