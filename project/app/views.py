@@ -146,41 +146,6 @@ def managepeople(request):
         return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
 
 
-
-# OCR
-def ocr(request):
-    get = request.GET.get("path")
-    res = getOCR(get)
-    return render(request, 'ocr.html', {'res': res})
-
-
-# EXIF
-def exif(request):
-    get = request.GET.get("path")
-    res = getExif(get)
-    isProcessed = alreadyProcessed(get)
-    if not isProcessed:
-        imgread = cv2.imread(get)
-        hash = dhash(imgread)
-        img = ImageNeo(folder_uri=get, name="something", hash=hash)
-        img.save()
-    return render(request, 'exif.html', {'res': res, 'isProcessed': isProcessed})
-
-
-# Elasticsearch
-def createIndex(request):
-    uri = request.GET.get("uri")
-    tag = request.GET.get("tag")
-
-    i = Index(using=es, name=request.GET.get("index"))
-    if not i.exists(using=es):
-        i.create()
-
-    ImageES(meta={'id': uri}, uri=uri, tags=[tag]).save(using=es)
-
-    return render(request, 'insert_es.html')
-
-
 def search(tags):
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
@@ -218,6 +183,7 @@ def updateFolders(request):
     image = SearchForImageForm()
     pathf = EditFoldersForm()
     return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+
 def update_faces(request):
     if request.method != 'POST':
         print('method not post!!!')
@@ -262,7 +228,11 @@ def update_faces(request):
         changeRelationship(image, new_person, old_person)
 
     frr.update_data()
-    return redirect('/')
+
+    form = SearchForm()
+    image = SearchForImageForm()
+    names = PersonsForm()
+    return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
 
 def changeRelationship(img, new_person, old_person):
     # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
