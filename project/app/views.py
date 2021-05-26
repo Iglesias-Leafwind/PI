@@ -259,4 +259,7 @@ def changeRelationship(img, new_person, old_person):
 
 
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    form = SearchForm()
+    image = SearchForImageForm()
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image})
+

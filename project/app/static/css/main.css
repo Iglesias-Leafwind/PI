@@ -754,3 +754,15 @@ fa.redo:hover{
     box-shadow: 0 0 10px #E0E0E0;
     width: 50vw;
 }
+
+/*===============================
+=            Sidebar            =
+===============================*/
+
+.nav-item{
+  margin-bottom: 5vh !important;
+}
+
+.main-sidebar{
+  box-shadow: 10px -10px 6px #E0E0E0 !important;
+}
