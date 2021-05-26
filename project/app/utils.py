@@ -6,6 +6,13 @@ from threading import Lock
 import imghdr
 
 lock = Lock()
+searchFilterOptions = {
+    'automatic': True,
+    'manual': True,
+    'folder_name': True,
+    'people': True,
+    'text': True
+}
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)

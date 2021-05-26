@@ -75,23 +75,15 @@ class PersonsForm(forms.Form):
         for field_name in self.fields:
             if field_name.startswith('person_'):
                 yield self[field_name]
-"""
 
-class PersonsForm(forms.Form):
-    people = Person.nodes.all()
 
-    all_rels = [ (person.image.relationship(img), person) for person in people for img in person.image.all() ]
 
-    for index, rel in enumerate(all_rels):
-        field_name = 'person_image_%s' % (index,)
-        field_image = 'person_name_%s' % (index,)
-        self.fields[field_image] = forms.ImageField(required=False, widget=PictureWidget)
-        self.fields[field_name] = forms.CharField(required=False)
+class FilterSearchForm(forms.Form):
+    automatic = forms.BooleanField(required=False)
+    manual = forms.BooleanField(required=False)
+    folder_name = forms.BooleanField(required=False)
+    people = forms.BooleanField(required=False)
+    text = forms.BooleanField(required=False)
+    current_url = forms.CharField(required=True, widget=HiddenInput)
 
-        self.initial[field_image] = rel[0].icon
-        # print(people[i].icon)
-        self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
-        
-        
-        """
 

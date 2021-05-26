@@ -235,7 +235,7 @@ def processing(dirFiles):
                             tag = Tag(name=object).save()
                         tags.append(object)
 
-                        image.tag.connect(tag)
+                        image.tag.connect(tag, {'originalTagName':object, 'originalTagSource': 'object'})
 
                     # !!!
                     face_rec_part(read_image, img_path, tags, image)
@@ -268,6 +268,7 @@ def processing(dirFiles):
                     i.features = norm_feat
                     ftManager.imageFeatures.append(i)
 
+                    print('tags', tags)
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                 print("extracting feature from image %s " % (img_path))
