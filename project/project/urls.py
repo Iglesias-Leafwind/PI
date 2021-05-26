@@ -28,5 +28,6 @@ urlpatterns = [
     path('people', views.managepeople, name='managepeople'),
     path('upload', views.upload, name='uploadFolder'),
     path('searchtag', views.searchtag, name='searchtag'),
-    path('update_faces', views.update_faces, name='update_faces')
+    path('update_faces', views.update_faces, name='update_faces'),
+    path('dashboard', views.dashboard, name='dashboard'),
 ]

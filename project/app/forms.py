@@ -1,16 +1,8 @@
-import os
-
 from django import forms
 from string import Template
 
 from django.forms import CheckboxInput, HiddenInput
 from django.utils.safestring import mark_safe
-from neomodel import match
-from neomodel.match import Traversal
-# from neomodel import Traversal
-
-import app.models
-from app.models import Person, DisplayA
 
 from app.models import Person
 

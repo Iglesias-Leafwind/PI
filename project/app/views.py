@@ -258,4 +258,5 @@ def changeRelationship(img, new_person, old_person):
     img.person.connect(new_person, relinfo)
 
 
-
+def dashboard(request):
+    return render(request, 'dashboard.html')

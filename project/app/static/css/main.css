@@ -706,3 +706,51 @@ fa.redo:hover{
   }
 
 }
+
+
+/*===============================
+=       People MGMT Page       =
+===============================*/
+
+.toggle-on{
+  margin-left: -4% !important;
+}
+
+.toggle-off{
+      margin-left: 4% !important;
+}
+
+.center-smallest span {
+    border-radius: 100%;
+    width: 14%;
+}
+.toggle {
+  border-radius: 17px;
+  border: 0px;
+  height: 0.5vh !important;
+}
+
+.importantcontainer input{
+  padding: 1%;
+  border-radius: 1px;
+  border: 0px;
+  background-color: #E0E0E0;
+  margin: 0.4%;
+  height: 6vh !important;
+}
+
+.importantcontainer img{
+  border-radius: 100%;
+  height: 8vh;
+}
+
+.center-smallest {
+    display: block;
+    background-color: white;
+    margin: 15vh auto;
+    padding: 4vh 4vw;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #E0E0E0;
+    width: 50vw;
+}
