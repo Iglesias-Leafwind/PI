@@ -51,7 +51,7 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 # load installed tesseract-ocr from users pc
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -270,7 +270,7 @@ def processing(dirFiles):
 
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
-                print("extracting feature from image %s " % (img_path))
+                    print("extracting feature from image %s " % (img_path))
         except Exception as e:
             print(e)
 
