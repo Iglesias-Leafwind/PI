@@ -66,12 +66,12 @@ def processQuery(text):
     text = text.lower()
     results = tokenizeText(text)
     results = filterPunctuation(results)
-    results = filterStopWords(results)
-    results = stemmingMethod(results)
+    words = filterStopWords(results)
+    results = stemmingMethod(words)
     results = posTagging(results)
     results = lemmatizationMethod(results)
     results = getSynsets(results)
-    return results
+    return results | words
 
 
 text = "loving someone is something beautiful, just like the nature. I love the world."
