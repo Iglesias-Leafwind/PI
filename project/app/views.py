@@ -223,6 +223,7 @@ def update_faces(request):
         # if old_personname != new_personname:
         image_hash = data['person_image_id_%s' % str(i)]
         frr.changeRelationship(image_hash, new_personname, old_personname)
+        frr.changeNameTagES(image_hash, new_personname, old_personname)
 
     frr.update_data()
 

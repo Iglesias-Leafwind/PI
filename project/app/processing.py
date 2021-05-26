@@ -117,7 +117,8 @@ def face_rec_part(read_image, img_path, tags, image):
         if p is None:
             #p = Person(name=name, icon=face_thumb_path).save()
             p = Person(name=name).save()
-            tags.append(name)
+
+        tags.append(name)
 
         # encodings falta
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
@@ -270,6 +271,7 @@ def processing(dirFiles):
                     i.features = norm_feat
                     ftManager.imageFeatures.append(i)
 
+                    print('tags: ', tags)
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                 print("extracting feature from image %s " % (img_path))

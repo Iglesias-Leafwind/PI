@@ -7,7 +7,8 @@ import numpy as np
 
 import face_recognition as fr
 
-from app.models import Person, DisplayA, ImageNeo
+from app.models import Person, DisplayA, ImageNeo, ImageES
+from manage import es
 
 PEN_THRESHOLD = 50
 
@@ -61,13 +62,13 @@ class FaceRecognition:
         return face_encoding
 
     def getTheNameOf(self, image=None, box=None, encoding=None):
-        print('entrou 1')
+        #print('entrou 1')
 
         if encoding is None:
             encoding = fr.face_encodings(image, [box])[0] # a len vai ser smp 1
-            print('encoding gerado: ', type(encoding))
-        else:
-            print('encoding dado: ', type(encoding))
+            #print('encoding gerado: ', type(encoding))
+        #else:
+            #print('encoding dado: ', type(encoding))
             # encoding = encoding[0]
 
         if self.name2encodings == {}:
@@ -82,15 +83,15 @@ class FaceRecognition:
         print("names: ", self.name2encodings.keys())
         for k in self.name2encodings:
             if len(self.name2encodings[k]) == 0:
-                print('name q passou: ', k)
+                #print('name q passou: ', k)
                 continue
 
-            print('entrou no loop')
+            #print('entrou no loop')
             # lista de booleanos com os encodings q ele achou parecidos
             # if len(self.name2encodings[k]) <10:
             #    continue
             n = len(self.name2encodings[k])
-            print('n : ', n)
+            #print('n : ', n)
 
 
             listt = fr.face_distance([ a[0] for a in self.name2encodings[k] ], encoding) #, tolerance=0.2)
@@ -119,6 +120,7 @@ class FaceRecognition:
         maxx = max(matches.keys())
         if maxx < 0.35:
             return None, encoding, 1
+            return None, encoding, 1
         #name = None if unknown>maxx else matches[maxx]
         name = matches[maxx]
         return name, encoding, maxx
@@ -146,6 +148,7 @@ class FaceRecognition:
 
                 # now we change the BD
                 self.changeRelationship(imghash, name, k, confiance=conf, approved=False)
+                self.changeNameTagES(imghash, name, k)
 
 
     # -- helper --
@@ -184,4 +187,10 @@ class FaceRecognition:
         img.person.connect(new_person, relinfo)
 
 
+    def changeNameTagES(self, image_hash, new_personname, old_personname):
+        img = ImageES.get(using=es, id=image_hash)
+        newtags = [ t if t != old_personname else new_personname for t in img.tags ]
+        img.tags = newtags
+        img.update(using=es, tags=img.tags)
+        img.save(using=es)
 
