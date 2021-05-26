@@ -51,6 +51,8 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 # load installed tesseract-ocr from users pc
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Iglesias:
 pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
 custom_config = r'--oem 3 --psm 6'
 
@@ -235,7 +237,7 @@ def processing(dirFiles):
                             tag = Tag(name=object).save()
                         tags.append(object)
 
-                        image.tag.connect(tag)
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
 
                     # !!!
                     face_rec_part(read_image, img_path, tags, image)
@@ -252,7 +254,7 @@ def processing(dirFiles):
                             if t is None:
                                 t = Tag(name=p).save()
                             tags.append(p)
-                            image.tag.connect(t)
+                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places'})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
@@ -261,7 +263,7 @@ def processing(dirFiles):
                             if t is None:
                                 t = Tag(name=word).save()
                             tags.append(word)
-                            image.tag.connect(t)
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr'})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -600,10 +602,19 @@ def generateThumbnail(imagepath, hash):
     # load the input image
     image = cv2.imread(imagepath)
     w,h,p = image.shape
-    ratio = w/h
-    thumbnailW = int(thumbnailH * ratio)
-    dim = (thumbnailH,thumbnailW)
 
+    paddingLR = 0
+    paddingTB = 0
+    if(w > h):
+        ratio = h/w
+        thumbnailW = int(thumbnailH * ratio)
+        paddingLR = int((225-thumbnailW)/2)
+    else:
+        ratio = w/h
+        thumbnailH = int(thumbnailW * ratio)
+        paddingTB = int((225-thumbnailH)/2)
+    dim = (225, 225)
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"

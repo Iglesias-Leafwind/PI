@@ -33,29 +33,40 @@ def getImagesPerUri(pathName):
 def getRandomNumber():
     return random.randint(1, 1 << 63)
 
+def addTagWithOldTag(hashcode, tagName, oldTagName, oldTagSource):
+    t = Tag.nodes.get_or_none(name=tagName)
+    i = ImageNeo.nodes.get_or_none(hash=hashcode)
+    if i is None:
+        return
+    if t is None:
+        t = Tag(name=tagName).save()
+    i.tag.connect(t, {'originalTagName': oldTagName,'originalTagSource':oldTagSource})
+    addESTag(hashcode, tagName)
+
 def addTag(hashcode, tagName):
     t = Tag.nodes.get_or_none(name=tagName)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
     if i is None:
         return
     if t is None:
-        t = Tag(name=tagName,
-            originalTagName=tagName,
-            originalTagSource='user').save()
-    i.tag.connect(t)
+        t = Tag(name=tagName).save()
+    i.tag.connect(t, {'originalTagName': tagName,'originalTagSource':"Manual"})
     addESTag(hashcode, tagName)
-
+    
 def deleteTag(hashcode, tagName):
     t = Tag.nodes.get_or_none(name=tagName)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
+    tagSource = "err"
     if i is None or t is None:
-        return
+        return [tagName,tagSource]
     if (t in i.tag):
+        rel = i.tag.relationship(t)
+        tagSource = rel.originalTagSource
         i.tag.disconnect(t)
     if (len(t.image) == 0):
         t.delete()
     deleteESTag(hashcode, tagName)
-
+    return [tagName,tagSource]
 
 def addESTag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
@@ -71,6 +82,7 @@ def deleteESTag(hashcode, tag):
     a.tags = list(set(a.tags))
     a.update(using=es, tags=a.tags)
     a.save(using=es)
+    
 def getFaceThumbnail(img, box, save_in=None):
     top, right, bottom, left= box
     # img = cv2.imread(img_path)
