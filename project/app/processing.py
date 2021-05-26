@@ -1,7 +1,7 @@
 import json
 import string
 
-from app.face_recognition import FaceRecognition
+#from app.face_recognition import FaceRecognition
 import time
 import sys
 from datetime import datetime
@@ -10,7 +10,7 @@ import random
 import numpy as np
 import requests
 from numpyencoder import NumpyEncoder
-#from app.face_recognition import FaceRecognition
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -229,13 +229,16 @@ def processing(dirFiles):
 
                     res = obj_extr.get_objects(img_path)
 
-                    for object in res["name"]:
+                   # for object in res["name"]:
+                    for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
-                            tag = Tag(name=object).save()
+                            tag = Tag(name=object,
+                                        originalTagName=object,
+                                        originalTagSource='object').save()
                         tags.append(object)
 
-                        image.tag.connect(tag)
+                        image.tag.connect(tag, {'score': confidence})
 
                     # !!!
                     face_rec_part(read_image, img_path, tags, image)
@@ -243,25 +246,29 @@ def processing(dirFiles):
 
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    places = getPlaces(img_path)
-                    if places:
+                    placesList = getPlaces(img_path)
+                    for places, prob in placesList:
                         places = places.split("/")
                         for place in places:
                             p = " ".join(place.split("_")).strip()
                             t = Tag.nodes.get_or_none(name=p)
                             if t is None:
-                                t = Tag(name=p).save()
+                                t = Tag(name=p,
+                                        originalTagName=p,
+                                        originalTagSource='places').save()
                             tags.append(p)
-                            image.tag.connect(t)
+                            image.tag.connect(t, {'score':prob})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             t = Tag.nodes.get_or_none(name=word)
                             if t is None:
-                                t = Tag(name=word).save()
+                                t = Tag(name=word,
+                                        originalTagName=word,
+                                        originalTagSource='ocr').save()
                             tags.append(word)
-                            image.tag.connect(t)
+                            image.tag.connect(t, {'score': 0})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -340,7 +347,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return classes[idx[0]] if probs[0] > 0.6 else None
+    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
 
 
 def getOCR(image):

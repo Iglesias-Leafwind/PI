@@ -83,6 +83,18 @@ def index(request):
                 tags = img.tag.all()    # get all tags from the image
                 results[tag].append((img, tags))    # insert tags in the dictionary
 
+            def sortFunction(elem):
+                image = elem[0]
+                tags = elem[1]
+                score = 0
+                for t in tags:
+                    for q in query_array:
+                        if q in t.name:
+                            score += image.tag.relationship(t).score
+                            break
+                return - (score / len(query_array))
+
+            results[tag].sort(key=sortFunction)
             return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
