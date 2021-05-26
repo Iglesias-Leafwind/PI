@@ -3,35 +3,52 @@
 
 {% block content %}
     <div class="center-small">
+
+    <form action="" method="post">
+        {% csrf_token %}
+        <!--
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showUnverifiedCheck" value="showUnverifiedCheck">
+                <label class="form-check-label" for="showUnverifiedCheck">Show Unverified</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showVerifiedCheck" value="showVerifiedCheck">
+                <label class="form-check-label" for="showVerifiedCheck">Show Verified</label>
+            </div>
+        -->
+        {{ filters }}
+    </form>
+
         <form action="{% url 'update_faces' %}" method="post" enctype="multipart/form-data">
-      <div class="">
-            {% csrf_token %}
-          {% for nfield in names_form.get_interest_fields %}
 
-                {{ nfield }}
-              {% if 'verified' in nfield.label %}
-                  <div></div> <!-- so pq dá um espacinho -->
-                <br>
-              {% endif %}
-              <!--
-          <input type="checkbox" unchecked data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger">
-          -->
+                {% csrf_token %}
+                {% for nfield in names_form.get_interest_fields %}
 
-            {% endfor %}
+                    {{ nfield }}
+                    {% if 'verified' in nfield.label %}
+                        <div></div> <!-- so pq dá um espacinho -->
+                        <br>
+                    {% endif %}
+                    <!--
+                <input type="checkbox" unchecked data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger">
+                -->
 
-      </div>
-        <div>
-            {% for field in form %}
-			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-            {% endfor %}
-        </div>
-      <div class="modal-footer">
-          <button type="submit" name="reload" class="btn btn-outline-danger">Save & Reload</button>
+                {% endfor %}
 
-        <button type="submit" name="close" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" name="save" class="btn btn-primary">Save changes</button>
-      </div>
-     </form>
+            </div>
+            <div>
+                {% for field in form %}
+                    {% if field.errors %}
+                        <li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
+                {% endfor %}
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="reload" class="btn btn-outline-danger">Save & Reload</button>
+
+                <button type="submit" name="close" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" name="save" class="btn btn-primary">Save changes</button>
+            </div>
+        </form>
     </div>
 
 {% endblock %}

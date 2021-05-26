@@ -5,6 +5,7 @@ from PIL import Image
 from threading import Lock
 import imghdr
 
+showDict = {'verified':False, 'unverified':True}
 lock = Lock()
 
 def getImagesPerUri(pathName):

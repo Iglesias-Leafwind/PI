@@ -6,12 +6,12 @@ from collections import defaultdict
 import cv2
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from manage import es
 from app.nlpFilterSearch import processQuery
-
+from app.utils import showDict
 
 def index(request):
     if request.method == 'POST':  # if it's a POST, we know it's from search by image
@@ -95,26 +95,37 @@ def managefolders(request):
 
 
 def managepeople(request):
+
     if request.method == 'POST':
-        form = SearchForm()
-        image = SearchForImageForm()
-        names = PersonsForm(request.POST)
-        if names.is_valid() and names.has_changed():  # if names changed
-            i = 0
-            for field in names.declared_fields:
-                if field.has_changed:
-                    fimage = names.cleaned_data["person_image_" + str(i)]
-                    fname = names.cleaned_data["person_name_" + str(i)]
-                    profile = Person.objects.get(icon=fimage)
-                    profile.name = fname
-                    profile.save()
-                    names = PersonsForm()
-        return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
-    else:
-        form = SearchForm()
-        image = SearchForImageForm()
-        names = PersonsForm()
-        return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+        filters = PeopleFilterForm(request.POST)
+        print('entrou aqui...')
+        print(filters)
+        filters2 = filters.cleaned_data
+        print('cleanded fore valid', filters2)
+
+        showDict['unverified'] = filters2['unverified']
+        showDict['verified'] = filters2['verified']
+        """
+        if filters.is_valid() and filters.has_changed():
+            print('entrou aqui tmb')
+            filters = filters.cleaned_data
+            print(filters)
+
+            #showDict = filters
+            showDict['unverified'] = filters['unverified']
+            showDict['verified'] = filters['verified']
+            print(showDict)
+        else:
+            print('invalid...')
+        """
+        return redirect('/people')
+        # return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+
+    form = SearchForm()
+    image = SearchForImageForm()
+    names = PersonsForm()
+    filters = PeopleFilterForm(initial=showDict)
+    return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names, 'filters' : filters})
 
 
 

@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from neomodel import match
 from neomodel.match import Traversal
 # from neomodel import Traversal
-
+from app.utils import showDict
 import app.models
 from app.models import Person, DisplayA
 
@@ -32,13 +32,28 @@ class SearchForImageForm(forms.Form):
 class EditFoldersForm(forms.Form):
     path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder.'}), label=" ", required=False)
 
+class PeopleFilterForm(forms.Form):
+    unverified = forms.BooleanField(required=False, label='Show Unverified', initial=showDict['unverified'], widget= CheckboxInput(
+        attrs= {'class' : 'form-check-input',
+                'onclick':'this.form.submit();'}
+    ))
+    verified = forms.BooleanField(required=False, label='Show Verified', initial=showDict['verified'], widget= CheckboxInput(
+        attrs= {'class' : 'form-check-input',
+                'onclick':'this.form.submit();'}
+    ))
 
 class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         people = Person.nodes.all()
 
-        all_rels = [ (person.image.relationship(img), person, img) for person in people for img in person.image.all() ]
+        print('showDict', showDict)
+        all_rels = []
+        if showDict['unverified']:
+            all_rels += [ (person.image.relationship(img), person, img) for person in people for img in person.image.all() if not person.image.relationship(img).approved]
+        if showDict['verified']:
+            all_rels += [ (person.image.relationship(img), person, img) for person in people for img in person.image.all() if person.image.relationship(img).approved]
+
 
         for index, rel in enumerate(all_rels):
             field_name = 'person_name_%s' % (index,)
@@ -74,6 +89,8 @@ class PersonsForm(forms.Form):
     def get_interest_fields(self):
         for field_name in self.fields:
             if field_name.startswith('person_'):
+                #number = field_name.split['_'][-1]
+                # if self[field_name]
                 yield self[field_name]
 """
 
