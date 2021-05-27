@@ -9,11 +9,12 @@ from manage import es
 
 
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#alguem:
+#Wei:
 #config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
 #Iglesias:
-config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
-
+#config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
+#Alexa:
+config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
 
 # for elastic search ↓
 class ImageES(Document):

@@ -53,7 +53,7 @@ net = cv2.dnn.readNet(east)
 # load installed tesseract-ocr from users pc
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Iglesias:
-pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces

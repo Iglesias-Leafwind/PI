@@ -3,15 +3,12 @@ from string import Template
 
 from django.forms import CheckboxInput, HiddenInput
 from django.utils.safestring import mark_safe
-<<<<<<< HEAD
-=======
 from neomodel import match
 from neomodel.match import Traversal
 # from neomodel import Traversal
 from app.utils import showDict
 import app.models
 from app.models import Person, DisplayA, ImageNeo
->>>>>>> develop
 
 from app.models import Person
 
@@ -127,9 +124,6 @@ class PersonsForm(forms.Form):
                 #number = field_name.split['_'][-1]
                 # if self[field_name]
                 yield self[field_name]
-<<<<<<< HEAD
 
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)
-=======
->>>>>>> develop
