@@ -77,8 +77,13 @@ class Tag(StructuredNode):
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
+    # icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
+
+    def getDetails(self):
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person)  WHERE id(p)=$id RETURN r"
+        results, meta = db.cypher_query(query, {"id": self.id})
+        return [row[0] for row in results]
 
 
 class Country(StructuredNode):
