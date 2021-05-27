@@ -47,6 +47,7 @@ class HasA(StructuredRel):
     rel = "Has a"
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
+    manual = BooleanProperty(default=False)
 
 
 class DisplayA(StructuredRel):
