@@ -236,8 +236,6 @@ def processing(dirFiles):
                             tag = Tag(name=object,
                                         originalTagName=object,
                                         originalTagSource='object').save()
-                        elif image.tag.get_or_none(name=object):
-                            continue
 
                         tags.append(object)
                         image.tag.connect(tag, {'score': confidence})
