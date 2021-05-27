@@ -167,6 +167,7 @@ class FaceRecognition:
         if old_person is None:
             print('OLD PERSON IS NONE')
         existent_rel = old_person.image.relationship(img)
+
         """
         coordinates = ArrayProperty()
         encodings = ArrayProperty()
@@ -174,16 +175,18 @@ class FaceRecognition:
         confiance = FloatProperty()
         approved = BooleanProperty()
         """
-        relinfo = {
-            'coordinates': existent_rel.coordinates,
-            'encodings': existent_rel.encodings,
-            'icon': existent_rel.icon,
-            'confiance': confiance,
-            'approved': approved
-        }
 
-        # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
-        old_person.image.disconnect(img)
+        if existent_rel is not None:
+            relinfo = {
+                'coordinates': existent_rel.coordinates,
+                'encodings': existent_rel.encodings,
+                'icon': existent_rel.icon,
+                'confiance': confiance,
+                'approved': approved
+            }
+
+            # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
+            old_person.image.disconnect(img)
         img.person.connect(new_person, relinfo)
 
 
