@@ -21,7 +21,8 @@ class FaceRecognition:
         all_people = Person.nodes.all()
         for p in all_people:
             # [(person.image.relationship(img), person) for person in people for img in persn.image.all()]
-            rels = [ (img, p.image.relationship(img)) for img in p.image.all() ]
+            # rels = [ (img, p.image.relationship(img)) for img in p.image.all() ]
+            rels = [ (img, rrr) for img in p.image.all() for rrr in p.image.all_relationships(img)]
             self.name2encodings[p.name] = [ (r[1].encodings, r[1].confiance, r[1].approved, r[0].hash) for r in rels ]
 
     def getFaceBoxes(self, open_img=None, image_path=None):
@@ -147,12 +148,12 @@ class FaceRecognition:
                 self.saveFaceIdentification(name=name, encoding=enc, conf=conf, approved=appr, imghash=imghash) # appr == False
 
                 # now we change the BD
-                self.changeRelationship(imghash, name, k, confiance=conf, approved=False)
+                self.changeRelationship(imghash, name, k, confiance=conf, approved=False, enc=enc)
                 self.changeNameTagES(imghash, name, k)
 
 
     # -- helper --
-    def changeRelationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True):
+    def changeRelationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True, enc=None, thumbnail=None):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:
             print('IMAGE IS NONE')
@@ -166,7 +167,12 @@ class FaceRecognition:
         old_person = Person.nodes.get_or_none(name=old_personname)
         if old_person is None:
             print('OLD PERSON IS NONE')
-        existent_rel = old_person.image.relationship(img)
+
+        print(new_person)
+        print(old_person)
+        existent_rel = old_person.image.all_relationships(img)
+        #existent_rel2 = img.person.all_relationships(old_person)
+        print('len', len(existent_rel))
 
         """
         coordinates = ArrayProperty()
@@ -176,19 +182,50 @@ class FaceRecognition:
         approved = BooleanProperty()
         """
 
-        if existent_rel is not None:
+        print('change relationship')
+        to_stay = []
+        neww = {}
+        for ex_rel in existent_rel:
             relinfo = {
-                'coordinates': existent_rel.coordinates,
-                'encodings': existent_rel.encodings,
-                'icon': existent_rel.icon,
-                'confiance': confiance,
-                'approved': approved
+                'coordinates': ex_rel.coordinates,
+                'encodings': ex_rel.encodings,
+                'icon': ex_rel.icon,
+                'confiance': ex_rel.confiance, #[0] if not isinstance(ex_rel.confiance, float) else ex_rel.confiance,
+                'approved': ex_rel.approved
             }
 
-            # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
-            old_person.image.disconnect(img)
-        img.person.connect(new_person, relinfo)
+            if (enc is not None and all([ex_rel.encodings[i] == enc[i] for i in range(len(enc))])) or (thumbnail is not None and thumbnail == ex_rel.icon):
+                print('found rel!!')
+                # overwrite
+                relinfo['confiance'] = confiance#[0] if not isinstance(confiance, float) else confiance,
+                relinfo['approved'] = approved
+                neww = relinfo
+                continue
+            to_stay.append(relinfo)
+            print(relinfo['icon'])
 
+        """
+        relinfo = {
+            'coordinates': existent_rel.coordinates,
+            'encodings': existent_rel.encodings,
+            'icon': existent_rel.icon,
+            'confiance': confiance,
+            'approved': approved
+        }
+        """
+
+        old_person.image.disconnect(img)
+        for relinfo in to_stay:
+            if isinstance(relinfo['confiance'], tuple):
+                print('is tuple')
+                relinfo['confiance'] = relinfo['confiance'][0]
+            old_person.image.connect(img, relinfo)
+
+        if neww == {}:
+            return
+        if isinstance(neww['confiance'], tuple):
+            neww['confiance'] = neww['confiance'][0]
+        img.person.connect(new_person, neww)
 
     def changeNameTagES(self, image_hash, new_personname, old_personname):
         img = ImageES.get(using=es, id=image_hash)
@@ -196,4 +233,6 @@ class FaceRecognition:
         img.tags = newtags
         img.update(using=es, tags=img.tags)
         img.save(using=es)
+
+
 

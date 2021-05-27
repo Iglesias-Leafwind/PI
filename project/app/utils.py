@@ -7,6 +7,7 @@ import imghdr
 
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()
+faceRecLock= Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
@@ -19,12 +20,13 @@ def getImagesPerUri(pathName):
 
             if os.path.isdir(f):
                 dirsAndFiles.update(getImagesPerUri(f))
-
-            elif f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png'):
-                if pathName in dirsAndFiles.keys():
-                    dirsAndFiles[pathName].append(os.path.basename(f))
-                else:
-                    dirsAndFiles[pathName] = [os.path.basename(f)]
+            else:
+                image_type = imghdr.what(f)
+                if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or image_type in ['jpeg', 'png', 'bmp']:
+                    if pathName in dirsAndFiles.keys():
+                        dirsAndFiles[pathName].append(os.path.basename(f))
+                    else:
+                        dirsAndFiles[pathName] = [os.path.basename(f)]
 
     return dirsAndFiles
 
