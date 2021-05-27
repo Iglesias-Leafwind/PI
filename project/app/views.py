@@ -19,12 +19,10 @@ from app.nlpFilterSearch import processQuery
 import re
 
 
-searchesResults = {}
-
 def updateTags(request, hash):
     newTagsString = request.POST.get("tagsTextarea")
-    newTags = re.split('\s|\s+|\t|#', newTagsString)
-    newTags = [tag for tag in newTags if tag != ""]
+    newTags = re.split('#', newTagsString)
+    newTags = [tag.strip() for tag in newTags if tag.strip() != ""]
     print(newTags)
     image = ImageNeo.nodes.get_or_none(hash=hash)
     oldTags = [x.name for x in image.tag.all()]
@@ -39,13 +37,7 @@ def updateTags(request, hash):
 
     query = SearchForm()
     image = SearchForImageForm()
-    results = {}
-    for tag in Tag.nodes.all():
-        results["#" + tag.name] = tag.image.all()
-        count = 0
-        for lstImage in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
-            count += 1
+    results = getAllImages()
 
     return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
 
@@ -64,13 +56,7 @@ def index(request):
                     results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
             return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
-            results = {}  # blank results dictionary
-            for tag in Tag.nodes.all():  # looping through all tag nodes
-                results["#" + tag.name] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
-                count = 0  # counter
-                for lstImage in results["#" + tag.name]:  # for each image of the value of this tag
-                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())  # replace it by a tuple w/ its tags
-                    count += 1  # increase counter
+            results = getAllImages()
             return render(request, 'index.html', {'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
@@ -80,8 +66,9 @@ def index(request):
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
             result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
+
             results = {tag: []} # blank results dictionary
-            searchesResults[request.headers['User-Agent']] = []
+
             for hash in result_hashs:   # iterating through the result's hashes
                 img = ImageNeo.nodes.get_or_none(hash=hash) # fetching the reuslts nodes from DB
                 if img is None: # if there is no image with this hash in DB
@@ -89,34 +76,43 @@ def index(request):
                 tags = img.tag.all()    # get all tags from the image
                 results[tag].append((img, tags))    # insert tags in the dictionary
                 img.features = None
-                searchesResults[request.headers['User-Agent']].append(img)
 
-            def sortFunction(elem):
-                image = elem[0]
-                tags = elem[1]
-                score = 0
-                for t in tags:
-                    for q in query_array:
-                        if q in t.name:
-                            score += image.tag.relationship(t).score
-                            break
-                return - (score / len(query_array))
+            if len(query_array) > 1:
+                def sortFunction(elem):
+                    image = elem[0]
+                    tags = elem[1]
+                    score = 0
+                    for t in tags:
+                        for q in query_array:
+                            if q in t.name:
+                                score += image.tag.relationship(t).score
+                                break
+                    return - (score / len(query_array))
 
-            results[tag].sort(key=sortFunction)
+                results[tag].sort(key=sortFunction)
+
             return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
             query = SearchForm()
             image = SearchForImageForm()
 
-            results = {}
-            for tag in Tag.nodes.all():
-                results["#" + tag.name] = tag.image.all()
-                count = 0
-                for lstImage in results["#" + tag.name]:
-                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
-                    count += 1
+            results = getAllImages()
             return render(request, 'index.html', {'form': query, 'image_form': image, 'results': results, 'error': False})
+
+def getAllImages():
+    results = {}  # blank results dictionary
+    for tag in Tag.nodes.all():  # looping through all tag nodes
+        tagName = "#" + tag.name
+        results[tagName] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
+        count = 0  # counter
+        for lstImage in results[tagName]:  # for each image of the value of this tag
+            lstImage.processing = None
+            results[tagName][count] = (lstImage, lstImage.tag.all())  # replace it by a tuple w/ its tags
+            count += 1  # increase counter
+    return results
+
+
 
 def delete(request, path):
     form = SearchForm()
@@ -283,11 +279,15 @@ def dashboard(request):
     image = SearchForImageForm()
     return render(request, 'dashboard.html', {'form': form, 'image_form': image})
 
-def exportToZip(request):
+def exportToZip(request, ids):
+    ids = ids.split("&")
     # Create zip
     buffer = io.BytesIO()
     zip_file = zipfile.ZipFile(buffer, 'w')
-    for img in searchesResults[request.headers['User-Agent']]:
+    for id in ids:
+        img = ImageNeo.nodes.get_or_none(hash=id)
+        if not img: continue
+
         path = os.path.join(img.folder_uri, img.name)
         zip_file.writestr(re.split("[\\\/]+", path)[-1],
                           open(path, 'rb').read())
@@ -298,14 +298,19 @@ def exportToZip(request):
     response['Content-Disposition'] = 'attachment; filename=images.zip'
     return response
 
-def exportToExcel(request):
+def exportToExcel(request, ids):
+    ids = ids.split("&")
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="images.csv"'
 
     csv_file = csv.writer(response)
     csv_file.writerow(['uri', 'creation time', 'insertion time', 'format', 'width', 'height', 'tags', 'persons', 'locations'])
 
-    for img in searchesResults[request.headers['User-Agent']]:
+    for id in ids:
+        img = ImageNeo.nodes.get_or_none(hash=id)
+        if not img: continue
+
         uri = os.path.join(img.folder_uri, img.name)
         creation_time = img.creation_date
         insertion_date = img.insertion_date
