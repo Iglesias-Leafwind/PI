@@ -43,7 +43,7 @@ def addTagWithOldTag(hashcode, tagName, oldTagName, oldTagSource):
         return
     if t is None:
         t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': oldTagName,'originalTagSource':oldTagSource})
+    i.tag.connect(t, {'originalTagName': oldTagName,'originalTagSource':oldTagSource,'manual':True})
     addESTag(hashcode, tagName)
 
 def addTag(hashcode, tagName):
@@ -53,7 +53,7 @@ def addTag(hashcode, tagName):
         return
     if t is None:
         t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': tagName,'originalTagSource':"Manual"})
+    i.tag.connect(t, {'originalTagName': tagName,'originalTagSource':"manual",'manual':True})
     addESTag(hashcode, tagName)
     
 def deleteTag(hashcode, tagName):

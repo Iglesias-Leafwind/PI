@@ -9,7 +9,7 @@ from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
-from app.utils import addTag, deleteTag
+from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
 import re
@@ -22,13 +22,16 @@ def updateTags(request, hash):
     image = ImageNeo.nodes.get_or_none(hash=hash)
     oldTags = [x.name for x in image.tag.all()]
     print(oldTags)
-    for tag in newTags:
+
+    for indx,tag in enumerate(newTags):
         if tag not in oldTags:
             addTag(hash, tag)
 
     for tag in oldTags:
         if tag not in newTags:
             deleteTag(hash, tag)
+
+
 
     query = SearchForm()
     image = SearchForImageForm()

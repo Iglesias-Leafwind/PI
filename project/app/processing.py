@@ -144,7 +144,7 @@ def processing(dirFiles):
         try:
             for index, img_name in enumerate(img_list):
                 img_path = os.path.join(dir, img_name)
-                print("I am here: ", img_path)
+                print("I am in: ",img_path)
                 i = ImageFeature()
 
                 read_image = cv2.imread(img_path)
@@ -605,23 +605,23 @@ def setUp():
     ftManager.imageFeatures = imageFeatures
 
 def generateThumbnail(imagepath, hash):
-    thumbnailH = 225
-    thumbnailW = 225
+    thumbnailH = 115
+    thumbnailW = 105
 
     # load the input image
     image = cv2.imread(imagepath)
-    w,h,p = image.shape
+    h,w,p = image.shape
 
     paddingLR = 0
     paddingTB = 0
     if(w > h):
-        ratio = h/w
-        thumbnailW = int(thumbnailH * ratio)
-        paddingLR = int((225-thumbnailW)/2)
-    else:
-        ratio = w/h
-        thumbnailH = int(thumbnailW * ratio)
+        ratio = thumbnailW/w
+        thumbnailH = int(h * ratio)
         paddingTB = int((225-thumbnailH)/2)
+    else:
+        ratio = thumbnailH/h
+        thumbnailW = int(w * ratio)
+        paddingLR = int((225-thumbnailW)/2)
     dim = (225, 225)
     image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
     # resize image
