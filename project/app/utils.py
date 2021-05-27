@@ -8,7 +8,8 @@ import imghdr
 from app.models import Tag, ImageNeo, ImageES
 from manage import es
 
-lock = Lock()
+processingLock = Lock()
+resultsLock = Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)

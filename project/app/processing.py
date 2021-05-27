@@ -14,7 +14,7 @@ from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, processingLock, get_and_save_thumbnail
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -37,7 +37,7 @@ import logging
 
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
+#frr = FaceRecognition()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -96,7 +96,7 @@ def uploadImages(uri):
     print("------------------task 1------------------")
     do(processing, taskTwo)
     print("------------------task 2------------------")
-
+'''
 def face_rec_part(read_image, img_path, tags, image):
     # image aberta -> read_image
     print("--- comeca a parte de face rec ---")
@@ -122,7 +122,7 @@ def face_rec_part(read_image, img_path, tags, image):
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
         print("-- face rec end --")
-
+'''
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -188,12 +188,12 @@ def processing(dirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    lock.acquire()
+                    processingLock.acquire()
                     if ImageNeo.nodes.get_or_none(hash=hash):
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        lock.release()
+                        processingLock.release()
                         continue
                     try:
                         image.save()
@@ -201,7 +201,7 @@ def processing(dirFiles):
                         print(e)
                         continue
                     finally:
-                        lock.release()
+                        processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -241,7 +241,7 @@ def processing(dirFiles):
                         image.tag.connect(tag, {'score': confidence})
 
                     # !!!
-                    face_rec_part(read_image, img_path, tags, image)
+                    #face_rec_part(read_image, img_path, tags, image)
 
 
                     #     p = Person.nodes.get_or_none(name=name)
@@ -379,10 +379,10 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
-    lock.acquire()
+    processingLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
-    lock.release()
+    processingLock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding

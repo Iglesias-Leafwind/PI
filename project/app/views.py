@@ -1,18 +1,25 @@
+import csv
+import io
 import json
 import os
-import re
+import zipfile
 from collections import defaultdict
 
 import cv2
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
+
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, EditTagForm
 from app.models import ImageES, ImageNeo, Tag, Person
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag
 from manage import es
 from app.nlpFilterSearch import processQuery
 import re
+
+
+searchesResults = {}
 
 def updateTags(request, hash):
     newTagsString = request.POST.get("tagsTextarea")
@@ -41,7 +48,6 @@ def updateTags(request, hash):
             count += 1
 
     return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
-
 
 def index(request):
     if request.method == 'POST':  # if it's a POST, we know it's from search by image
@@ -73,15 +79,17 @@ def index(request):
             query_text = request.GET.get("query")   # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
-
             result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
             results = {tag: []} # blank results dictionary
+            searchesResults[request.headers['User-Agent']] = []
             for hash in result_hashs:   # iterating through the result's hashes
                 img = ImageNeo.nodes.get_or_none(hash=hash) # fetching the reuslts nodes from DB
                 if img is None: # if there is no image with this hash in DB
                     continue    # ignore, advance
                 tags = img.tag.all()    # get all tags from the image
                 results[tag].append((img, tags))    # insert tags in the dictionary
+                img.features = None
+                searchesResults[request.headers['User-Agent']].append(img)
 
             def sortFunction(elem):
                 image = elem[0]
@@ -275,3 +283,46 @@ def dashboard(request):
     image = SearchForImageForm()
     return render(request, 'dashboard.html', {'form': form, 'image_form': image})
 
+def exportToZip(request):
+    # Create zip
+    buffer = io.BytesIO()
+    zip_file = zipfile.ZipFile(buffer, 'w')
+    for img in searchesResults[request.headers['User-Agent']]:
+        path = os.path.join(img.folder_uri, img.name)
+        zip_file.writestr(re.split("[\\\/]+", path)[-1],
+                          open(path, 'rb').read())
+    zip_file.close()
+    # Return zip
+    response = HttpResponse(buffer.getvalue())
+    response['Content-Type'] = 'application/x-zip-compressed'
+    response['Content-Disposition'] = 'attachment; filename=images.zip'
+    return response
+
+def exportToExcel(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="images.csv"'
+
+    csv_file = csv.writer(response)
+    csv_file.writerow(['uri', 'creation time', 'insertion time', 'format', 'width', 'height', 'tags', 'persons', 'locations'])
+
+    for img in searchesResults[request.headers['User-Agent']]:
+        uri = os.path.join(img.folder_uri, img.name)
+        creation_time = img.creation_date
+        insertion_date = img.insertion_date
+        format = img.format
+        width = img.width
+        height = img.height
+        tags = [t.name for t in img.tag]
+        persons = [p.name for p in img.person]
+        locations = []
+        for l in img.location:
+            locations.append(l.name)
+            for city in l.city:
+                locations.append(city.name)
+                for country in city.country:
+                    locations.append(country.name)
+
+        csv_file.writerow([uri, creation_time, insertion_date, format, width,
+                           height, tags, persons, locations])
+
+    return response
