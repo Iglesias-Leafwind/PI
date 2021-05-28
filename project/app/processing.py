@@ -14,7 +14,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, get_and_save_thumbnail
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -51,7 +51,7 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 # load installed tesseract-ocr from users pc
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = r'D:\\Programs\\tesseract-OCR\\tesseract'
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -90,16 +90,19 @@ def uploadImages(uri):
     print("----------------------------------------------")
 
     dirFiles = getImagesPerUri(uri)
-    taskOne, taskTwo = divideTaskInTwo(dirFiles)
+    do(processing, dirFiles)
 
+    """
+    taskOne, taskTwo = divideTaskInTwo(dirFiles)
     do(processing, taskOne)
     print("------------------task 1------------------")
     do(processing, taskTwo)
     print("------------------task 2------------------")
+    """
 
 def face_rec_part(read_image, img_path, tags, image):
     # image aberta -> read_image
-    print("--- comeca a parte de face rec ---")
+    print("--- comeca a parte de face rec da img: ",img_path, " ---")
     openimage, boxes = frr.getFaceBoxes(open_img=read_image, image_path=img_path)
 
     for b in boxes:
@@ -108,15 +111,17 @@ def face_rec_part(read_image, img_path, tags, image):
             # esta verificacao terá de ser alterada para algo mais preciso
             # por exemplo, definir um grau de certeza
             name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-        frr.saveFaceIdentification(openimage, b, name, encoding = enc, conf=conf)
+        frr.saveFaceIdentification(name=name, encoding = enc, conf=conf, imghash=image.hash)
 
         # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
         p = Person.nodes.get_or_none(name=name)
         if p is None:
-            p = Person(name=name, icon=face_thumb_path).save()
-            tags.append(name)
+            #p = Person(name=name, icon=face_thumb_path).save()
+            p = Person(name=name).save()
+
+        tags.append(name)
 
         # encodings falta
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
@@ -137,10 +142,12 @@ def processing(dirFiles):
         try:
             for index, img_name in enumerate(img_list):
                 img_path = os.path.join(dir, img_name)
+                print("I am here: ", img_path)
                 i = ImageFeature()
 
                 read_image = cv2.imread(img_path)
                 if read_image is None:
+                    print('read img is none')
                     continue
                 hash = dhash(read_image)
 
@@ -238,8 +245,9 @@ def processing(dirFiles):
                         image.tag.connect(tag, {'originalTagName':object, 'originalTagSource': 'object'})
 
                     # !!!
+                    faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
-
+                    faceRecLock.release()
 
                     #     p = Person.nodes.get_or_none(name=name)
 
@@ -268,7 +276,7 @@ def processing(dirFiles):
                     i.features = norm_feat
                     ftManager.imageFeatures.append(i)
 
-                    print('tags', tags)
+                    print('tags: ', tags)
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                 print("extracting feature from image %s " % (img_path))
