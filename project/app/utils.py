@@ -11,6 +11,7 @@ from manage import es
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()
 faceRecLock= Lock()
+ocrLock= Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
