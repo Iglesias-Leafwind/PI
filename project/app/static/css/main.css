@@ -471,7 +471,8 @@ button:focus{
 .main{
   padding-top: 15vh;
   margin-top: -1.2vh;
-  background: url("../img/bg-texture.png") repeat;
+  background-image: url("../img/bg-texture.png");
+  background-color: rgba(248, 249, 250, 0.5);
   min-height: 200vh;
 }
 
@@ -767,6 +768,13 @@ fa.redo:hover{
   box-shadow: 0px 10px 6px #E0E0E0;
   background-color: white;
   height: 100%;
+  width: 16vw;
+  padding-top: 3vh;
+}
+
+.main-sidebar i{
+    font-size: 2vw;
+    margin-right: 1vw;
 }
 
 .sadnav-item:hover{
@@ -782,14 +790,56 @@ fa.redo:hover{
   position: absolute;
   left: 15vw;
   display: grid;
-  grid-template-columns: 1vw 3vw 6vw 10vw 12vw;
-  grid-template-rows: 3vh 13vh 16vh 30vh 33vh auto;
+  grid-template-columns: 6vw 16vw 3vw 16vw 3vw 16vw 3vw 16vw ;
+  grid-template-rows: 5vh 20vh 10vh 80vh;
 }
 
 .piechart{
   grid-column-start: 2;
-  grid-column-end: five;
+  grid-column-end: 9;
+  grid-row-start: 4;
+  grid-row-end: 5;
+  background-color: wheat;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.locations-div{
+  background-color: #0a58ca;
+  grid-column-start: 2;
+  grid-column-end: 3;
   grid-row-start: 2;
   grid-row-end: 3;
-  background-color: #0a58ca;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.people-div{
+  background-color: #0c4128;
+  grid-column-start: 4;
+  grid-column-end: 5;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.scenes-div{
+  background-color: #6f42c1;
+  grid-column-start: 6;
+  grid-column-end: 7;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.dates-div{
+  background-color: #fd7e14;
+  grid-column-start: 8;
+  grid-column-end: 9;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
 }
