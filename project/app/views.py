@@ -119,10 +119,17 @@ def get_image_results(query_text):
 
 
         if not searchFilterOptions['folder_name']:
-            pass
+            tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
+            remove = any([q in tags for q in query_array])
+
 
         if not searchFilterOptions['text']:
-            pass
+            tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
+            remove = any([q in tags for q in query_array])
+
+        if not searchFilterOptions['exif']:
+            tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
+            remove = any([q in tags for q in query_array])
 
 
         if not remove:

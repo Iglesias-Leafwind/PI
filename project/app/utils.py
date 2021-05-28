@@ -11,11 +11,12 @@ faceRecLock= Lock()
 
 
 searchFilterOptions = {
-    'automatic': True,
+    'automatic': True, # isto sao os objects
     'manual': True,
     'folder_name': True,
     'people': True,
-    'text': True
+    'text': True,
+    'exif': True
 }
 
 def getImagesPerUri(pathName):

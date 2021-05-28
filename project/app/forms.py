@@ -134,4 +134,5 @@ class FilterSearchForm(forms.Form):
     folder_name = forms.BooleanField(required=False)
     people = forms.BooleanField(required=False)
     text = forms.BooleanField(required=False)
+    exif = forms.BooleanField(required=False)
     current_url = forms.CharField(required=True, widget=HiddenInput)
