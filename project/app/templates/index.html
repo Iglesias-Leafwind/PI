@@ -86,9 +86,10 @@
             param = idSetToString(selectedIds)
             param = param.substr(0, param.length - 1)
         }else{
-            param = allIds.substr(0, param.length - 1)
+            param = allIds.substr(0, allIds.length - 1)
         }
-        $('form').attr('action', 'export/excel/' + param);
+
+        $('form').attr('action', 'export/excel/$' + param);
     })
 
     $('#zip_btn').click(function (){
@@ -97,9 +98,9 @@
             param = idSetToString(selectedIds)
             param = param.substr(0, param.length - 1)
         }else{
-            param = allIds.substr(0, param.length - 1)
+            param = allIds.substr(0, allIds.length - 1)
         }
-        $('form').attr('action', 'export/zip/' + param);
+        $('form').attr('action', 'export/zip/$' + param);
     })
 
     $(".img_box").click(function (){

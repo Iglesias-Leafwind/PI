@@ -280,6 +280,10 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'form': form, 'image_form': image})
 
 def exportToZip(request, ids):
+    ids = ids[1:]
+    if ids.strip() == '':
+        return HttpResponse(content_type='text/json')
+
     ids = ids.split("&")
     # Create zip
     buffer = io.BytesIO()
@@ -299,6 +303,10 @@ def exportToZip(request, ids):
     return response
 
 def exportToExcel(request, ids):
+    ids = ids[1:]
+    if ids.strip() == '':
+        return HttpResponse(content_type='text/json')
+
     ids = ids.split("&")
 
     response = HttpResponse(content_type='text/csv')
