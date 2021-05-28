@@ -14,7 +14,7 @@
         <div class="col">
           <div class="card shadow-sm">
             {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-              <img height="115px" src="{% static image_static %}">
+              <img class="imageThumbnailInMenu" src="{% static image_static %}">
             {% endwith %}
             <div class="card-body">
               <p class="card-text">{{ image.0.name|truncatechars:16}}</p>

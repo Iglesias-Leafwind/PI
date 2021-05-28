@@ -1,7 +1,10 @@
 import os
 from concurrent.futures.thread import ThreadPoolExecutor
+import multiprocessing
 
-pool = ThreadPoolExecutor(max_workers=2)
+numThreads = multiprocessing.cpu_count()
+
+pool = ThreadPoolExecutor(max_workers=numThreads*2)
 
 def do(fc, args=None):
     if args:
@@ -9,8 +12,6 @@ def do(fc, args=None):
     else:
         future = pool.submit(fc)
     return future
-
-
 
 def getFolders():
     results = []
