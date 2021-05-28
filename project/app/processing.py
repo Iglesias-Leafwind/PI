@@ -14,7 +14,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -383,10 +383,10 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
-    lock.acquire()
+    ocrLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
-    lock.release()
+    ocrLock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
