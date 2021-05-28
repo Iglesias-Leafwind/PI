@@ -13,6 +13,7 @@ from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
 import re
+import itertools
 
 def updateTags(request, hash):
     newTagsString = request.POST.get("tagsTextarea")
@@ -249,5 +250,18 @@ def update_faces(request):
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
-    return render(request, 'dashboard.html', {'form': form, 'image_form': image})
+    results = {}
+    counts = {}
+    for tag in Tag.nodes.all():
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+        counts[tag.name] = len(results["#" + tag.name])
+
+    countTags = dict(sorted(counts.items(), key=lambda item: item[1], reverse=True)) # sort the dict by its value (count), from the greatest to the lowest
+    countTags = dict(itertools.islice(countTags.items(), 10)) # only want the first top 10 more common tags
+    countTags = json.dumps(countTags)
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags})
 
