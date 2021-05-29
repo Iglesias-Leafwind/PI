@@ -13,6 +13,7 @@ from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
 import re
+import itertools
 
 def updateTags(request, hash):
     newTagsString = request.POST.get("tagsTextarea")
@@ -252,5 +253,78 @@ def dashboard(request):
     person_number = 0
     for p in Person.nodes.all():
         person_number +=1
-    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'numbers': {'person':person_number}})
+    results = {}
+    counts = {}
+    for tag in Tag.nodes.all():
+
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+        counts[tag.name] = len(results["#" + tag.name])
+
+    countTags = dict(sorted(counts.items(), key=lambda item: item[1], reverse=True)) # sort the dict by its value (count), from the greatest to the lowest
+    if len(countTags) < 10:
+        countTags = dict(itertools.islice(countTags.items(), len(countTags)))
+    else:
+        countTags = dict(itertools.islice(countTags.items(), 10)) # only want the first top 10 more common tags
+    countTags = json.dumps(countTags)
+
+    ## original tag source statistics
+    countOriginalTagSource = {}
+    allTagLabels = {"ocr":"text from image", "manual":"manual", "object":"objects", "places":"places", "exif":"image properties", "folder":"folder's name", "breeds":"breed"}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            originalTagSource = allTagLabels[originalTagSource]
+            # print(tag.name, originalTagSource)
+            if originalTagSource not in countOriginalTagSource:
+                countOriginalTagSource[originalTagSource] = 1
+            else:
+                countOriginalTagSource[originalTagSource] += 1
+
+    # print(countOriginalTagSource)
+    for label in allTagLabels.values():
+        if label not in countOriginalTagSource.keys():
+            countOriginalTagSource[label] = 0
+
+    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1], reverse=True))
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags, 'countTagSource': countOriginalTagSource, 'numbers': {'person':person_number}})
+
+def calendarGallery(request):
+    datesInsertion = {}
+    datesCreation = {}
+    previousImages = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            if img not in previousImages:
+                insertionDate = str(img.insertion_date)
+                creationDate = str(img.creation_date)
+                insertionDate = insertionDate.split(" ")[0]
+                creationDate = creationDate.split(" ")[0]
+                if insertionDate not in datesInsertion:
+                    datesInsertion[insertionDate] = 1
+                else:
+                    datesInsertion[insertionDate] += 1
+                if creationDate != "None":
+                    if creationDate not in datesCreation:
+                        datesCreation[creationDate] = 1
+                    else:
+                        datesCreation[creationDate] += 1
+
+                previousImages += [img]
+
+            else:
+                continue
+
+    datesInsertion = json.dumps(datesInsertion)
+    datesCreation = json.dumps(datesCreation)
+    print(datesCreation)
+    return render(request, 'gallery.html', {'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
+
+
 

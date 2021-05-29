@@ -30,4 +30,5 @@ urlpatterns = [
     path('searchtag', views.searchtag, name='searchtag'),
     path('update_faces', views.update_faces, name='update_faces'),
     path('dashboard', views.dashboard, name='dashboard'),
+    path('gallery', views.calendarGallery, name='gallery')
 ]

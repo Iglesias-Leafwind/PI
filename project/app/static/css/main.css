@@ -802,6 +802,7 @@ fa.redo:hover{
   background-color: white;
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
+  height: 1000vh;
 }
 
 .locations-div{
@@ -846,4 +847,13 @@ fa.redo:hover{
   grid-row-end: 3;
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+/*===============================
+=          Gallery Page          =
+===============================*/
+
+.centerGalleryDiv {
+  width: 50%;
+  margin: 0 auto;
 }

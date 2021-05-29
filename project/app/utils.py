@@ -11,6 +11,7 @@ from manage import es
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()
 faceRecLock= Lock()
+ocrLock= Lock()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
@@ -36,6 +37,7 @@ def getImagesPerUri(pathName):
 def getRandomNumber():
     return random.randint(1, 1 << 63)
 
+
 def addTagWithOldTag(hashcode, tagName, oldTagName, oldTagSource):
     t = Tag.nodes.get_or_none(name=tagName)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
@@ -43,8 +45,9 @@ def addTagWithOldTag(hashcode, tagName, oldTagName, oldTagSource):
         return
     if t is None:
         t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': oldTagName,'originalTagSource':oldTagSource,'manual':True})
+    i.tag.connect(t, {'originalTagName': oldTagName, 'originalTagSource': oldTagSource, 'manual': True})
     addESTag(hashcode, tagName)
+
 
 def addTag(hashcode, tagName):
     t = Tag.nodes.get_or_none(name=tagName)
@@ -53,15 +56,16 @@ def addTag(hashcode, tagName):
         return
     if t is None:
         t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': tagName,'originalTagSource':"manual",'manual':True})
+    i.tag.connect(t, {'originalTagName': tagName, 'originalTagSource': "manual", 'manual': True})
     addESTag(hashcode, tagName)
-    
+
+
 def deleteTag(hashcode, tagName):
     t = Tag.nodes.get_or_none(name=tagName)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
     tagSource = "err"
     if i is None or t is None:
-        return [tagName,tagSource]
+        return [tagName, tagSource]
     if (t in i.tag):
         rel = i.tag.relationship(t)
         tagSource = rel.originalTagSource
@@ -69,7 +73,8 @@ def deleteTag(hashcode, tagName):
     if (len(t.image) == 0):
         t.delete()
     deleteESTag(hashcode, tagName)
-    return [tagName,tagSource]
+    return [tagName, tagSource]
+
 
 def addESTag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
