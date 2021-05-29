@@ -2,32 +2,51 @@
 {% load static %}
 
 {% block content %}
-    <div class="mygrid">
-        <div id="calendar_basic" style="width: 1000px; height: 350px;"></div>
+    <div class="container">
+        <div id="insertion_calendar" style="width: 1000vw; height: 30vh;"></div>
+        <div id="creation_calendar" style="width: 1000vw; height: 700vh;"></div>
     </div>
 
 
     <script type="text/javascript">
       google.charts.load("current", {packages:["calendar"]});
       google.charts.setOnLoadCallback(drawCalendarChart);
+      google.charts.setOnLoadCallback(drawCalendarChartByCreation);
 
    function drawCalendarChart() {
-       datesDjango = {{ dates|safe }};
+       datesDjango = {{ datesInsertion|safe }};
        var dataTable = new google.visualization.DataTable();
        dataTable.addColumn({ type: 'date', id: 'Date' });
        dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
        for (var key in datesDjango) {
-            //alert("key " + key);
-            //alert("value " + datesDjango[key]);
-            //var dateSplit = key.split(" ")[0];
             dataTable.addRow([new Date(key), datesDjango[key]]);
         }
 
-       var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
+       var chart = new google.visualization.Calendar(document.getElementById('insertion_calendar'));
 
        var options = {
-         title: "New images calendar",
-         height: 350,
+         title: "New images Calendar",
+         height: "100%",
+       };
+
+       chart.draw(dataTable, options);
+   }
+
+   function drawCalendarChartByCreation() {
+       datesByCreationDjango = {{ datesCreation|safe }};
+       var dataTable = new google.visualization.DataTable();
+       dataTable.addColumn({ type: 'date', id: 'Date' });
+       dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
+       for (var key in datesByCreationDjango) {
+           alert(key);
+            dataTable.addRow([new Date(key), datesByCreationDjango[key]]);
+        }
+
+       var chart = new google.visualization.Calendar(document.getElementById('creation_calendar'));
+
+       var options = {
+         title: "Images' creation date Calendar",
+         height: "100%",
        };
 
        chart.draw(dataTable, options);

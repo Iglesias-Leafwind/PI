@@ -292,24 +292,36 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags, 'countTagSource': countOriginalTagSource})
 
 def calendarGallery(request):
-    dates = {}
+    datesInsertion = {}
+    datesCreation = {}
     previousImages = []
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             if img not in previousImages:
                 insertionDate = str(img.insertion_date)
+                creationDate = str(img.creation_date)
                 insertionDate = insertionDate.split(" ")[0]
-                if insertionDate not in dates:
-                    dates[insertionDate] = 1
+                creationDate = creationDate.split(" ")[0]
+                if insertionDate not in datesInsertion:
+                    datesInsertion[insertionDate] = 1
                 else:
-                    dates[insertionDate] += 1
+                    datesInsertion[insertionDate] += 1
+                if creationDate != "None":
+                    if creationDate not in datesCreation:
+                        datesCreation[creationDate] = 1
+                    else:
+                        datesCreation[creationDate] += 1
+
                 previousImages += [img]
+
             else:
                 continue
 
-    dates = json.dumps(dates)
-    return render(request, 'gallery.html', {'dates': dates})
+    datesInsertion = json.dumps(datesInsertion)
+    datesCreation = json.dumps(datesCreation)
+    print(datesCreation)
+    return render(request, 'gallery.html', {'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
 
 
