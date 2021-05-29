@@ -25,6 +25,7 @@
 
 */face-thumbnails/*
 */thumbnails/*
+*/breedclassifier-model/*
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 
