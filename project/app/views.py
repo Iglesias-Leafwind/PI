@@ -295,6 +295,8 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags, 'countTagSource': countOriginalTagSource, 'numbers': {'person':person_number}})
 
 def calendarGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
     datesInsertion = {}
     datesCreation = {}
     previousImages = []
@@ -324,7 +326,7 @@ def calendarGallery(request):
     datesInsertion = json.dumps(datesInsertion)
     datesCreation = json.dumps(datesCreation)
     print(datesCreation)
-    return render(request, 'gallery.html', {'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
+    return render(request, 'gallery.html', {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
 
 
