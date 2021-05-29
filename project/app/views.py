@@ -275,12 +275,34 @@ def dashboard(request):
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            print(tag.name, originalTagSource)
+            # print(tag.name, originalTagSource)
             if originalTagSource not in countOriginalTagSource:
                 countOriginalTagSource[originalTagSource] = 1
             else:
                 countOriginalTagSource[originalTagSource] += 1
 
-    print(countOriginalTagSource)
+    # print(countOriginalTagSource)
     return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags})
+
+def calendarGallery(request):
+    dates = {}
+    previousImages = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            if img not in previousImages:
+                insertionDate = str(img.insertion_date)
+                insertionDate = insertionDate.split(" ")[0]
+                if insertionDate not in dates:
+                    dates[insertionDate] = 1
+                else:
+                    dates[insertionDate] += 1
+                previousImages += [img]
+            else:
+                continue
+
+    dates = json.dumps(dates)
+    return render(request, 'gallery.html', {'dates': dates})
+
+
 

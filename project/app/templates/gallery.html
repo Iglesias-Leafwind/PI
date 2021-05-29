@@ -1,0 +1,36 @@
+{% extends 'topbar.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="mygrid">
+        <div id="calendar_basic" style="width: 1000px; height: 350px;"></div>
+    </div>
+
+
+    <script type="text/javascript">
+      google.charts.load("current", {packages:["calendar"]});
+      google.charts.setOnLoadCallback(drawCalendarChart);
+
+   function drawCalendarChart() {
+       datesDjango = {{ dates|safe }};
+       var dataTable = new google.visualization.DataTable();
+       dataTable.addColumn({ type: 'date', id: 'Date' });
+       dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
+       for (var key in datesDjango) {
+            //alert("key " + key);
+            //alert("value " + datesDjango[key]);
+            //var dateSplit = key.split(" ")[0];
+            dataTable.addRow([new Date(key), datesDjango[key]]);
+        }
+
+       var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
+
+       var options = {
+         title: "New images calendar",
+         height: 350,
+       };
+
+       chart.draw(dataTable, options);
+   }
+    </script>
+{% endblock %}
