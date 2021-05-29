@@ -844,3 +844,12 @@ fa.redo:hover{
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
 }
+
+/*===============================
+=          Gallery Page          =
+===============================*/
+
+.centerGalleryDiv {
+  width: 50%;
+  margin: 0 auto;
+}

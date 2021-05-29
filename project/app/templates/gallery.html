@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="container">
+    <div class="container centerGalleryDiv">
         <div id="insertion_calendar" style="width: 1000vw; height: 30vh;"></div>
         <div id="creation_calendar" style="width: 1000vw; height: 700vh;"></div>
     </div>
@@ -38,7 +38,6 @@
        dataTable.addColumn({ type: 'date', id: 'Date' });
        dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
        for (var key in datesByCreationDjango) {
-           alert(key);
             dataTable.addRow([new Date(key), datesByCreationDjango[key]]);
         }
 
