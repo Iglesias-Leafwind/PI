@@ -2,10 +2,12 @@ html {
   line-height: 1.15;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
+  height: 100%;
 }
 
 body{
   margin:0 !important;
+  height: 100%;
 }
 
 article,
@@ -271,24 +273,6 @@ legend {
 /*===============================
 =            Choices            =
 ===============================*/
-.s004 {
-  height: 80vh;
-  width: 100% !important;
-  display: -ms-flexbox;
-  display: flex;
-  flex-flow: column wrap;
-  -ms-flex-pack: center;
-  justify-content: center;
-  -ms-flex-align: center;
-  align-items: center;
-  background-size: cover;
-  background: url("../img/lens2.jpg") no-repeat fixed 97% 79%;
-  background-size: auto;
-}
-
-.s004:nth-child(1) {
-  page-break-after: always;
-}
 
 .topbar{
   background-color: white;
@@ -473,7 +457,7 @@ button:focus{
   margin-top: -1.2vh;
   background-image: url("../img/bg-texture.png");
   background-color: rgba(248, 249, 250, 0.5);
-  min-height: 200vh;
+  min-height: 150vh;
 }
 
 .bg-mine{
@@ -767,7 +751,7 @@ fa.redo:hover{
 .main-sidebar{
   box-shadow: 0px 10px 6px #E0E0E0;
   background-color: white;
-  height: 100%;
+  height: 135vh;
   width: 16vw;
   padding-top: 3vh;
 }
@@ -791,21 +775,14 @@ fa.redo:hover{
   left: 15vw;
   display: grid;
   grid-template-columns: 6vw 16vw 3vw 16vw 3vw 16vw 3vw 16vw ;
-  grid-template-rows: 5vh 20vh 10vh 80vh;
-}
-
-.piechart{
-  grid-column-start: 2;
-  grid-column-end: 9;
-  grid-row-start: 4;
-  grid-row-end: 5;
-  background-color: white;
-  border-radius: 25px;
-  box-shadow: 1px 10px 6px #E0E0E0;
-  height: 1000vh;
+  grid-template-rows: 5vh 20vh 10vh 40vh 10vh 40vh;
 }
 
 .locations-div{
+  background-image: url("../img/compass-fill.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
   background-color: #5baee5;
   grid-column-start: 2;
   grid-column-end: 3;
@@ -830,6 +807,10 @@ fa.redo:hover{
 }
 
 .scenes-div{
+  background-image: url("../img/geo-fill.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
   background-color: #703770;
   grid-column-start: 6;
   grid-column-end: 7;
@@ -840,6 +821,10 @@ fa.redo:hover{
 }
 
 .dates-div{
+  background-image: url("../img/person-bounding-box.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
   background-color: #334553;
   grid-column-start: 8;
   grid-column-end: 9;
@@ -848,6 +833,31 @@ fa.redo:hover{
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
 }
+
+.piechart{
+  padding: 7% 0% 0% 7% !important;
+  grid-column-start: 6;
+  margin-left: 3vw;
+  grid-column-end: 9;
+  grid-row-start: 4;
+  grid-row-end: 5;
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.barchart{
+  padding: 7% 0% 0% 7% !important;
+  grid-column-start: 2;
+  grid-column-end: 6;
+  grid-row-start: 4;
+  grid-row-end: 5;
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+  overflow: hidden;
+}
+
 
 /*===============================
 =          Gallery Page          =
