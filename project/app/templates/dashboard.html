@@ -76,7 +76,7 @@
         </div>
         <div class="piechart">
             <div id="chart1"></div>
-
+            <div id="chart2"></div>
         </div>
     </div>
 <script type="text/javascript">
@@ -94,8 +94,6 @@
         for (var key in countTagsDjango) {
             data.addRow([key, countTagsDjango[key]]);
         }
-
-
       // Optional; add a title and set the width and height of the chart
       var options = {'title':'Top Most Common Tags', 'pieHole': 0.4, 'width':1000, 'height':800};
 
@@ -103,6 +101,32 @@
       var chart = new google.visualization.PieChart(document.getElementById('chart1'));
       chart.draw(data, options);
     }
+    google.charts.setOnLoadCallback(drawBarChart);
+    // Draw a bar chart
+    function drawBarChart() {
+        countTagSourceDjango = {{ countTagSource|safe }};
+        var data = new google.visualization.DataTable();
+
+        data.addColumn('string', 'Element');
+        data.addColumn('number', 'Counts');
+        data.addColumn({type: 'string', role: 'style'});
+
+        for (var key in countTagSourceDjango) {
+            var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+            data.addRow([key, countTagSourceDjango[key], 'color: ' + randomColor]);
+        }
+        
+        var options = {
+        title: "Most Common Tag Sources",
+        width: 600,
+        height: 400,
+        bar: {groupWidth: "95%"},
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.BarChart(document.getElementById("chart2"));
+      chart.draw(data, options);
+    }
+
 </script>
 
 

@@ -270,11 +270,13 @@ def dashboard(request):
 
     ## original tag source statistics
     countOriginalTagSource = {}
+    allTagLabels = {"ocr":"text from image", "manual":"manual", "object":"objects", "places":"places", "exif":"image properties", "folder":"folder's name", "breeds":"breed"}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
+            originalTagSource = allTagLabels[originalTagSource]
             # print(tag.name, originalTagSource)
             if originalTagSource not in countOriginalTagSource:
                 countOriginalTagSource[originalTagSource] = 1
@@ -282,7 +284,12 @@ def dashboard(request):
                 countOriginalTagSource[originalTagSource] += 1
 
     # print(countOriginalTagSource)
-    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags})
+    for label in allTagLabels.values():
+        if label not in countOriginalTagSource.keys():
+            countOriginalTagSource[label] = 0
+
+    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1], reverse=True))
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags, 'countTagSource': countOriginalTagSource})
 
 def calendarGallery(request):
     dates = {}
