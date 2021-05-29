@@ -241,7 +241,6 @@ def processing(dirFiles):
                         if tag is None:
                             tag = Tag(name=object).save()
                         tags.append(object)
-
                         image.tag.connect(tag)
 
                     # !!!
