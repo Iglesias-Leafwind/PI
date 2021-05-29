@@ -253,6 +253,7 @@ def dashboard(request):
     results = {}
     counts = {}
     for tag in Tag.nodes.all():
+
         results["#" + tag.name] = tag.image.all()
         count = 0
         for lstImage in results["#" + tag.name]:
@@ -261,7 +262,25 @@ def dashboard(request):
         counts[tag.name] = len(results["#" + tag.name])
 
     countTags = dict(sorted(counts.items(), key=lambda item: item[1], reverse=True)) # sort the dict by its value (count), from the greatest to the lowest
-    countTags = dict(itertools.islice(countTags.items(), 10)) # only want the first top 10 more common tags
+    if len(countTags) < 10:
+        countTags = dict(itertools.islice(countTags.items(), len(countTags)))
+    else:
+        countTags = dict(itertools.islice(countTags.items(), 10)) # only want the first top 10 more common tags
     countTags = json.dumps(countTags)
+
+    ## original tag source statistics
+    countOriginalTagSource = {}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            print(tag.name, originalTagSource)
+            if originalTagSource not in countOriginalTagSource:
+                countOriginalTagSource[originalTagSource] = 1
+            else:
+                countOriginalTagSource[originalTagSource] += 1
+
+    print(countOriginalTagSource)
     return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'results': results, 'counts': countTags})
 
