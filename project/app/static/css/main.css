@@ -799,13 +799,13 @@ fa.redo:hover{
   grid-column-end: 9;
   grid-row-start: 4;
   grid-row-end: 5;
-  background-color: wheat;
+  background-color: white;
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
 }
 
 .locations-div{
-  background-color: #0a58ca;
+  background-color: #5baee5;
   grid-column-start: 2;
   grid-column-end: 3;
   grid-row-start: 2;
@@ -815,7 +815,11 @@ fa.redo:hover{
 }
 
 .people-div{
-  background-color: #0c4128;
+  background-image: url("../img/person-bounding-box.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
+  background-color: #0c819c;
   grid-column-start: 4;
   grid-column-end: 5;
   grid-row-start: 2;
@@ -825,7 +829,7 @@ fa.redo:hover{
 }
 
 .scenes-div{
-  background-color: #6f42c1;
+  background-color: #703770;
   grid-column-start: 6;
   grid-column-end: 7;
   grid-row-start: 2;
@@ -835,7 +839,7 @@ fa.redo:hover{
 }
 
 .dates-div{
-  background-color: #fd7e14;
+  background-color: #334553;
   grid-column-start: 8;
   grid-column-end: 9;
   grid-row-start: 2;

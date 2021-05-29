@@ -249,5 +249,8 @@ def update_faces(request):
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
-    return render(request, 'dashboard.html', {'form': form, 'image_form': image})
+    person_number = 0
+    for p in Person.nodes.all():
+        person_number +=1
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image, 'numbers': {'person':person_number}})
 
