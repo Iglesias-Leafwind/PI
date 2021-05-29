@@ -1,6 +1,7 @@
 import json
 import string
 
+from app.breed_classifier import BreedClassifier
 from app.face_recognition import FaceRecognition
 import time
 import sys
@@ -38,6 +39,7 @@ import logging
 
 obj_extr = ObjectExtract()
 frr = FaceRecognition()
+bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -127,6 +129,16 @@ def face_rec_part(read_image, img_path, tags, image):
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
         print("-- face rec end --")
+
+def classifyBreedPart(read_image, tags, imageDB):
+    breed, breed_conf = bc.predict_image(read_image)
+    if breed_conf > 0.7:  # TODO: adapt!
+        tags.append(breed)
+
+        tag = Tag.nodes.get_or_none(name=breed)
+        if tag is None:
+            tag = Tag(name=breed).save()
+        imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds'})
 
 
 def processing(dirFiles):
@@ -242,6 +254,11 @@ def processing(dirFiles):
                             tag = Tag(name=object).save()
                         tags.append(object)
                         image.tag.connect(tag)
+
+                        if object in ['cat', 'dog']:
+                            classifyBreedPart(read_image, tags, image)
+
+
 
                     # !!!
                     faceRecLock.acquire()

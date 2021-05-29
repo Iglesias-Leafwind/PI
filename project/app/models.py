@@ -41,6 +41,7 @@ class HasA(StructuredRel):
     rel = "Has a"
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
+    score = FloatProperty()
 
 
 class DisplayA(StructuredRel):
