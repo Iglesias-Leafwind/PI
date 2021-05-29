@@ -138,7 +138,7 @@ def classifyBreedPart(read_image, tags, imageDB):
         tag = Tag.nodes.get_or_none(name=breed)
         if tag is None:
             tag = Tag(name=breed).save()
-        imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds'})
+        imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
 
 
 def processing(dirFiles):
