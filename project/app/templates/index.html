@@ -4,8 +4,8 @@
 {% block content %}
 <div class="results">
 
-    <form action="export/zip/$">
-        <button type="submit" id="excel_btn" class="btn btn-primary">export to excel</button>
+    <form id="showingform" action="export/zip/$" style="display: none">
+        <button style="margin: 0vh 1vw 0vh 3vw;" type="submit" id="excel_btn" class="btn btn-primary">export to excel</button>
         <button type="submit" id="zip_btn" class="btn btn-primary">export to zip</button>
     </form>
     {% for tag_cluster in results.items %}
@@ -26,7 +26,7 @@
                     <div class="btn-group">
                       <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}">View</button>
                     </div> <!--btn group-->
-                        <img class="checked_img" src="{% static '/img/checked.png' %}">
+                        <img class="checked_img" src="{% static '/img/check2.svg' %}">
                   </div> <!--d-flex justify-content-between align-items-center-->
                 </div> <!--card-body-->
 
@@ -79,6 +79,7 @@
         }
 
         var selectedIds = new Set()
+        var idsList = new Array()
 
     $('#excel_btn').click(function (){
         var param = ''
@@ -103,16 +104,26 @@
         $('form').attr('action', 'export/zip/$' + param);
     })
 
+    var myform = document.getElementById("showingform")
+
     $(".img_box").click(function (){
         if ($(this).hasClass('selected_img')){
             $(this).removeClass('selected_img')
             $(this).find(".checked_img").css('display','none')
             selectedIds.delete($(this).children('img')[0].id)
+            idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
+            if (idsList.length == 0){
+                myform.style.display = "none"
+            }
         }
         else{
             selectedIds.add($(this).children('img')[0].id)
+            idsList.push($(this).children('img')[0].id)
             $(this).addClass('selected_img')
             $(this).find(".checked_img").css('display','block')
+            if (myform.style.display == "none"){
+                myform.style.display = "block"
+            }
         }
     })
 
