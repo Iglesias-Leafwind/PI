@@ -53,6 +53,10 @@ net = cv2.dnn.readNet(east)
 # load installed tesseract-ocr from users pc
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Iglesias:
+
+# Alexandra:
+# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+# Anthony:
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 custom_config = r'--oem 3 --psm 6'
 

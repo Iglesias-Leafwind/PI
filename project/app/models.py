@@ -14,7 +14,9 @@ from manage import es
 #Iglesias:
 #config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
 #Alexa:
-config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
+#config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
+#Anthony:
+config.DATABASE_URL = 'bolt://neo4j:pass@localhost:7687'
 
 # for elastic search ↓
 class ImageES(Document):
