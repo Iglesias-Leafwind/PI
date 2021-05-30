@@ -358,12 +358,24 @@ def calendarGallery(request):
 
     datesInsertion = json.dumps(datesInsertion)
     datesCreation = json.dumps(datesCreation)
-    print(datesCreation)
+    # print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
 
 def objectsGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            # print(tag.name, originalTagSource)
+            if originalTagSource == "object":
+                allTags += [tag]
+
     return None
 
 
@@ -376,5 +388,18 @@ def scenesGallery(request):
 
 
 def locationsGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    locations = {}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            location = img.location
+            if location not in locations:
+                locations[location] = 1
+            else:
+                locations[location] += 1
+            print(location)
+    return render(request, 'locationsGallery.html',
+                  {'form': form, 'image_form': image, 'locations': locations})
 
