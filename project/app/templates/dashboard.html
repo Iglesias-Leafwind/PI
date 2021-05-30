@@ -95,7 +95,7 @@
             countTotal = countTotal + countTagsDjango[key];
         }
         for (var key in countTagsDjango) {
-            dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': (countTagsDjango[key]/countTotal)*100});
+            dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': ((countTagsDjango[key]/countTotal)*100).toFixed(2)});
         }
         var chart = new CanvasJS.Chart("chart1", {
             theme: "light2", // "light1", "light2", "dark1", "dark2"
@@ -114,7 +114,7 @@
                 toolTipContent: "<b>{label}</b>: {percentage}%",
                 showInLegend: "true",
                 legendText: "{label}",
-                indexLabelFontSize: 12,
+                indexLabelFontSize: 18,
                 indexLabel: "{label} - {y}",
                 dataPoints: dataPoints
             }]
@@ -132,72 +132,38 @@
             countTotal = countTotal + countTagSourceDjango[key];
         }
         for (var key in countTagSourceDjango) {
-            dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key, 'percentage': (countTagSourceDjango[key]/countTotal)*100});
+            dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key, 'percentage': ((countTagSourceDjango[key]/countTotal)*100).toFixed(2)});
         }
         var chart = new CanvasJS.Chart("chart2", {
             exportEnabled: true,
             animationEnabled: true,
             height: 300,
+            width: 600,
             title: {
                 text: "Top Most Common Tag Sources",
                 fontSize: 20,
                 fontFamily: "arial",
+                margin: 20,
+                fontStyle: "bold",
             },
             axisX: {
-                title: "Tag Source",
-                margin: 5,
-                interval: 1
+                interval: 1,
+                labelFontSize: 15
             },
             axisY: {
                 title: "Counts",
                 margin: 1,
-                includeZero: true
+                includeZero: true,
             },
             data: [{
                 type: "bar",
-                toolTipContent: "<b>{label}</b>: {percentage}%",
-                dataPoints: dataPoints
+                toolTipContent: "<b>{label}</b>: {y} ({percentage}%)",
+                dataPoints: dataPoints,
+                indexLabelFontSize: 15
             }]
         });
         chart.render();
 
     }
-/*
-
-    function drawBarChart() {
-
-        var data = new google.visualization.DataTable();
-
-        data.addColumn('string', 'Element');
-        data.addColumn('number', 'Counts');
-        data.addColumn({type: 'string', role: 'style'});
-
-        var colorcodes = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6']
-        var counter = 0
-
-        for (var key in countTagSourceDjango) {
-            if(colorcodes.length > counter){
-                data.addRow([key, countTagSourceDjango[key], 'color: ' + colorcodes[counter]]);
-            } else{
-                var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-                data.addRow([key, countTagSourceDjango[key], 'color: ' + randomColor]);
-            }
-            counter++;
-        }
-
-        var options = {
-        title: "Most Common Tag Sources",
-        bar: {groupWidth: "95%"},
-        legend: { position: "none" },
-      };
-      var chart = new google.visualization.BarChart(document.getElementById("chart2"));
-      chart.draw(data, options);
-    }
-*/
 </script>
-
-
-
-
-
 {% endblock %}
