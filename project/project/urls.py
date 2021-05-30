@@ -21,14 +21,13 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('updateTags/<int:hash>', views.updateTags, name='updateTags'),
     path('folders', views.managefolders, name='managefolders'),
     path('delete/<path:path>', views.delete, name='uploadDelete'),
+    path('update', views.updateFolders, name='updateFolders'),
     path('people', views.managepeople, name='managepeople'),
-    path('ocr', views.ocr, name='ocr'),
-    path('exif', views.exif, name='exif'),
-    path('es', views.createIndex, name='createIndexES'),
-    path('searches', views.search, name='searchIndexES'),
     path('upload', views.upload, name='uploadFolder'),
     path('searchtag', views.searchtag, name='searchtag'),
-    path('update_faces', views.update_faces, name='update_faces')
+    path('update_faces', views.update_faces, name='update_faces'),
+    path('dashboard', views.dashboard, name='dashboard'),
 ]

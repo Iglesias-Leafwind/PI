@@ -344,6 +344,16 @@ legend {
   margin-top: 2vh;
 }
 
+.inner-textarea{
+  height: 10vh;
+  border-radius: 0.25rem;
+  border: 0px;
+  float: left;
+  background-color: #E0E0E0;
+  width: 98%;
+  margin-bottom: 4%;
+}
+
 .inner-path > input{
   width: 50vw;
   height: 7vh;
@@ -462,10 +472,27 @@ button:focus{
   padding-top: 15vh;
   margin-top: -1.2vh;
   background: url("../img/bg-texture.png") repeat;
+  min-height: 200vh;
 }
 
 .bg-mine{
   background-color: rgba(248, 249, 250, 0.5);
+}
+#editTagsIcon {
+  margin-left: 2%;
+  font-size: 100%;
+  color: #0d6efd;
+  cursor: pointer;
+}
+
+.imageThumbnail {
+  margin: 2% 25% 6% 25%
+}
+.imageThumbnailInMenu {
+  object-fit: cover;
+}
+.imagePath {
+  margin: 2% 0%;
 }
 
 /* Rename Profiles Modal */
@@ -637,6 +664,10 @@ fa.redo:hover{
   border: none !important;
 }
 
+.whiteLink, .whiteLink:hover{
+  color:white;
+  text-decoration: none;
+}
 
 /*===============================
 =       Buttons Animation       =
@@ -676,4 +707,91 @@ fa.redo:hover{
     -ms-transform: rotate(100deg);
   }
 
+}
+
+
+/*===============================
+=       People MGMT Page       =
+===============================*/
+
+.toggle-on{
+  margin-left: -4% !important;
+}
+
+.toggle-off{
+      margin-left: 4% !important;
+}
+
+.center-smallest span {
+    border-radius: 100%;
+    width: 14%;
+}
+.toggle {
+  border-radius: 17px;
+  border: 0px;
+  height: 0.5vh !important;
+}
+
+.importantcontainer input{
+  padding: 1%;
+  border-radius: 1px;
+  border: 0px;
+  background-color: #E0E0E0;
+  margin: 0.4%;
+  height: 6vh !important;
+}
+
+.importantcontainer img{
+  border-radius: 100%;
+  height: 8vh;
+}
+
+.center-smallest {
+    display: block;
+    background-color: white;
+    margin: 15vh auto;
+    padding: 4vh 4vw;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #E0E0E0;
+    width: 50vw;
+}
+
+/*===============================
+=            Sidebar            =
+===============================*/
+
+.nav-item{
+  margin-bottom: 5vh !important;
+}
+
+.main-sidebar{
+  box-shadow: 0px 10px 6px #E0E0E0;
+  background-color: white;
+  height: 100%;
+}
+
+.sadnav-item:hover{
+  background-color: #E0E0E0;
+  border-radius: 10px;
+}
+
+/*===============================
+=          Grid Layout          =
+===============================*/
+
+.mygrid{
+  position: absolute;
+  left: 15vw;
+  display: grid;
+  grid-template-columns: 1vw 3vw 6vw 10vw 12vw;
+  grid-template-rows: 3vh 13vh 16vh 30vh 33vh auto;
+}
+
+.piechart{
+  grid-column-start: 2;
+  grid-column-end: five;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  background-color: #0a58ca;
 }

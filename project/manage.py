@@ -26,7 +26,9 @@ def main():
     #closeES()
 
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#"/home/alexis/elasticsearch-7.12.1/bin/elasticsearch"
+#alexa
+#esPath = "/home/alexis/elasticsearch-7.12.1/bin/elasticsearch"
+#Iglesias:
 esPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch"
 
 def openES():

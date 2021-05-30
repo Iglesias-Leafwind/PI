@@ -7,7 +7,14 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from manage import es
 
-config.DATABASE_URL = 'bolt://neo4j:password@localhost:7687'
+
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Wei:
+#config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
+#Iglesias:
+config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
+#Alexa:
+#config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
 
 # for elastic search ↓
 class ImageES(Document):
@@ -41,6 +48,7 @@ class HasA(StructuredRel):
     rel = "Has a"
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
+    manual = BooleanProperty(default=False)
 
 
 class DisplayA(StructuredRel):
@@ -71,7 +79,6 @@ class ImageNeo(StructuredNode):
 
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    quantity = IntegerProperty(default=1)
     image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
 

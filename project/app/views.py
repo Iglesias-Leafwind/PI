@@ -9,8 +9,42 @@ from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
+import re
+
+def updateTags(request, hash):
+    newTagsString = request.POST.get("tagsTextarea")
+    newTags = re.split('\s|\s+|\t|#', newTagsString)
+    newTags = [tag for tag in newTags if tag != ""]
+    print(newTags)
+    image = ImageNeo.nodes.get_or_none(hash=hash)
+    oldTags = [x.name for x in image.tag.all()]
+    print(oldTags)
+
+    for indx,tag in enumerate(newTags):
+        if tag not in oldTags:
+            addTag(hash, tag)
+
+    for tag in oldTags:
+        if tag not in newTags:
+            deleteTag(hash, tag)
+
+
+
+    query = SearchForm()
+    image = SearchForImageForm()
+    results = {}
+    for tag in Tag.nodes.all():
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+
+    return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
+
 from app.utils import showDict
 
 def index(request):
@@ -40,7 +74,6 @@ def index(request):
         if 'query' in request.GET:
             query = SearchForm()    # cleaning this form
             image = SearchForImageForm()    # fetching the images form
-
             query_text = request.GET.get("query")   # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
@@ -128,41 +161,6 @@ def managepeople(request):
     return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names, 'filters' : filters})
 
 
-
-# OCR
-def ocr(request):
-    get = request.GET.get("path")
-    res = getOCR(get)
-    return render(request, 'ocr.html', {'res': res})
-
-
-# EXIF
-def exif(request):
-    get = request.GET.get("path")
-    res = getExif(get)
-    isProcessed = alreadyProcessed(get)
-    if not isProcessed:
-        imgread = cv2.imread(get)
-        hash = dhash(imgread)
-        img = ImageNeo(folder_uri=get, name="something", hash=hash)
-        img.save()
-    return render(request, 'exif.html', {'res': res, 'isProcessed': isProcessed})
-
-
-# Elasticsearch
-def createIndex(request):
-    uri = request.GET.get("uri")
-    tag = request.GET.get("tag")
-
-    i = Index(using=es, name=request.GET.get("index"))
-    if not i.exists(using=es):
-        i.create()
-
-    ImageES(meta={'id': uri}, uri=uri, tags=[tag]).save(using=es)
-
-    return render(request, 'insert_es.html')
-
-
 def search(tags):
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
@@ -191,6 +189,15 @@ def searchtag(request):
     for i in execute:
         print(i)
     return render(request, 'index.html')
+
+def updateFolders(request):
+    folders = fs.getAllUris()
+    for folder in folders:
+        uploadImages(folder)
+    form = SearchForm()
+    image = SearchForImageForm()
+    pathf = EditFoldersForm()
+    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 def update_faces(request):
     if request.method != 'POST':
@@ -239,4 +246,8 @@ def update_faces(request):
 
     return redirect('/people')
 
+def dashboard(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    return render(request, 'dashboard.html', {'form': form, 'image_form': image})
 
