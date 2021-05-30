@@ -373,10 +373,11 @@ def objectsGallery(request):
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
             # print(tag.name, originalTagSource)
-            if originalTagSource == "object":
-                allTags += [tag]
+            if originalTagSource == "object" and tag.name not in allTags:
+                allTags += [tag.name]
 
-    return None
+    return render(request, 'objectsGallery.html',
+                  {'form': form, 'image_form': image, 'objectTags': allTags})
 
 
 def peopleGallery(request):
