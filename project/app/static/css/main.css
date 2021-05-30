@@ -820,8 +820,8 @@ fa.redo:hover{
   box-shadow: 1px 10px 6px #E0E0E0;
 }
 
-.dates-div{
-  background-image: url("../img/person-bounding-box.svg");
+.obj-div{
+  background-image: url("../img/box-seam.svg");
   background-size: 30%;
   background-position: 90% 85%;
   background-repeat: no-repeat;
@@ -856,6 +856,13 @@ fa.redo:hover{
   border-radius: 25px;
   box-shadow: 1px 10px 6px #E0E0E0;
   overflow: hidden;
+}
+
+.stats-text{
+  color: white;
+  font-weight: bold;
+  margin-top: 4vh;
+  margin-left: 2vw;
 }
 
 

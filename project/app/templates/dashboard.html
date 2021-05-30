@@ -59,20 +59,23 @@
 
     <div class="mygrid">
         <div class="locations-div">
-
+            <h1 class="stats-text">{{ numbers.location }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">locations</p>
         </div>
 
         <div class="people-div">
-            {{ numbers.person }}
+            <h1 class="stats-text">{{ numbers.person }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">people</p>
         </div>
+
         <div class="scenes-div">
-
+            <h1 class="stats-text">{{ countTagSource.places }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">places</p>
         </div>
-        <div class="objects-div">
 
-        </div>
-        <div class="dates-div">
-
+        <div class="obj-div">
+            <h1 class="stats-text">{{ countTagSource.objects }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">objects</p>
         </div>
         <div class="piechart">
             <div id="chart1"></div>
