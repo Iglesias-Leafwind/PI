@@ -86,6 +86,44 @@
 
     </div>
 <script type="text/javascript">
+    drawChart();
+    function drawChart() {
+        countTagsDjango = {{ counts|safe }};
+        var dataPoints = [];
+        var countTotal = 0;
+        var percentages = [];
+        for (var key in countTagsDjango) {
+            dataPoints.push({ 'y': countTagsDjango[key], 'label': key});
+            countTotal = countTotal + countTagsDjango[key];
+        }
+        for (var key in countTagsDjango) {
+            percentages.push(countTagsDjango[key]/countTotal);
+        }
+        var chart = new CanvasJS.Chart("chart1", {
+            theme: "light2", // "light1", "light2", "dark1", "dark2"
+            exportEnabled: true,
+            animationEnabled: true,
+            height: 300,
+            title: {
+                text: "Top Most Common Tags",
+                fontSize: 20,
+            },
+            data: [{
+                type: "doughnut",
+                startAngle: 25,
+                innerRadius: 60,
+                toolTipContent: "<b>{label}</b>: {y}",
+                showInLegend: "true",
+                legendText: "{label}",
+                indexLabelFontSize: 12,
+                indexLabel: "{label} - {y}",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
+
+}
+/*
 
     // Load google charts
     google.charts.load('current', {'packages':['corechart']});
@@ -138,7 +176,7 @@
       var chart = new google.visualization.BarChart(document.getElementById("chart2"));
       chart.draw(data, options);
     }
-
+*/
 </script>
 
 
