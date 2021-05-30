@@ -41,12 +41,13 @@ import psutil, time
 cpuPerThread = 1
 ramPerThread = 1
 def testingThreadCapacity():
-    time.sleep(2)
+    global cpuPerThread
+    global ramPerThread
+
     cpuNormal = psutil.cpu_percent()
     ramNormal = psutil.virtual_memory().percent
     cpuHigh = 0
     ramHigh = 0
-    time.sleep(2)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     head,_ = os.path.split(dir_path)
     dir_path = os.path.join(head,"tests")
@@ -262,7 +263,8 @@ def processing(dirFiles):
                                          insertion_date=datetime.now())
 
                     lock.acquire()
-                    if ImageNeo.nodes.get_or_none(hash=hash):
+                    existed = ImageNeo.nodes.get_or_none(hash=hash)
+                    if existed:
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)

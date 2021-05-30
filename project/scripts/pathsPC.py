@@ -4,7 +4,7 @@ import multiprocessing
 
 numThreads = multiprocessing.cpu_count()
 
-pool = ThreadPoolExecutor(max_workers=numThreads*2)
+pool = ThreadPoolExecutor(max_workers=numThreads)
 
 def do(fc, args=None):
     if args:
