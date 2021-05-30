@@ -3,18 +3,93 @@
 
 {% block content %}
     <div class="container centerGalleryDiv">
-        <div id="insertion_calendar" style="width: 1000vw; height: 30vh;"></div>
-        <div id="creation_calendar" style="width: 1000vw; height: 700vh;"></div>
+        <div id="insertion_calendar" style="width: 60vw; height: 45vh; margin-top: 2vh"></div>
+        <div id="creation_calendar" style="width: 60vw; height: 45vh; margin-top: 4vh"></div>
     </div>
 
 
     <script type="text/javascript">
+
+    drawCalendarChartByInsertion();
+    function drawCalendarChartByInsertion() {
+        datesDjango = {{ datesInsertion|safe }};
+        var dataPoints = [];
+        for (var key in datesDjango) {
+            dataPoints.push({ 'y': datesDjango[key], 'label': key});
+        }
+        var chart = new CanvasJS.Chart("insertion_calendar", {
+            animationEnabled: true,
+            exportEnabled: true,
+            title:{
+                text: "New Images Calendar",
+                fontFamily: "arial",
+                fontStyle: "bold",
+            },
+            axisX:{
+                valueFormatString: "YYYY DD MMM",
+                labelFontSize: 15,
+            },
+            axisY: {
+                interval: 1,
+                labelFontSize: 15,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            data: [{
+                type: "line",
+                xValueFormatString: "YYYY DD MMM",
+                toolTipContent: "<b>{label}</b>: {y} images uploaded",
+                color: "#ff0000",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
+    }
+
+    drawCalendarChartByCreation();
+    function drawCalendarChartByCreation() {
+        datesByCreationDjango = {{ datesCreation|safe }};
+        var dataPoints = [];
+        for (var key in datesByCreationDjango) {
+            dataPoints.push({ 'y': datesByCreationDjango[key], 'label': key});
+        }
+        var chart = new CanvasJS.Chart("creation_calendar", {
+            animationEnabled: true,
+            exportEnabled: true,
+            title:{
+                text: "Images' Creation Date Calendar",
+                fontFamily: "arial",
+                fontStyle: "bold",
+            },
+            axisX:{
+                valueFormatString: "YYYY DD MMM",
+                labelFontSize: 15,
+            },
+            axisY: {
+                interval: 1,
+                labelFontSize: 15,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            data: [{
+                type: "line",
+                xValueFormatString: "YYYY DD MMM",
+                toolTipContent: "<b>{label}</b>: {y} image(s) taken on this day",
+                color: "#0000ff",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
+    }
+    /*
       google.charts.load("current", {packages:["calendar"]});
       google.charts.setOnLoadCallback(drawCalendarChart);
       google.charts.setOnLoadCallback(drawCalendarChartByCreation);
 
    function drawCalendarChart() {
-       datesDjango = {{ datesInsertion|safe }};
+
        var dataTable = new google.visualization.DataTable();
        dataTable.addColumn({ type: 'date', id: 'Date' });
        dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
@@ -33,7 +108,7 @@
    }
 
    function drawCalendarChartByCreation() {
-       datesByCreationDjango = {{ datesCreation|safe }};
+
        var dataTable = new google.visualization.DataTable();
        dataTable.addColumn({ type: 'date', id: 'Date' });
        dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
@@ -50,5 +125,6 @@
 
        chart.draw(dataTable, options);
    }
+   */
     </script>
 {% endblock %}
