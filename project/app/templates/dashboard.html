@@ -91,13 +91,11 @@
         countTagsDjango = {{ counts|safe }};
         var dataPoints = [];
         var countTotal = 0;
-        var percentages = [];
         for (var key in countTagsDjango) {
-            dataPoints.push({ 'y': countTagsDjango[key], 'label': key});
             countTotal = countTotal + countTagsDjango[key];
         }
         for (var key in countTagsDjango) {
-            percentages.push(countTagsDjango[key]/countTotal);
+            dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': (countTagsDjango[key]/countTotal)*100});
         }
         var chart = new CanvasJS.Chart("chart1", {
             theme: "light2", // "light1", "light2", "dark1", "dark2"
@@ -112,7 +110,7 @@
                 type: "doughnut",
                 startAngle: 25,
                 innerRadius: 60,
-                toolTipContent: "<b>{label}</b>: {y}",
+                toolTipContent: "<b>{label}</b>: {percentage}%",
                 showInLegend: "true",
                 legendText: "{label}",
                 indexLabelFontSize: 12,
@@ -122,33 +120,53 @@
         });
         chart.render();
 
-}
-/*
-
-    // Load google charts
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
-
-    // Draw the chart and set the chart values
-    function drawChart() {
-        countTagsDjango = {{ counts|safe }};
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Element');
-        data.addColumn('number', 'Counts');
-        for (var key in countTagsDjango) {
-            data.addRow([key, countTagsDjango[key]]);
-        }
-      // Optional; add a title and set the width and height of the chart
-      var options = {'title':'Top Most Common Tags', 'pieHole': 0.4};
-
-      // Display the chart inside the <div> element with id="piechart"
-      var chart = new google.visualization.PieChart(document.getElementById('chart1'));
-      chart.draw(data, options);
     }
-    google.charts.setOnLoadCallback(drawBarChart);
-    // Draw a bar chart
+
+    drawBarChart();
     function drawBarChart() {
         countTagSourceDjango = {{ countTagSource|safe }};
+        var dataPoints = [];
+        for (var key in countTagsDjango) {
+            dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key});
+        }
+        var chart = new CanvasJS.Chart("chartContainer", {
+            animationEnabled: true,
+            title: {
+                text: "Most Common Tag Sources"
+            },
+            axisX: {
+                interval: 1
+            },
+            axisY: {
+                title: "Counts",
+                includeZero: true
+            },
+            data: [{
+                type: "bar",
+                toolTipContent: "<b>{label}</b><br>Budget: ${y}bn<br>{gdp}% of GDP",
+                dataPoints: [
+                    {label: "Israel", y: 17.8, gdp: 5.8, url: "israel.png"},
+                    {label: "United Arab Emirates", y: 22.8, gdp: 5.7, url: "uae.png"},
+                    {label: "Brazil", y: 22.8, gdp: 1.3, url: "brazil.png"},
+                    {label: "Australia", y: 24.3, gdp: 2.0, url: "australia.png"},
+                    {label: "South Korea", y: 36.8, gdp: 2.7, url: "skorea.png"},
+                    {label: "Germany", y: 41.1, gdp: 1.2, url: "germany.png"},
+                    {label: "Japan", y: 46.1, gdp: 1.0, url: "japan.png"},
+                    {label: "United Kingdom", y: 48.3, gdp: 1.9, url: "uk.png"},
+                    {label: "India", y: 55.9, gdp: 2.5, url: "india.png"},
+                    {label: "Russia", y: 69.2, gdp: 5.3, url: "russia.png"},
+                    {label: "China", y: 215.7, gdp: 1.9, url: "china.png"},
+                    {label: "United States", y: 611.2, gdp: 3.3, url: "us.png"}
+                ]
+            }]
+        });
+        chart.render();
+
+    }
+/*
+
+    function drawBarChart() {
+
         var data = new google.visualization.DataTable();
 
         data.addColumn('string', 'Element');
