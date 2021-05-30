@@ -14,6 +14,7 @@ nltk==3.6.2
 numpy==1.20.2
 numpyencoder==0.3.0
 opencv-python==4.5.1.48
+psutil==5.8.0
 py==1.10.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
