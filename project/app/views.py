@@ -352,3 +352,19 @@ def calendarGallery(request):
     print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
+
+
+def objectsGallery(request):
+    return None
+
+
+def peopleGallery(request):
+    return None
+
+
+def scenesGallery(request):
+    return None
+
+
+def locationsGallery(request):
+    return None

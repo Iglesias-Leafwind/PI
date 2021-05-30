@@ -30,5 +30,9 @@ urlpatterns = [
     path('searchtag', views.searchtag, name='searchtag'),
     path('update_faces', views.update_faces, name='update_faces'),
     path('dashboard', views.dashboard, name='dashboard'),
-    path('gallery', views.calendarGallery, name='gallery')
+    path('objects', views.objectsGallery, name='objectsGallery'),
+    path('people', views.peopleGallery, name='pplGallery'),
+    path('scenes', views.scenesGallery, name='scenesGallery'),
+    path('locations', views.locationsGallery, name='locationsGallery'),
+    path('gallery', views.calendarGallery, name='gallery'),
 ]
