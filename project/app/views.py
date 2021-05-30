@@ -320,7 +320,8 @@ def dashboard(request):
         if label not in countOriginalTagSource.keys():
             countOriginalTagSource[label] = 0
 
-    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1], reverse=True))
+    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1]))
+    print(countOriginalTagSource)
     return render(request, 'dashboard.html',
                   {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
                    'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
