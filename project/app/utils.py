@@ -26,12 +26,13 @@ def getImagesPerUri(pathName):
                 dirsAndFiles.update(getImagesPerUri(f))
             else:
                 image_type = imghdr.what(f)
-                if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or image_type in ['jpeg', 'png', 'bmp']:
+                if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or f.endswith('JPG') or image_type in ['jpeg', 'png', 'bmp']:
                     if pathName in dirsAndFiles.keys():
                         dirsAndFiles[pathName].append(os.path.basename(f))
                     else:
                         dirsAndFiles[pathName] = [os.path.basename(f)]
-
+                else:
+                    print(f, image_type)
     return dirsAndFiles
 
 def getRandomNumber():
