@@ -16,6 +16,14 @@ import re
 import itertools
 
 
+
+def landingpage(request):
+    query = SearchForm()  # query form stays the same
+    image = SearchForImageForm()  # fetching image form response
+    folders = len(fs.getAllUris())
+    path_form = EditFoldersForm()
+    return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
+
 def updateTags(request, hash):
     newTagsString = request.POST.get("tagsTextarea")
     newTags = re.split('\s|\s+|\t|#', newTagsString)
@@ -368,3 +376,4 @@ def scenesGallery(request):
 
 def locationsGallery(request):
     return None
+
