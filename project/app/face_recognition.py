@@ -247,3 +247,7 @@ class FaceRecognition:
 
         for k in keys_to_remove:
             del self.name2encodings[k]
+
+            p = Person.nodes.get_or_none(name=k)
+            if p is not None:
+                p.delete()
