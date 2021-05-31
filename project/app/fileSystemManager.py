@@ -160,7 +160,7 @@ class SimpleFileSystemManager:
                 node = node.children[folder]
 
             if node.parent:
-                node.parent.children.pop(folders[-1])
+                node.parent.children.pop(node.name)
 
             folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
 
@@ -205,10 +205,18 @@ class SimpleFileSystemManager:
                 parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
                 if not parentFolder:
                     continue
+                currNode = node
                 node = node.parent
                 children = parentFolder.getChildren()
                 if len(children) == 0 and not parentFolder.terminated:
                     parentFolder.delete()
+                    if currNode.name in node.children:
+                        node.children.pop(currNode.name)
+                else: break
+
+            if node.name in self.trees:
+                if len(node.children) == 0:
+                    self.trees.pop(node.name)
 
             return deletedImages
 
@@ -262,6 +270,6 @@ class SimpleFileSystemManager:
                 buildUri(nextNode, path)
 
         for node in self.trees.keys():
-            buildUri(self.trees[node], os.path.normpath(node + "//"))
+            buildUri(self.trees[node], os.path.normpath(node + "/"))
 
         return uris

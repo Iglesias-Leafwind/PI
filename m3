@@ -1,0 +1,3 @@
+- falar da implementação da rede neuronal para reconhecer animais
+- falar da implementação dos resultados retornando um JSON com o path das imagens ou uma pasta que contenha essas imagens
+- 
