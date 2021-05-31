@@ -2,10 +2,12 @@ html {
   line-height: 1.15;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
+  height: 100%;
 }
 
 body{
   margin:0 !important;
+  height: 100%;
 }
 
 article,
@@ -267,27 +269,29 @@ legend {
   margin-top: 3vh;
   margin-left: 12vh;
 }
+<<<<<<< HEAD
+=======
+
+#scrollBtn {
+  display: none; /* Hidden by default */
+  position: fixed; /* Fixed/sticky position */
+  bottom: 20px; /* Place the button at the bottom of the page */
+  right: 30px; /* Place the button 30px from the right */
+  z-index: 99; /* Make sure it does not overlap */
+  border: none; /* Remove borders */
+  outline: none; /* Remove outline */
+  background-color: #1E2832; /* Set a background color */
+  color: white; /* Text color */
+  cursor: pointer; /* Add a mouse pointer on hover */
+  padding: 15px; /* Some padding */
+  border-radius: 10px; /* Rounded corners */
+  font-size: 18px; /* Increase font size */
+}
+
+>>>>>>> develop
 /*===============================
 =            Choices            =
 ===============================*/
-.s004 {
-  height: 80vh;
-  width: 100% !important;
-  display: -ms-flexbox;
-  display: flex;
-  flex-flow: column wrap;
-  -ms-flex-pack: center;
-  justify-content: center;
-  -ms-flex-align: center;
-  align-items: center;
-  background-size: cover;
-  background: url("../img/lens2.jpg") no-repeat fixed 97% 79%;
-  background-size: auto;
-}
-
-.s004:nth-child(1) {
-  page-break-after: always;
-}
 
 .topbar{
   background-color: white;
@@ -470,8 +474,9 @@ button:focus{
 .main{
   padding-top: 15vh;
   margin-top: -1.2vh;
-  background: url("../img/bg-texture.png") repeat;
-  min-height: 200vh;
+  background-image: url("../img/bg-texture.png");
+  background-color: rgba(248, 249, 250, 0.5);
+  min-height: 150vh;
 }
 
 .bg-mine{
@@ -485,9 +490,11 @@ button:focus{
 }
 
 .imageThumbnail {
-  margin: 2% 25% 6% 25%;
+  margin: 2% 25% 6% 25%
 }
-
+.imageThumbnailInMenu {
+  object-fit: cover;
+}
 .imagePath {
   margin: 2% 0%;
 }
@@ -763,5 +770,128 @@ fa.redo:hover{
 }
 
 .main-sidebar{
-  box-shadow: 10px -10px 6px #E0E0E0 !important;
+  box-shadow: 0px 10px 6px #E0E0E0;
+  background-color: white;
+  height: 135vh;
+  width: 16vw;
+  padding-top: 3vh;
+}
+
+.main-sidebar i{
+    font-size: 2vw;
+    margin-right: 1vw;
+}
+
+.sadnav-item:hover{
+  background-color: #E0E0E0;
+  border-radius: 10px;
+}
+
+/*===============================
+=          Grid Layout          =
+===============================*/
+
+.mygrid{
+  position: absolute;
+  left: 15vw;
+  display: grid;
+  grid-template-columns: 6vw 16vw 3vw 16vw 3vw 16vw 3vw 16vw ;
+  grid-template-rows: 5vh 20vh 10vh 40vh 10vh 40vh;
+}
+
+.locations-div{
+  background-image: url("../img/compass-fill.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
+  background-color: #5baee5;
+  grid-column-start: 2;
+  grid-column-end: 3;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.people-div{
+  background-image: url("../img/person-bounding-box.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
+  background-color: #0c819c;
+  grid-column-start: 4;
+  grid-column-end: 5;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.scenes-div{
+  background-image: url("../img/geo-fill.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
+  background-color: #703770;
+  grid-column-start: 6;
+  grid-column-end: 7;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.obj-div{
+  background-image: url("../img/box-seam.svg");
+  background-size: 30%;
+  background-position: 90% 85%;
+  background-repeat: no-repeat;
+  background-color: #334553;
+  grid-column-start: 8;
+  grid-column-end: 9;
+  grid-row-start: 2;
+  grid-row-end: 3;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.piechart{
+  padding: 7% 0% 0% 7% !important;
+  grid-column-start: 6;
+  margin-left: 3vw;
+  grid-column-end: 9;
+  grid-row-start: 4;
+  grid-row-end: 5;
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+}
+
+.barchart{
+  padding: 7% 0% 0% 7% !important;
+  grid-column-start: 2;
+  grid-column-end: 6;
+  grid-row-start: 4;
+  grid-row-end: 5;
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 1px 10px 6px #E0E0E0;
+  overflow: hidden;
+}
+
+.stats-text{
+  color: white;
+  font-weight: bold;
+  margin-top: 4vh;
+  margin-left: 2vw;
+}
+
+
+/*===============================
+=          Gallery Page          =
+===============================*/
+
+.centerGalleryDiv {
+  width: 50%;
+  margin: 0 auto;
 }

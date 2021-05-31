@@ -1,7 +1,7 @@
 import json
 import string
 
-#from app.face_recognition import FaceRecognition
+from app.face_recognition import FaceRecognition
 import time
 import sys
 from datetime import datetime
@@ -10,11 +10,10 @@ import random
 import numpy as np
 import requests
 from numpyencoder import NumpyEncoder
-from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, processingLock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail, processingLock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -32,12 +31,43 @@ from exif import Image as ImgX
 from app.VGG_ import VGGNet
 from manage import es
 import app.utils
-from scripts.pathsPC import do
+from scripts.pathsPC import do,numThreads
 import logging
 
+import psutil, time
+
+cpuPerThread = 1
+ramPerThread = 1
+def testingThreadCapacity():
+    global cpuPerThread
+    global ramPerThread
+
+    cpuNormal = psutil.cpu_percent()
+    ramNormal = psutil.virtual_memory().percent
+    cpuHigh = 0
+    ramHigh = 0
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    head,_ = os.path.split(dir_path)
+    dir_path = os.path.join(head,"tests")
+    wait = do(processing, {dir_path: ["face.jpg"]})
+    while not wait.done():
+        cpuCurr = psutil.cpu_percent()
+        ramCurr = psutil.virtual_memory().percent
+        if(cpuCurr > cpuHigh):
+            cpuHigh = cpuCurr
+        if(ramCurr > ramHigh):
+            ramHigh = ramCurr
+    deleteFolder(dir_path)
+    cpuPerThread = cpuHigh - cpuNormal
+    if(cpuPerThread <= 0):
+        cpuPerThread = (cpuPerThread * -1) + 1
+
+    ramPerThread = ramHigh - ramNormal
+    if(ramPerThread <= 0):
+        ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
+frr = FaceRecognition()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -51,7 +81,12 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 # load installed tesseract-ocr from users pc
-pytesseract.pytesseract.tesseract_cmd = r'D:\\OCR\\tesseract'
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Windows Iglesias:
+pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
+# Ubuntu:
+# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -90,16 +125,50 @@ def uploadImages(uri):
     print("----------------------------------------------")
 
     dirFiles = getImagesPerUri(uri)
-    taskOne, taskTwo = divideTaskInTwo(dirFiles)
 
-    do(processing, taskOne)
-    print("------------------task 1------------------")
-    do(processing, taskTwo)
-    print("------------------task 2------------------")
-'''
+    cpuCurr = psutil.cpu_percent()
+    ramCurr = psutil.virtual_memory().percent
+    freeCPU = (100 - cpuCurr)/2
+    freeRAM = (100 - ramCurr)/2
+    threads = freeCPU/cpuPerThread
+    threadsRAM = freeRAM/ramPerThread
+    if(threadsRAM < threads):
+        threads = threadsRAM
+    threads = int(threads)
+    if(threads > numThreads):
+        threads = numThreads
+    if(threads <= 0):
+        threads = 1
+    tasks = divideTasksInMany(dirFiles,threads)
+    i = 1
+    for task in tasks:
+        print("------------------task", i, "------------------")
+        do(processing, task)
+        i += 1
+
+def divideTasksInMany(dirFiles,qty):
+    threading = 0
+    tasks = []
+
+    for i in range(1,qty+1):
+        tasks.append({})
+
+    # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, 2.jpg
+    for path in dirFiles.keys():
+        for image in dirFiles[path]:
+            if(path not in tasks[threading].keys()):
+                tasks[threading][path] = [image]
+            else:
+                tasks[threading][path] += [image]
+            threading += 1
+            if(threading >= len(tasks)):
+                threading = 0
+
+    return tasks
+
 def face_rec_part(read_image, img_path, tags, image):
     # image aberta -> read_image
-    print("--- comeca a parte de face rec ---")
+    print("--- comeca a parte de face rec da img: ",img_path, " ---")
     openimage, boxes = frr.getFaceBoxes(open_img=read_image, image_path=img_path)
 
     for b in boxes:
@@ -108,21 +177,22 @@ def face_rec_part(read_image, img_path, tags, image):
             # esta verificacao terá de ser alterada para algo mais preciso
             # por exemplo, definir um grau de certeza
             name = ''.join(random.choice(string.ascii_letters) for i in range(10))
-        frr.saveFaceIdentification(openimage, b, name, encoding = enc, conf=conf)
+        frr.saveFaceIdentification(name=name, encoding = enc, conf=conf, imghash=image.hash)
 
         # face_thumb_path = os.path.join('app', 'static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
         face_icon = app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
         p = Person.nodes.get_or_none(name=name)
         if p is None:
-            p = Person(name=name, icon=face_thumb_path).save()
-            tags.append(name)
+            #p = Person(name=name, icon=face_thumb_path).save()
+            p = Person(name=name).save()
+
+        tags.append(name)
 
         # encodings falta
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
         print("-- face rec end --")
-'''
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -137,10 +207,12 @@ def processing(dirFiles):
         try:
             for index, img_name in enumerate(img_list):
                 img_path = os.path.join(dir, img_name)
+                print("I am in: ",img_path)
                 i = ImageFeature()
 
                 read_image = cv2.imread(img_path)
                 if read_image is None:
+                    print('read img is none')
                     continue
                 hash = dhash(read_image)
 
@@ -189,6 +261,7 @@ def processing(dirFiles):
                                          insertion_date=datetime.now())
 
                     processingLock.acquire()
+                    existed = ImageNeo.nodes.get_or_none(hash=hash)
                     if ImageNeo.nodes.get_or_none(hash=hash):
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
@@ -238,11 +311,12 @@ def processing(dirFiles):
                                         originalTagSource='object').save()
 
                         tags.append(object)
-                        image.tag.connect(tag, {'score': confidence})
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
                     # !!!
-                    #face_rec_part(read_image, img_path, tags, image)
-
+                    faceRecLock.acquire()
+                    face_rec_part(read_image, img_path, tags, image)
+                    faceRecLock.release()
 
                     #     p = Person.nodes.get_or_none(name=name)
 
@@ -257,7 +331,7 @@ def processing(dirFiles):
                                         originalTagName=p,
                                         originalTagSource='places').save()
                             tags.append(p)
-                            image.tag.connect(t, {'score':prob})
+                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places', 'score':prob})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
@@ -268,35 +342,19 @@ def processing(dirFiles):
                                         originalTagName=word,
                                         originalTagSource='ocr').save()
                             tags.append(word)
-                            image.tag.connect(t, {'score': 0})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
                     i.features = norm_feat
                     ftManager.imageFeatures.append(i)
 
+                    print('tags: ', tags)
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                     print("extracting feature from image %s " % (img_path))
         except Exception as e:
             print(e)
-
-
-def divideTaskInTwo(dirFiles):
-    l = int(len(dirFiles) / 2) # numero de pastas
-    i = 0
-    taskOne = {}
-    taskTwo = {}
-
-    # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, .jpg
-    for k in dirFiles.keys():
-        if i < l:
-            taskOne[k] = dirFiles[k]
-        else:
-            taskTwo[k] = dirFiles[k]
-        i += 1
-
-    return taskOne, taskTwo
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -379,10 +437,11 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
-    processingLock.acquire()
+
+    ocrLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
-    processingLock.release()
+    ocrLock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
@@ -599,18 +658,30 @@ def setUp():
     loadFileSystemManager()
     ftManager.npFeatures = npfeatures
     ftManager.imageFeatures = imageFeatures
+    testingThreadCapacity()
 
 def generateThumbnail(imagepath, hash):
     thumbnailH = 225
     thumbnailW = 225
 
+    dim = (thumbnailW, thumbnailH)
+
     # load the input image
     image = cv2.imread(imagepath)
-    w,h,p = image.shape
-    ratio = w/h
-    thumbnailW = int(thumbnailH * ratio)
-    dim = (thumbnailH,thumbnailW)
+    h,w,p = image.shape
 
+    paddingLR = 0
+    paddingTB = 0
+    if(w - thumbnailW > h - thumbnailH):
+        ratio = thumbnailW/w
+        thumbnailH = int(h * ratio)
+        paddingTB = int((thumbnailW-thumbnailH)/2)
+    else:
+        ratio = thumbnailH/h
+        thumbnailW = int(w * ratio)
+        paddingLR = int((thumbnailH-thumbnailW)/2)
+
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
@@ -620,6 +691,5 @@ def generateThumbnail(imagepath, hash):
     # 00 288 957
     # 99,65 %
     return(saving)
-
 
 setUp()

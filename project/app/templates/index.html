@@ -18,7 +18,7 @@
             <div class="col">
               <div class="card shadow-sm img_box">
                 {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                  <img height="115px" id="{{ image.0.hash }}" src="{% static image_static %}">
+                  <img class="imageThumbnailInMenu" height="115px" id="{{ image.0.hash }}" src="{% static image_static %}">
                 {% endwith %}
                 <div class="card-body">
                   <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
@@ -68,6 +68,9 @@
     </div>
   </div>
     {% endfor %}
+{% with 'img/arrow-up.svg' as myarrow %}
+    <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
+{% endwith %}
 </div>
     <script>
         var imgs = document.getElementsByTagName('img')
@@ -160,5 +163,25 @@
             })
             return ids;
         }
+        //Get the button:
+        mybutton = document.getElementById("scrollBtn");
+
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function() {scrollFunction()};
+
+        function scrollFunction() {
+          if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            mybutton.style.display = "block";
+          } else {
+            mybutton.style.display = "none";
+          }
+        }
+
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+          document.body.scrollTop = 0; // For Safari
+          document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+
     </script>
 {% endblock %}

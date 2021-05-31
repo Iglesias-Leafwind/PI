@@ -20,7 +20,8 @@ from app import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='index'),
+    path('', views.landingpage, name='landingpage'),
+    path('results', views.index, name='index'),
     path('updateTags/<int:hash>', views.updateTags, name='updateTags'),
     path('folders', views.managefolders, name='managefolders'),
     path('delete/<path:path>', views.delete, name='uploadDelete'),
@@ -32,4 +33,9 @@ urlpatterns = [
     path('dashboard', views.dashboard, name='dashboard'),
     path('export/zip/<str:ids>', views.exportToZip, name='export_zip'),
     path('export/excel/<str:ids>', views.exportToExcel, name='export_excel'),
+    path('objects', views.objectsGallery, name='objectsGallery'),
+    path('people', views.peopleGallery, name='pplGallery'),
+    path('scenes', views.scenesGallery, name='scenesGallery'),
+    path('locations', views.locationsGallery, name='locationsGallery'),
+    path('gallery', views.calendarGallery, name='gallery'),
 ]

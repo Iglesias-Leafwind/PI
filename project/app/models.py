@@ -7,8 +7,16 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from manage import es
 
-config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
 
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Wei:
+#config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
+#Iglesias:
+config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
+#Alexa:
+#config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
+#Anthony:
+config.DATABASE_URL = 'bolt://neo4j:pass@localhost:7687'
 
 # for elastic search ↓
 class ImageES(Document):
@@ -43,6 +51,7 @@ class HasA(StructuredRel):
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
     score = FloatProperty()
+    manual = BooleanProperty(default=False)
 
 
 class DisplayA(StructuredRel):
@@ -73,14 +82,18 @@ class ImageNeo(StructuredNode):
 
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    quantity = IntegerProperty(default=1)
     image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
+    # icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
+
+    def getDetails(self):
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person)  WHERE id(p)=$id RETURN r"
+        results, meta = db.cypher_query(query, {"id": self.id})
+        return [row[0] for row in results]
 
 
 class Country(StructuredNode):

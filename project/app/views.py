@@ -9,14 +9,23 @@ import cv2
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
-
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, EditTagForm
-from app.models import ImageES, ImageNeo, Tag, Person
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
-from app.utils import addTag, deleteTag
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm
+from app.models import ImageES, ImageNeo, Tag, Person, Location
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
 import re
+import itertools
+
+
+
+def landingpage(request):
+    query = SearchForm()  # query form stays the same
+    image = SearchForImageForm()  # fetching image form response
+    folders = len(fs.getAllUris())
+    path_form = EditFoldersForm()
+    return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
 
 def updateTags(request, hash):
@@ -27,7 +36,8 @@ def updateTags(request, hash):
     image = ImageNeo.nodes.get_or_none(hash=hash)
     oldTags = [x.name for x in image.tag.all()]
     print(oldTags)
-    for tag in newTags:
+
+    for indx, tag in enumerate(newTags):
         if tag not in oldTags:
             addTag(hash, tag)
 
@@ -40,6 +50,10 @@ def updateTags(request, hash):
     results = getAllImages()
 
     return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
+
+
+from app.utils import showDict
+
 
 def index(request):
     if request.method == 'POST':  # if it's a POST, we know it's from search by image
@@ -54,15 +68,16 @@ def index(request):
                 getresult = ImageNeo.nodes.get_or_none(hash=i)  # fetching each corresponding node
                 if getresult:  # if it exists
                     results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
-            return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
+            return render(request, "index.html",
+                          {'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
             results = getAllImages()
             return render(request, 'index.html', {'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
-            query = SearchForm()    # cleaning this form
-            image = SearchForImageForm()    # fetching the images form
-            query_text = request.GET.get("query")   # fetching the inputted query
+            query = SearchForm()  # cleaning this form
+            image = SearchForImageForm()  # fetching the images form
+            query_text = request.GET.get("query")  # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
             result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
@@ -91,7 +106,8 @@ def index(request):
 
                 results[tag].sort(key=sortFunction)
 
-            return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
+            return render(request, "index.html",
+                          {'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
             query = SearchForm()
@@ -120,7 +136,8 @@ def delete(request, path):
     pathf = EditFoldersForm()
     deleteFolder(path)
     folders = fs.getAllUris()
-    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    return render(request, 'managefolders.html',
+                  {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 
 def managefolders(request):
@@ -130,36 +147,49 @@ def managefolders(request):
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
-        return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+        return render(request, 'managefolders.html',
+                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
     else:
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
-        return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+        return render(request, 'managefolders.html',
+                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 
 def managepeople(request):
     if request.method == 'POST':
-        form = SearchForm()
-        image = SearchForImageForm()
-        names = PersonsForm(request.POST)
-        if names.is_valid() and names.has_changed():  # if names changed
-            i = 0
-            for field in names.declared_fields:
-                if field.has_changed:
-                    fimage = names.cleaned_data["person_image_" + str(i)]
-                    fname = names.cleaned_data["person_name_" + str(i)]
-                    profile = Person.objects.get(icon=fimage)
-                    profile.name = fname
-                    profile.save()
-                    names = PersonsForm()
-        return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
-    else:
-        form = SearchForm()
-        image = SearchForImageForm()
-        names = PersonsForm()
-        return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+        filters = PeopleFilterForm(request.POST)
+        print('entrou aqui...')
+        print(filters)
+        filters2 = filters.cleaned_data
+        print('cleanded fore valid', filters2)
+
+        showDict['unverified'] = filters2['unverified']
+        showDict['verified'] = filters2['verified']
+        """
+        if filters.is_valid() and filters.has_changed():
+            print('entrou aqui tmb')
+            filters = filters.cleaned_data
+            print(filters)
+
+            #showDict = filters
+            showDict['unverified'] = filters['unverified']
+            showDict['verified'] = filters['verified']
+            print(showDict)
+        else:
+            print('invalid...')
+        """
+        return redirect('/people')
+        # return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+
+    form = SearchForm()
+    image = SearchForImageForm()
+    names = PersonsForm()
+    filters = PeopleFilterForm(initial=showDict)
+    return render(request, 'renaming.html',
+                  {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
 
 
 def search(tags):
@@ -191,6 +221,7 @@ def searchtag(request):
         print(i)
     return render(request, 'index.html')
 
+
 def updateFolders(request):
     folders = fs.getAllUris()
     for folder in folders:
@@ -198,7 +229,9 @@ def updateFolders(request):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
-    return render(request, 'managefolders.html', {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    return render(request, 'managefolders.html',
+                  {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+
 
 def update_faces(request):
     if request.method != 'POST':
@@ -209,75 +242,152 @@ def update_faces(request):
     if not form.is_valid():
         print('invalid form!!!')
         # return or smth
+
+    if request.POST.get("close"):
+        print('close was called, do something!!')  # TODO
+
     print(form.cleaned_data)
     data = form.cleaned_data
 
     imgs = int(len(form.cleaned_data) / 5)
     listt = []
     for i in range(imgs):
-        if not data['person_verified_%s' % str(i)]:
-            continue
+        # if not data['person_verified_%s' % str(i)]:
+        #    continue
         thumbname = data['person_image_%s' % str(i)]
         new_personname = data['person_name_%s' % str(i)]
 
         # retirar isto abaixo dps!!!
         new_personname = new_personname.split(' ')[0]
         old_personname = data['person_before_%s' % str(i)]
+        verified = True
+        if not data['person_verified_%s' % str(i)]:
+            # continue
+            new_personname = old_personname
+            verified = False
 
-        #if old_personname == new_personname:
-        #    continue
-
+        # if old_personname != new_personname:
         image_hash = data['person_image_id_%s' % str(i)]
-        image = ImageNeo.nodes.get_or_none(hash=image_hash)
-        if image is None:
-            print('IMAGE IS NONE')
-
-        new_person = Person.nodes.get_or_none(name=new_personname)
-        if new_person is None:
-            new_person = Person(name=new_personname, icon=thumbname).save()
-            print('new person was created')
-
-        old_person = Person.nodes.get_or_none(name=old_personname)
-        if old_person is None:
-            print('OLD PERSON IS NONE')
-
-        changeRelationship(image, new_person, old_person)
+        frr.changeRelationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
+        if old_personname != new_personname:
+            frr.changeNameTagES(image_hash, new_personname, old_personname)
 
     frr.update_data()
 
-    form = SearchForm()
-    image = SearchForImageForm()
-    names = PersonsForm()
-    return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+    if 'reload' in request.POST:
+        print('reload was called')
+        frr.reload()
 
-def changeRelationship(img, new_person, old_person):
-    # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
-
-    existent_rel = old_person.image.relationship(img)
-    """
-    coordinates = ArrayProperty()
-    encodings = ArrayProperty()
-    icon = StringProperty()
-    confiance = FloatProperty()
-    approved = BooleanProperty()
-    """
-    relinfo = {
-        'coordinates' : existent_rel.coordinates,
-        'encodings' : existent_rel.encodings,
-        'icon' : existent_rel.icon,
-        'confiance' : 1.0,
-        'approved' : True
-    }
-
-    # nao vai resultar se tiver + do q 1 relacao... mau TODO melhorar
-    old_person.image.disconnect(img)
-    img.person.connect(new_person, relinfo)
+    return redirect('/people')
 
 
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
-    return render(request, 'dashboard.html', {'form': form, 'image_form': image})
+    person_number = 0
+    for p in Person.nodes.all():
+        person_number += 1
+
+    location_number = 0
+    for l in Location.nodes.all():
+        location_number +=1
+
+    results = {}
+    counts = {}
+    for tag in Tag.nodes.all():
+
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+        counts[tag.name] = len(results["#" + tag.name])
+
+    countTags = dict(sorted(counts.items(), key=lambda item: item[1],
+                            reverse=True))  # sort the dict by its value (count), from the greatest to the lowest
+    if len(countTags) < 10:
+        countTags = dict(itertools.islice(countTags.items(), len(countTags)))
+    else:
+        countTags = dict(itertools.islice(countTags.items(), 10))  # only want the first top 10 more common tags
+    countTags = json.dumps(countTags)
+
+    ## original tag source statistics
+    countOriginalTagSource = {}
+    allTagLabels = {"ocr": "text from image", "manual": "manual", "object": "objects", "places": "places",
+                    "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            originalTagSource = allTagLabels[originalTagSource]
+            # print(tag.name, originalTagSource)
+            if originalTagSource not in countOriginalTagSource:
+                countOriginalTagSource[originalTagSource] = 1
+            else:
+                countOriginalTagSource[originalTagSource] += 1
+
+    # print(countOriginalTagSource)
+    for label in allTagLabels.values():
+        if label not in countOriginalTagSource.keys():
+            countOriginalTagSource[label] = 0
+
+    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1], reverse=True))
+    return render(request, 'dashboard.html',
+                  {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
+                   'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
+
+
+def calendarGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    datesInsertion = {}
+    datesCreation = {}
+    previousImages = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            if img not in previousImages:
+                insertionDate = str(img.insertion_date)
+                creationDate = str(img.creation_date)
+                insertionDate = insertionDate.split(" ")[0]
+                creationDate = creationDate.split(" ")[0]
+                if insertionDate not in datesInsertion:
+                    datesInsertion[insertionDate] = 1
+                else:
+                    datesInsertion[insertionDate] += 1
+                if creationDate != "None":
+                    if creationDate not in datesCreation:
+                        datesCreation[creationDate] = 1
+                    else:
+                        datesCreation[creationDate] += 1
+
+                previousImages += [img]
+
+            else:
+                continue
+
+    datesInsertion = json.dumps(datesInsertion)
+    datesCreation = json.dumps(datesCreation)
+    print(datesCreation)
+    return render(request, 'gallery.html',
+                  {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
+
+
+def objectsGallery(request):
+    return None
+
+
+def peopleGallery(request):
+    return None
+
+
+def scenesGallery(request):
+    return None
+
+
+def locationsGallery(request):
+    return None
 
 def exportToZip(request, ids):
     ids = ids[1:]
