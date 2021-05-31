@@ -1,5 +1,3 @@
-import os
-
 from django import forms
 from string import Template
 
@@ -126,3 +124,6 @@ class PersonsForm(forms.Form):
                 #number = field_name.split['_'][-1]
                 # if self[field_name]
                 yield self[field_name]
+
+class EditTagForm(forms.Form):
+    tagsForm = forms.CharField(widget=forms.Textarea)
