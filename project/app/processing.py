@@ -37,6 +37,7 @@ from scripts.pathsPC import do,numThreads
 import logging
 
 import psutil, time
+from scripts.pcVariables import ocrPath
 
 cpuPerThread = 1
 ramPerThread = 1
@@ -82,12 +83,7 @@ THUMBNAIL_PIXELS=100
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
-# load installed tesseract-ocr from users pc
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Windows Iglesias:
-pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-# Ubuntu:
-# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = ocrPath
 
 custom_config = r'--oem 3 --psm 6'
 
@@ -310,7 +306,6 @@ def processing(dirFiles):
                         if tag is None:
                             tag = Tag(name=object).save()
                         tags.append(object)
-
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
 
                     # !!!
@@ -367,6 +362,7 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
+        frr.removeImage(di.hash)
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)

@@ -223,16 +223,11 @@ def updateFolders(request):
 
 def update_faces(request):
     if request.method != 'POST':
-        print('method not post!!!')
-        pass
+        redirect('/people')
 
     form = PersonsForm(request.POST)
     if not form.is_valid():
         print('invalid form!!!')
-        # return or smth
-
-    if request.POST.get("close"):
-        print('close was called, do something!!')  # TODO
 
     print(form.cleaned_data)
     data = form.cleaned_data
