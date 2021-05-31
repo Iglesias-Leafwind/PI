@@ -5,8 +5,8 @@
 <div class="results">
 
     <form id="showingform" action="export/zip/$" style="display: none">
-        <button style="margin: 0vh 1vw 0vh 3vw;" type="submit" id="excel_btn" class="btn btn-primary">export to excel</button>
-        <button type="submit" id="zip_btn" class="btn btn-primary">export to zip</button>
+        <button style="margin: 0vh 1vw 0vh 3vw;" type="submit" id="excel_btn" class="btn btn-primary">Export to excel</button>
+        <button type="submit" id="zip_btn" class="btn btn-primary">Export to zip</button>
     </form>
     {% for tag_cluster in results.items %}
     <div class="album py-5 bg-mine">
@@ -75,14 +75,21 @@
     <script>
         var imgs = document.getElementsByTagName('img')
         var allIds = ''
+        var images = false;
+
         for (let i = 0; i < imgs.length; i++) {
             if (imgs[i].id === '')
                 continue
             allIds += imgs[i].id + '&';
+            images = true;
         }
 
         var selectedIds = new Set()
         var idsList = new Array()
+
+        if (images){
+            $('#showingform').css('display', 'block')
+        }
 
     $('#excel_btn').click(function (){
         var param = ''
@@ -107,7 +114,6 @@
         $('form').attr('action', 'export/zip/$' + param);
     })
 
-    var myform = document.getElementById("showingform")
 
     $(".img_box").click(function (){
         if ($(this).hasClass('selected_img')){
@@ -115,18 +121,20 @@
             $(this).find(".checked_img").css('display','none')
             selectedIds.delete($(this).children('img')[0].id)
             idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
-            if (idsList.length == 0){
-                myform.style.display = "none"
-            }
         }
         else{
             selectedIds.add($(this).children('img')[0].id)
             idsList.push($(this).children('img')[0].id)
             $(this).addClass('selected_img')
             $(this).find(".checked_img").css('display','block')
-            if (myform.style.display == "none"){
-                myform.style.display = "block"
-            }
+        }
+
+        if (selectedIds.size === 0){
+            $("#excel_btn").html('Export all to excel')
+            $("#zip_btn").html('Export all to zip')
+        }else{
+            $("#excel_btn").html('Export to excel')
+            $("#zip_btn").html('Export to zip')
         }
     })
 
