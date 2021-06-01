@@ -1,11 +1,11 @@
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## Windows Iglesias:
-
+"""
 ocrPath = r'D:\Programs\tesseract-OCR\tesseract'
 essPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch"
 dbsPath = 'bolt://neo4j:12345@localhost:7687'
-
+"""
 
 ## Windows Wei:
 """
@@ -29,8 +29,6 @@ dbsPath = 'bolt://neo4j:a12345a@localhost:7687'
 """
 
 ## Ubuntu Mariana:
-"""
 ocrPath = r'/usr/bin/tesseract'
 essPath = ""
 dbsPath = 'bolt://neo4j:password@localhost:7687'
-"""

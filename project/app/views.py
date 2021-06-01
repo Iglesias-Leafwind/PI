@@ -241,7 +241,7 @@ def update_faces(request):
         new_personname = data['person_name_%s' % str(i)]
 
         # retirar isto abaixo dps!!!
-        new_personname = new_personname.split(' ')[0]
+        #new_personname = new_personname.split(' ')[0]
         old_personname = data['person_before_%s' % str(i)]
         verified = True
         if not data['person_verified_%s' % str(i)]:
