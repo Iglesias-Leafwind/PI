@@ -1,7 +1,7 @@
 import json
 import string
 
-
+from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -11,7 +11,7 @@ import numpy as np
 import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
-from app.face_recognition import FaceRecognition
+#from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -37,6 +37,7 @@ from scripts.pathsPC import do,numThreads
 import logging
 
 import psutil, time
+from scripts.pcVariables import ocrPath
 
 cpuPerThread = 1
 ramPerThread = 1
@@ -69,7 +70,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
+#frr = FaceRecognition()
+bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -200,6 +202,16 @@ def face_rec_part(read_image, img_path, tags, image):
         # """
         print("-- face rec end --")
 
+def classifyBreedPart(read_image, tags, imageDB):
+    breed, breed_conf = bc.predict_image(read_image)
+    if breed_conf > 0.7:  # TODO: adapt!
+        tags.append(breed)
+
+        tag = Tag.nodes.get_or_none(name=breed)
+        if tag is None:
+            tag = Tag(name=breed).save()
+        imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
+
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -317,14 +329,18 @@ def processing(dirFiles):
                         if tag is None:
                             tag = Tag(name=object).save()
                         tags.append(object)
-
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
 
-                    # !!!
-                    faceRecLock.acquire()
-                    face_rec_part(read_image, img_path, tags, image)
-                    faceRecLock.release()
+                        if object in ['cat', 'dog']:
+                            classifyBreedPart(read_image, tags, image)
 
+
+
+                    # !!!
+                    #faceRecLock.acquire()
+                    #face_rec_part(read_image, img_path, tags, image)
+                    #faceRecLock.release()
+                    a = 1 / 0
                     #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
@@ -382,6 +398,7 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
+        frr.removeImage(di.hash)
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)

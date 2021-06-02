@@ -7,7 +7,6 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from manage import es
 
-
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Wei:
 config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
@@ -50,6 +49,7 @@ class HasA(StructuredRel):
     rel = "Has a"
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
+    score = FloatProperty()
     manual = BooleanProperty(default=False)
 
 
