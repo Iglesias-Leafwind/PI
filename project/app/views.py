@@ -127,6 +127,9 @@ def change_filters(request):
     searchFilterOptions['folder_name'] = form['folder_name']
     searchFilterOptions['people'] = form['people']
     searchFilterOptions['text'] = form['text']
+    searchFilterOptions['places'] = form['places']
+    searchFilterOptions['breeds'] = form['breeds']
+    searchFilterOptions['exif'] = form['exif']
 
     return redirect(form['current_url'])
 
@@ -155,29 +158,33 @@ def get_image_results(query_text):
         people = img.person.all()
         # verifica se a query ta dentro do nome
         dentro = any([q in p.name.lower() for q in query_array for p in people])
-        if not searchFilterOptions['people']:
+        if not searchFilterOptions['people'] and dentro:
             print('entrou.... (people)')
             remove.add(dentro)
         else:
             remove.add(not dentro)  # se estiver dentro vai adicionar False (não remove)
                                     # se estiver fora vai adicionar True (remove..)
 
-        # -- manual TODO --
-        if not searchFilterOptions['manual']:
-            pass
+        # -- manual TODO test --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['manual'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
 
         # -- object --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
-        dentro = any([q in tags for q in query_array])
-        if not searchFilterOptions['automatic']: # objects
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['automatic'] and dentro: # objects
             remove.add(dentro)
         else:
             remove.add(not dentro)
 
         # -- folder name --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
-        dentro = any([q in tags for q in query_array])
-        if not searchFilterOptions['folder_name']:
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['folder_name'] and dentro:
             remove.add(dentro)
         else:
             remove.add(not dentro)
@@ -185,23 +192,42 @@ def get_image_results(query_text):
 
         # -- ocr --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
-        dentro = any([q in tags for q in query_array])
-        if not searchFilterOptions['text']:
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['text'] and dentro:
             remove.add(dentro)
         else:
             remove.add(not dentro)
 
         # -- exif --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
-        dentro = any([q in tags for q in query_array])
-        if not searchFilterOptions['exif']:
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['exif'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- places --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['places'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- breeds --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['breeds'] and dentro:
+            print('entrou breeds!!', dentro)
+            print(query_array)
+            print(tags)
             remove.add(dentro)
         else:
             remove.add(not dentro)
 
         if not all(remove):
             results[tag].append((img, tags))  # insert tags in the dictionary
-    return results # TODO filter here
+    return results
 
 
 def delete(request, path):

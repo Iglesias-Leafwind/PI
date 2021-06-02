@@ -20,7 +20,9 @@ searchFilterOptions = {
     'folder_name': True,
     'people': True,
     'text': True,
-    'exif': True
+    'exif': True,
+    'places' : True,
+    'breeds': True
 }
 
 def getImagesPerUri(pathName):
