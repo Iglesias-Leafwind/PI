@@ -11,7 +11,7 @@ import numpy as np
 import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
-#from app.face_recognition import FaceRecognition
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -70,7 +70,7 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
+frr = FaceRecognition()
 bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
@@ -337,10 +337,9 @@ def processing(dirFiles):
 
 
                     # !!!
-                    #faceRecLock.acquire()
-                    #face_rec_part(read_image, img_path, tags, image)
-                    #faceRecLock.release()
-                    a = 1 / 0
+                    faceRecLock.acquire()
+                    face_rec_part(read_image, img_path, tags, image)
+                    faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
