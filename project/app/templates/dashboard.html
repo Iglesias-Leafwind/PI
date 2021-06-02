@@ -8,7 +8,7 @@
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           <li class="sadnav-item nav-item">
-            <a href="../gallery.html" class="nav-link">
+            <a href="{% url 'locationsGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-map-marked-alt"></i>
               <span>
                 Locations
@@ -32,7 +32,7 @@
             </a>
           </li>
           <li class="sadnav-item nav-item">
-            <a href="../gallery.html" class="nav-link">
+            <a href="{% url 'objectsGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-cubes"></i>
               <span>
                 Objects
@@ -86,63 +86,84 @@
 
     </div>
 <script type="text/javascript">
-
-    // Load google charts
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
-
-    // Draw the chart and set the chart values
+    drawChart();
     function drawChart() {
         countTagsDjango = {{ counts|safe }};
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Element');
-        data.addColumn('number', 'Counts');
+        var dataPoints = [];
+        var countTotal = 0;
         for (var key in countTagsDjango) {
-            data.addRow([key, countTagsDjango[key]]);
+            countTotal = countTotal + countTagsDjango[key];
         }
-      // Optional; add a title and set the width and height of the chart
-      var options = {'title':'Top Most Common Tags', 'pieHole': 0.4};
+        for (var key in countTagsDjango) {
+            dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': ((countTagsDjango[key]/countTotal)*100).toFixed(2)});
+        }
+        var chart = new CanvasJS.Chart("chart1", {
+            theme: "light2", // "light1", "light2", "dark1", "dark2"
+            exportEnabled: true,
+            animationEnabled: true,
+            height: 300,
+            title: {
+                text: "Top Most Common Tags",
+                fontSize: 20,
+                fontFamily: "arial",
+            },
+            data: [{
+                type: "doughnut",
+                startAngle: 25,
+                innerRadius: 60,
+                toolTipContent: "<b>{label}</b>: {percentage}%",
+                showInLegend: "true",
+                legendText: "{label}",
+                indexLabelFontSize: 18,
+                indexLabel: "{label} - {y}",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
 
-      // Display the chart inside the <div> element with id="piechart"
-      var chart = new google.visualization.PieChart(document.getElementById('chart1'));
-      chart.draw(data, options);
     }
-    google.charts.setOnLoadCallback(drawBarChart);
-    // Draw a bar chart
+
+    drawBarChart();
     function drawBarChart() {
         countTagSourceDjango = {{ countTagSource|safe }};
-        var data = new google.visualization.DataTable();
-
-        data.addColumn('string', 'Element');
-        data.addColumn('number', 'Counts');
-        data.addColumn({type: 'string', role: 'style'});
-
-        var colorcodes = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6']
-        var counter = 0
-
-        for (var key in countTagSourceDjango) {
-            if(colorcodes.length > counter){
-                data.addRow([key, countTagSourceDjango[key], 'color: ' + colorcodes[counter]]);
-            } else{
-                var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-                data.addRow([key, countTagSourceDjango[key], 'color: ' + randomColor]);
-            }
-            counter++;
+        var dataPoints = [];
+        var countTotal = 0;
+       for (var key in countTagSourceDjango) {
+            countTotal = countTotal + countTagSourceDjango[key];
         }
+        for (var key in countTagSourceDjango) {
+            dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key, 'percentage': ((countTagSourceDjango[key]/countTotal)*100).toFixed(2)});
+        }
+        var chart = new CanvasJS.Chart("chart2", {
+            exportEnabled: true,
+            animationEnabled: true,
+            height: 300,
+            width: 600,
+            title: {
+                text: "Top Most Common Tag Sources",
+                fontSize: 20,
+                fontFamily: "arial",
+                margin: 20,
+                fontStyle: "bold",
+            },
+            axisX: {
+                interval: 1,
+                labelFontSize: 15
+            },
+            axisY: {
+                title: "Counts",
+                margin: 1,
+                includeZero: true,
+            },
+            data: [{
+                type: "bar",
+                toolTipContent: "<b>{label}</b>: {y} ({percentage}%)",
+                dataPoints: dataPoints,
+                indexLabelFontSize: 15
+            }]
+        });
+        chart.render();
 
-        var options = {
-        title: "Most Common Tag Sources",
-        bar: {groupWidth: "95%"},
-        legend: { position: "none" },
-      };
-      var chart = new google.visualization.BarChart(document.getElementById("chart2"));
-      chart.draw(data, options);
     }
-
 </script>
-
-
-
-
-
 {% endblock %}
