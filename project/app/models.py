@@ -6,8 +6,9 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
     ArrayProperty
 from neomodel import db
 from manage import es
+from scripts.pcVariables import dbsPath
 
-config.DATABASE_URL = 'bolt://neo4j:password@localhost:7687'
+config.DATABASE_URL = dbsPath
 
 # for elastic search ↓
 class ImageES(Document):
@@ -41,6 +42,8 @@ class HasA(StructuredRel):
     rel = "Has a"
     originalTagName = StringProperty()
     originalTagSource = StringProperty()
+    score = FloatProperty()
+    manual = BooleanProperty(default=False)
 
 
 class DisplayA(StructuredRel):
@@ -71,7 +74,6 @@ class ImageNeo(StructuredNode):
 
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    quantity = IntegerProperty(default=1)
     image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
 

@@ -1,5 +1,3 @@
-import os
-
 from django import forms
 from string import Template
 
@@ -112,7 +110,7 @@ class PersonsForm(forms.Form):
             # data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger"
 
             self.initial[field_image] = rel[0].icon
-            self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
+            self.initial[field_name] = rel[1].name # + ' -- ' + str(rel[0].confiance)
             self.initial[field_person_before] = rel[1].name
             self.initial[field_image_id] = rel[2].hash
             self.initial[field_verified] = rel[0].approved
@@ -127,7 +125,6 @@ class PersonsForm(forms.Form):
                 # if self[field_name]
                 yield self[field_name]
 
-
 class FilterSearchForm(forms.Form):
     automatic = forms.BooleanField(required=False)
     manual = forms.BooleanField(required=False)
@@ -136,3 +133,6 @@ class FilterSearchForm(forms.Form):
     text = forms.BooleanField(required=False)
     exif = forms.BooleanField(required=False)
     current_url = forms.CharField(required=True, widget=HiddenInput)
+
+class EditTagForm(forms.Form):
+    tagsForm = forms.CharField(widget=forms.Textarea)

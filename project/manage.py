@@ -6,7 +6,7 @@ import sys
 import time
 
 from elasticsearch import Elasticsearch
-
+from scripts.pcVariables import essPath
 
 def main():
     """Run administrative tasks."""
@@ -25,9 +25,7 @@ def main():
     execute_from_command_line(sys.argv)
     #closeES()
 
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#"/home/alexis/elasticsearch-7.12.1/bin/elasticsearch"
-esPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch"
+esPath = essPath
 
 def openES():
     global elasticsearchClient

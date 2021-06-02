@@ -157,6 +157,7 @@ class FaceRecognition:
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:
             print('IMAGE IS NONE')
+            print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
 
         # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
         new_person = Person.nodes.get_or_none(name=new_personname)
@@ -240,5 +241,19 @@ class FaceRecognition:
         img.update(using=es, tags=img.tags)
         img.save(using=es)
 
+    def removeImage(self, image_hash):
+        # [(r[1].encodings, r[1].confiance, r[1].approved, r[0].hash) for r in rels]
+        temp = self.name2encodings
+        keys_to_remove = set()
+        for k in temp:
+            self.name2encodings[k] = [ data for data in temp[k] if data[3] != image_hash ]
 
+            if len(self.name2encodings[k]) == 0:
+                keys_to_remove.add(k)
 
+        for k in keys_to_remove:
+            del self.name2encodings[k]
+
+            p = Person.nodes.get_or_none(name=k)
+            if p is not None:
+                p.delete()
