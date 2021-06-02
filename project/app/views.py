@@ -427,7 +427,8 @@ def dashboard(request):
         if label not in countOriginalTagSource.keys():
             countOriginalTagSource[label] = 0
 
-    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1], reverse=True))
+    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1]))
+    print(countOriginalTagSource)
     return render(request, 'dashboard.html',
                   {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
                    'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
@@ -464,13 +465,26 @@ def calendarGallery(request):
 
     datesInsertion = json.dumps(datesInsertion)
     datesCreation = json.dumps(datesCreation)
-    print(datesCreation)
+    # print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
 
 def objectsGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            # print(tag.name, originalTagSource)
+            if originalTagSource == "object" and tag.name not in allTags:
+                allTags += [tag.name]
+
+    return render(request, 'objectsGallery.html',
+                  {'form': form, 'image_form': image, 'objectTags': allTags})
 
 
 def peopleGallery(request):
@@ -482,5 +496,18 @@ def scenesGallery(request):
 
 
 def locationsGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    locations = {}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            location = img.location
+            if location not in locations:
+                locations[location] = 1
+            else:
+                locations[location] += 1
+            print(location)
+    return render(request, 'locationsGallery.html',
+                  {'form': form, 'image_form': image, 'locations': locations})
 

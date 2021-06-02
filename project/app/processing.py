@@ -2,7 +2,6 @@ import json
 import string
 
 from app.breed_classifier import BreedClassifier
-from app.face_recognition import FaceRecognition
 import time
 import sys
 from datetime import datetime
@@ -10,8 +9,9 @@ from os.path import join
 import random
 import numpy as np
 import requests
+from neomodel import db
 from numpyencoder import NumpyEncoder
-#from app.face_recognition import FaceRecognition
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -84,7 +84,16 @@ THUMBNAIL_PIXELS=100
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
-pytesseract.pytesseract.tesseract_cmd = ocrPath
+# load installed tesseract-ocr from users pc
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Windows Iglesias:
+#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
+
+# Ubuntu:
+#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
+# Wei:
+pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
 
 custom_config = r'--oem 3 --psm 6'
 
@@ -213,9 +222,11 @@ def processing(dirFiles):
         else:
             lastNode = fs.getLastNode(dir)
 
+        commit = True
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
-        try:
-            for index, img_name in enumerate(img_list):
+        for index, img_name in enumerate(img_list):
+            db.begin()  # start the transaction
+            try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
                 i = ImageFeature()
@@ -282,6 +293,7 @@ def processing(dirFiles):
                         image.save()
                     except Exception as e:
                         print(e)
+                        db.commit()
                         continue
                     finally:
                         lock.release()
@@ -325,7 +337,6 @@ def processing(dirFiles):
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
-
                     #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
@@ -357,8 +368,16 @@ def processing(dirFiles):
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                     print("extracting feature from image %s " % (img_path))
-        except Exception as e:
-            print(e)
+                    db.commit()
+                    commit &= True
+            except Exception as e:
+                db.rollback()
+                fs.deleteFolderFromFs(dir)
+                commit &= False
+                print("Error during processing: ", e)
+
+        if not commit:
+            fs.deleteFolderFromFs(dir)
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -685,7 +704,7 @@ def generateThumbnail(imagepath, hash):
         thumbnailW = int(w * ratio)
         paddingLR = int((thumbnailH-thumbnailW)/2)
 
-    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_REPLICATE)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
