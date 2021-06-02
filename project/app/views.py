@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
@@ -25,7 +25,7 @@ def landingpage(request):
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
 def updateTags(request, hash):
-    newTagsString = request.POST.get("tagsTextarea")
+    newTagsString = request.POST.get("tags")
     newTags = re.split('\s|\s+|\t|#', newTagsString)
     newTags = [tag for tag in newTags if tag != ""]
     print(newTags)

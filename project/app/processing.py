@@ -2,7 +2,6 @@ import json
 import string
 
 
-from app.face_recognition import FaceRecognition
 import time
 import sys
 from datetime import datetime
@@ -69,7 +68,7 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
+#frr = FaceRecognition()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -87,8 +86,11 @@ net = cv2.dnn.readNet(east)
 #Windows Iglesias:
 #pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
 
+#Windows Wei:
+pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
+
 # Ubuntu:
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 custom_config = r'--oem 3 --psm 6'
 
@@ -315,9 +317,9 @@ def processing(dirFiles):
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
 
                     # !!!
-                    faceRecLock.acquire()
-                    face_rec_part(read_image, img_path, tags, image)
-                    faceRecLock.release()
+                    #faceRecLock.acquire()
+                    #face_rec_part(read_image, img_path, tags, image)
+                    #faceRecLock.release()
 
                     #     p = Person.nodes.get_or_none(name=name)
 
