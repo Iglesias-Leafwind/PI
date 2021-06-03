@@ -33,7 +33,7 @@ urlpatterns = [
     path('dashboard', views.dashboard, name='dashboard'),
     path('objects', views.objectsGallery, name='objectsGallery'),
     path('people', views.peopleGallery, name='pplGallery'),
-    path('scenes', views.scenesGallery, name='scenesGallery'),
+    path('scenes', views.scenesGallery, name='placesGallery'),
     path('locations', views.locationsGallery, name='locationsGallery'),
     path('gallery', views.calendarGallery, name='gallery'),
 ]

@@ -372,7 +372,6 @@ def objectsGallery(request):
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            # print(tag.name, originalTagSource)
             if originalTagSource == "object" and tag.name not in allTags:
                 allTags += [tag.name.lower()]
 
@@ -387,7 +386,21 @@ def peopleGallery(request):
 
 
 def scenesGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            if originalTagSource == "places" and tag.name not in allTags:
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
+
+    return render(request, 'placesGallery.html',
+                  {'form': form, 'image_form': image, 'placesTags': allTags})
 
 
 def locationsGallery(request):
