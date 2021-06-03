@@ -87,7 +87,7 @@ net = cv2.dnn.readNet(east)
 #pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
 
 #Windows Wei:
-pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 # Ubuntu:
 #pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'

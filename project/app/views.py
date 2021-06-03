@@ -374,7 +374,9 @@ def objectsGallery(request):
             originalTagSource = rel.originalTagSource
             # print(tag.name, originalTagSource)
             if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name]
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
 
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allTags})

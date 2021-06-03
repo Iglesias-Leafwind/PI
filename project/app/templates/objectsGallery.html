@@ -4,7 +4,11 @@
 {% block content %}
     <div class="container centerGalleryDiv">
         <div id="objects" style="width: 60vw; height: 45vh; margin-top: 2vh">
-            <p>{{ objectTags }}</p>
+            <ul>
+                {% for elem in objectTags %}
+              <li>{{ elem }}</li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 {% endblock %}
