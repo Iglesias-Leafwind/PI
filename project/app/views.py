@@ -358,7 +358,6 @@ def calendarGallery(request):
 
     datesInsertion = json.dumps(datesInsertion)
     datesCreation = json.dumps(datesCreation)
-    # print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
@@ -382,7 +381,16 @@ def objectsGallery(request):
 
 
 def peopleGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allNames = []
+
+    for person in Person.nodes.all():
+        name = person.name
+        allNames += [name]
+
+    return render(request, 'peopleGallery.html',
+                  {'form': form, 'image_form': image, 'people': allNames})
 
 
 def scenesGallery(request):
