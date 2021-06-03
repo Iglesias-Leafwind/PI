@@ -387,7 +387,17 @@ def peopleGallery(request):
 
     for person in Person.nodes.all():
         name = person.name
-        allNames += [name]
+        imgList = person.image.all()
+        for img in imgList:
+            rel = img.person.relationship(person)
+            verified = rel.approved
+            if verified == True:
+                allNames += [name]
+                break
+            else:
+                break
+
+    allNames = sorted(allNames)
 
     return render(request, 'peopleGallery.html',
                   {'form': form, 'image_form': image, 'people': allNames})
