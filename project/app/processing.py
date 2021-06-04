@@ -11,7 +11,7 @@ import random
 import numpy as np
 import requests
 from numpyencoder import NumpyEncoder
-#from app.face_recognition import FaceRecognition
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
@@ -69,7 +69,7 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
+#frr = FaceRecognition()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -85,10 +85,9 @@ net = cv2.dnn.readNet(east)
 # load installed tesseract-ocr from users pc
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Windows Iglesias:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-
+pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
 # Ubuntu:
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 custom_config = r'--oem 3 --psm 6'
 
@@ -129,6 +128,11 @@ def uploadImages(uri):
 
     dirFiles = getImagesPerUri(uri)
 
+    do(processing, taskOne)
+    print("------------------task 1------------------")
+    do(processing, taskTwo)
+    print("------------------task 2------------------")
+'''
     cpuCurr = psutil.cpu_percent()
     ramCurr = psutil.virtual_memory().percent
     freeCPU = (100 - cpuCurr)/2
@@ -196,7 +200,7 @@ def face_rec_part(read_image, img_path, tags, image):
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
         print("-- face rec end --")
-
+'''
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -264,13 +268,12 @@ def processing(dirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    lock.acquire()
-                    existed = ImageNeo.nodes.get_or_none(hash=hash)
-                    if existed:
+                    processingLock.acquire()
+                    if ImageNeo.nodes.get_or_none(hash=hash):
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        lock.release()
+                        processingLock.release()
                         continue
                     try:
                         image.save()
@@ -278,7 +281,7 @@ def processing(dirFiles):
                         print(e)
                         continue
                     finally:
-                        lock.release()
+                        processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -306,13 +309,16 @@ def processing(dirFiles):
 
                     res = obj_extr.get_objects(img_path)
 
-                    for object in res["name"]:
+                   # for object in res["name"]:
+                    for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
-                            tag = Tag(name=object).save()
-                        tags.append(object)
+                            tag = Tag(name=object,
+                                        originalTagName=object,
+                                        originalTagSource='object').save()
 
-                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
+                        tags.append(object)
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
                     # !!!
                     faceRecLock.acquire()
@@ -321,25 +327,29 @@ def processing(dirFiles):
 
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    places = getPlaces(img_path)
-                    if places:
+                    placesList = getPlaces(img_path)
+                    for places, prob in placesList:
                         places = places.split("/")
                         for place in places:
                             p = " ".join(place.split("_")).strip()
                             t = Tag.nodes.get_or_none(name=p)
                             if t is None:
-                                t = Tag(name=p).save()
+                                t = Tag(name=p,
+                                        originalTagName=p,
+                                        originalTagSource='places').save()
                             tags.append(p)
-                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places'})
+                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places', 'score':prob})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             t = Tag.nodes.get_or_none(name=word)
                             if t is None:
-                                t = Tag(name=word).save()
+                                t = Tag(name=word,
+                                        originalTagName=word,
+                                        originalTagSource='ocr').save()
                             tags.append(word)
-                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr'})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -402,7 +412,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return classes[idx[0]] if probs[0] > 0.6 else None
+    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
 
 
 def getOCR(image):
@@ -677,7 +687,7 @@ def generateThumbnail(imagepath, hash):
         thumbnailW = int(w * ratio)
         paddingLR = int((thumbnailH-thumbnailW)/2)
 
-    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_REPLICATE)
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"

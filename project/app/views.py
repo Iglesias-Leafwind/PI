@@ -223,16 +223,11 @@ def updateFolders(request):
 
 def update_faces(request):
     if request.method != 'POST':
-        print('method not post!!!')
-        pass
+        redirect('/people')
 
     form = PersonsForm(request.POST)
     if not form.is_valid():
         print('invalid form!!!')
-        # return or smth
-
-    if request.POST.get("close"):
-        print('close was called, do something!!')  # TODO
 
     print(form.cleaned_data)
     data = form.cleaned_data
@@ -246,7 +241,7 @@ def update_faces(request):
         new_personname = data['person_name_%s' % str(i)]
 
         # retirar isto abaixo dps!!!
-        new_personname = new_personname.split(' ')[0]
+        #new_personname = new_personname.split(' ')[0]
         old_personname = data['person_before_%s' % str(i)]
         verified = True
         if not data['person_verified_%s' % str(i)]:
