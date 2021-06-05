@@ -1,7 +1,7 @@
 import json
 import string
 
-from app.breed_classifier import BreedClassifier 
+from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -9,7 +9,7 @@ from os.path import join
 import random
 import numpy as np
 import requests
-from neomodel import db 
+from neomodel import db
 from numpyencoder import NumpyEncoder
 from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
@@ -37,7 +37,7 @@ from scripts.pathsPC import do,numThreads
 import logging
 
 import psutil, time
-from scripts.pcVariables import ocrPath 
+from scripts.pcVariables import ocrPath
 
 cpuPerThread = 1
 ramPerThread = 1
@@ -212,12 +212,11 @@ def processing(dirFiles):
             lastNode = fs.createUriInNeo4j(dir)
         else:
             lastNode = fs.getLastNode(dir)
-        
-        commit = True 
+
+        commit = True
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
-        
         for index, img_name in enumerate(img_list):
-            db.begin()  # start the transaction 
+            db.begin()  # start the transaction
             try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
@@ -285,7 +284,7 @@ def processing(dirFiles):
                         image.save()
                     except Exception as e:
                         print(e)
-                        db.commit() 
+                        db.commit()
                         continue
                     finally:
                         lock.release()
@@ -316,50 +315,41 @@ def processing(dirFiles):
 
                     res = obj_extr.get_objects(img_path)
 
-                   #for object in res["name"]:
-                    for object, confidence in res:
+                    for object in res["name"]:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
-                            tag = Tag(name=object,
-                                        originalTagName=object,
-                                        originalTagSource='object').save()
-
+                            tag = Tag(name=object).save()
                         tags.append(object)
-                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
 
                         #if object in ['cat', 'dog']:
                         #    classifyBreedPart(read_image, tags, image)
 
-
+                    # !!!
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
-
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    placesList = getPlaces(img_path)
-                    for places, prob in placesList:
+                    places = getPlaces(img_path)
+                    if places:
                         places = places.split("/")
                         for place in places:
                             p = " ".join(place.split("_")).strip()
                             t = Tag.nodes.get_or_none(name=p)
                             if t is None:
-                                t = Tag(name=p,
-                                        originalTagName=p,
-                                        originalTagSource='places').save()
+                                t = Tag(name=p).save()
                             tags.append(p)
-                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places', 'score':prob})
+                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places'})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             t = Tag.nodes.get_or_none(name=word)
                             if t is None:
-                                t = Tag(name=word,
-                                        originalTagName=word,
-                                        originalTagSource='ocr').save()
+                                t = Tag(name=word).save()
                             tags.append(word)
-                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr'})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -371,14 +361,15 @@ def processing(dirFiles):
 
                     print("extracting feature from image %s " % (img_path))
                     db.commit()
-                    commit &= True 
+                    commit &= True
             except Exception as e:
                 db.rollback()
-                fs.deleteFolderFromFs(dir) 
-                commit &= False 
-                print("Error during processing: ", e) 
-        if not commit: 
-            fs.deleteFolderFromFs(dir) 
+                fs.deleteFolderFromFs(dir)
+                commit &= False
+                print("Error during processing: ", e)
+
+        if not commit:
+            fs.deleteFolderFromFs(dir)
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -395,7 +386,7 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
-        frr.removeImage(di.hash) 
+        frr.removeImage(di.hash)
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)
@@ -705,7 +696,7 @@ def generateThumbnail(imagepath, hash):
         thumbnailW = int(w * ratio)
         paddingLR = int((thumbnailH-thumbnailW)/2)
 
-    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_REPLICATE)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
