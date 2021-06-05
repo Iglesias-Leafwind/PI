@@ -9,7 +9,7 @@ dbsPath = 'bolt://neo4j:12345@localhost:7687'
 
 ## Windows Wei:
 ocrPath = r'D:\OCR\tesseract'
-essPath = ""
+essPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
 dbsPath = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
 
 

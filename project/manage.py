@@ -20,27 +20,26 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    #openES()
-    #time.sleep(5)
+    global elasticsearchClient
+    elasticsearchClient = openES()
     execute_from_command_line(sys.argv)
-    #closeES()
+    closeES()
 
 esPath = essPath
 
 def openES():
-    global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
-
+    elasticsearchClient = Elasticsearch()
+    while 1:
+        try:
+            elasticsearchClient.cluster.health(wait_for_status='yellow')
+            return elasticsearchClient
+        except ConnectionError:
+            print("---- connection error ----")
+            time.sleep(1)
 
 def closeES():
-    elasticsearchClient.terminate()
     print("---------------------------------------------terminate---------------------------------------------")
-    time.sleep(1)
-    if elasticsearchClient.returncode is None:
-        # It has not terminated. Kill it.
-        elasticsearchClient.kill()
-        print("---------------------------------------------kill---------------------------------------------")
-
+    elasticsearchClient.close()
 
 es = Elasticsearch()
 
