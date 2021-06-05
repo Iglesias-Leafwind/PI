@@ -6,7 +6,6 @@ import sys
 import time
 
 from elasticsearch import Elasticsearch
-from scripts.pcVariables import essPath
 
 def main():
     """Run administrative tasks."""
@@ -21,15 +20,12 @@ def main():
         ) from exc
 
     #openES()
-    #time.sleep(5)
     execute_from_command_line(sys.argv)
     #closeES()
 
-esPath = essPath
-
 def openES():
     global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
+    elasticsearchClient = Elasticsearch()
 
 
 def closeES():
