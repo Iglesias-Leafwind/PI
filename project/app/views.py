@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
@@ -25,7 +25,7 @@ def landingpage(request):
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
 def updateTags(request, hash):
-    newTagsString = request.POST.get("tagsTextarea")
+    newTagsString = request.POST.get("tags")
     newTags = re.split('\s|\s+|\t|#', newTagsString)
     newTags = [tag for tag in newTags if tag != ""]
     print(newTags)
@@ -353,7 +353,6 @@ def calendarGallery(request):
 
     datesInsertion = json.dumps(datesInsertion)
     datesCreation = json.dumps(datesCreation)
-    # print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
@@ -367,20 +366,54 @@ def objectsGallery(request):
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            # print(tag.name, originalTagSource)
             if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name]
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
 
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allTags})
 
 
 def peopleGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allNames = []
+
+    for person in Person.nodes.all():
+        name = person.name
+        imgList = person.image.all()
+        for img in imgList:
+            rel = img.person.relationship(person)
+            verified = rel.approved
+            if verified == True:
+                allNames += [name]
+                break
+            else:
+                break
+
+    allNames = sorted(allNames)
+
+    return render(request, 'peopleGallery.html',
+                  {'form': form, 'image_form': image, 'people': allNames})
 
 
 def scenesGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            if originalTagSource == "places" and tag.name not in allTags:
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
+
+    return render(request, 'placesGallery.html',
+                  {'form': form, 'image_form': image, 'placesTags': allTags})
 
 
 def locationsGallery(request):

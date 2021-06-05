@@ -1,8 +1,7 @@
 import json
 import string
 
-
-from app.face_recognition import FaceRecognition
+from app.breed_classifier import BreedClassifier 
 import time
 import sys
 from datetime import datetime
@@ -10,6 +9,7 @@ from os.path import join
 import random
 import numpy as np
 import requests
+from neomodel import db 
 from numpyencoder import NumpyEncoder
 from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
@@ -37,6 +37,7 @@ from scripts.pathsPC import do,numThreads
 import logging
 
 import psutil, time
+from scripts.pcVariables import ocrPath 
 
 cpuPerThread = 1
 ramPerThread = 1
@@ -69,7 +70,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
+frr = FaceRecognition()
+#bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -82,12 +84,7 @@ THUMBNAIL_PIXELS=100
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
-# load installed tesseract-ocr from users pc
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Windows Iglesias:
-pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-# Ubuntu:
-# pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = ocrPath
 
 custom_config = r'--oem 3 --psm 6'
 
@@ -128,11 +125,6 @@ def uploadImages(uri):
 
     dirFiles = getImagesPerUri(uri)
 
-    do(processing, taskOne)
-    print("------------------task 1------------------")
-    do(processing, taskTwo)
-    print("------------------task 2------------------")
-'''
     cpuCurr = psutil.cpu_percent()
     ramCurr = psutil.virtual_memory().percent
     freeCPU = (100 - cpuCurr)/2
@@ -200,7 +192,17 @@ def face_rec_part(read_image, img_path, tags, image):
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
         print("-- face rec end --")
-'''
+
+def classifyBreedPart(read_image, tags, imageDB):
+    breed, breed_conf = bc.predict_image(read_image)
+    if breed_conf > 0.7:  # TODO: adapt!
+        tags.append(breed)
+
+        tag = Tag.nodes.get_or_none(name=breed)
+        if tag is None:
+            tag = Tag(name=breed).save()
+        imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
+
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
@@ -210,10 +212,13 @@ def processing(dirFiles):
             lastNode = fs.createUriInNeo4j(dir)
         else:
             lastNode = fs.getLastNode(dir)
-
+        
+        commit = True 
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
-        try:
-            for index, img_name in enumerate(img_list):
+        
+        for index, img_name in enumerate(img_list):
+            db.begin()  # start the transaction 
+            try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
                 i = ImageFeature()
@@ -268,20 +273,22 @@ def processing(dirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    processingLock.acquire()
-                    if ImageNeo.nodes.get_or_none(hash=hash):
+                    lock.acquire()
+                    existed = ImageNeo.nodes.get_or_none(hash=hash)
+                    if existed:
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        processingLock.release()
+                        lock.release()
                         continue
                     try:
                         image.save()
                     except Exception as e:
                         print(e)
+                        db.commit() 
                         continue
                     finally:
-                        processingLock.release()
+                        lock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -309,7 +316,7 @@ def processing(dirFiles):
 
                     res = obj_extr.get_objects(img_path)
 
-                   # for object in res["name"]:
+                   #for object in res["name"]:
                     for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
@@ -320,7 +327,10 @@ def processing(dirFiles):
                         tags.append(object)
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
-                    # !!!
+                        #if object in ['cat', 'dog']:
+                        #    classifyBreedPart(read_image, tags, image)
+
+
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
@@ -360,8 +370,15 @@ def processing(dirFiles):
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                     print("extracting feature from image %s " % (img_path))
-        except Exception as e:
-            print(e)
+                    db.commit()
+                    commit &= True 
+            except Exception as e:
+                db.rollback()
+                fs.deleteFolderFromFs(dir) 
+                commit &= False 
+                print("Error during processing: ", e) 
+        if not commit: 
+            fs.deleteFolderFromFs(dir) 
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -378,6 +395,7 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
+        frr.removeImage(di.hash) 
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)
@@ -412,7 +430,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
+    return classes[idx[0]] if probs[0] > 0.6 else None
 
 
 def getOCR(image):
