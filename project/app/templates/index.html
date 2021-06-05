@@ -3,166 +3,105 @@
 
 {% block content %}
 <div class="results">
+        {% for tag_cluster in results.items %}
+        <div class="album py-5 bg-mine">
+            <div class="container">
+                <p>{{ tag_cluster.0 }}</p>
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
+                    {% for image in tag_cluster.1 %}
+                    {% if image.0 is not None %}
+                    <div class="col">
+                        <div class="card shadow-sm">
+                            {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
+                            <img class="imageThumbnailInMenu" src="{% static image_static %}">
+                            {% endwith %}
 
-    <form id="showingform" action="export/zip/$" style="display: none">
-        <button style="margin: 0vh 1vw 0vh 3vw;" type="submit" id="excel_btn" class="btn btn-primary">Export to excel</button>
-        <button type="submit" id="zip_btn" class="btn btn-primary">Export to zip</button>
-    </form>
-    {% for tag_cluster in results.items %}
-    <div class="album py-5 bg-mine">
-    <div class="container">
-        <p>{{ tag_cluster.0 }}</p>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
-          {% for image in tag_cluster.1 %}
-              {% if image.0 is not None %}
-            <div class="col">
-              <div class="card shadow-sm img_box">
-                {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                  <img class="imageThumbnailInMenu" height="115px" id="{{ image.0.hash }}" src="{% static image_static %}">
-                {% endwith %}
-                <div class="card-body">
-                  <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div class="btn-group">
-                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}">View</button>
-                    </div> <!--btn group-->
-                        <img class="checked_img" src="{% static '/img/check2.svg' %}">
-                  </div> <!--d-flex justify-content-between align-items-center-->
-                </div> <!--card-body-->
+                            <div class="card-body">
+                                <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                       <button type="button" class="view btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}">View</button>
+                                    </div> <!--btn group-->
+                                </div> <!--d-flex justify-content-between align-items-center-->
+                            </div> <!--card-body-->
+                        </div> <!--card shadow-sm-->
+                    </div> <!--col-->
+                    <div class="modal fade detailsModal" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
+                                    <button onclick="closeModal({{ forloop.parentloop.counter }}, {{forloop.counter}})" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
+                                    <div class="modal-body">
+                                        {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
+                                            <img class="imageThumbnail" src="{% static imgPath%}">
+                                        {% endwith %}
 
-              </div> <!--card shadow-sm-->
-            </div> <!--col-->
-            <div class="modal fade detailsModal" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
-                    <button onclick="closeModal({{ forloop.parentloop.counter }}, {{forloop.counter}})" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                <form id="imageDetailsForm" name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
-                  <div class="modal-body">
-                      {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
-                          <img class="imageThumbnail" src="{% static imgPath%}">
-                      {% endwith %}
-                          <div id="tagsDiv{{ forloop.parentloop.counter }}{{forloop.counter}}">{% for elem in image.1 %}
-                          #{{ elem.name }}
-                          {% endfor %} <i id="editTagsIcon" onclick="divClicked({{ forloop.parentloop.counter }}, {{forloop.counter}})" class="fas fa-pencil-alt"></i> </div>
-                          <input style="display: none" class="inner-textarea" type="textarea" name="tagsTextarea" id="tagsTextarea{{ forloop.parentloop.counter }}{{forloop.counter}}" size="60%" value="{% for elem in image.1 %} #{{ elem.name }}{% endfor %}">
-                            <p class="imagePath">Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
-                          <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
-                          {% if not image.0.creation_date is None %}
-                                <p class="card-text">Creation Date: {{ image.0.creation_date }}</p>
-                            {% endif %}
-                  </div>
-                    <div class="modal-footer">
-                    <button onclick="closeModal({{ forloop.parentloop.counter }}, {{forloop.counter}})" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                  </div>
-                </form>
-                </div>
-              </div>
+                                        <i class="tagsIcon editTagsIcon fas fa-pencil-alt" title="edit tags"></i>
+                                        <i class="tagsIcon addTagsIcon fas fa-plus-square" title="add new tag"></i>
+                                        <div class="addTagDiv" hidden>
+                                            <input type="text" class="form-control"/>
+                                            <button type="button" class="addTag btn btn-primary" title="add">Add</button>
+                                        </div>
+                                        <div class="tagsDiv" id="{{ image.0.hash }}">
+                                            {% for elem in image.1 %}
+                                            <span class="tag"> #{{ elem.name }} <i hidden class="deleteIcon fas fa-times" title="delete this tag"></i></span>
+                                            {% endfor %}
+                                        </div>
+                                        <input hidden class="postInput" type="text" name="tags">
+                                        <p class="imagePath">Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
+                                        <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
+                                        {% if not image.0.creation_date is None %}
+                                        <p class="card-text">Creation Date: {{ image.0.creation_date }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" class="submitBtn btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                              {% endif %}
+                              {% endfor %}
+                  </div> <!--row-->
             </div>
-            {% endif %}
-            {% endfor %}
-        </div> <!--row-->
-    </div>
-  </div>
-    {% endfor %}
-{% with 'img/arrow-up.svg' as myarrow %}
-    <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
-{% endwith %}
+      </div>
+        {% endfor %}
+    {% with 'img/arrow-up.svg' as myarrow %}
+        <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
+    {% endwith %}
 </div>
-    <script>
-        var imgs = document.getElementsByTagName('img')
-        var allIds = ''
-        var images = false;
+<script>
+    var edit = true;
+    var add = true;
 
-        for (let i = 0; i < imgs.length; i++) {
-            if (imgs[i].id === '')
-                continue
-            allIds += imgs[i].id + '&';
-            images = true;
-        }
-
-        var selectedIds = new Set()
-        var idsList = new Array()
-
-        if (images){
-            $('#showingform').css('display', 'block')
-        }
-
-    $('#excel_btn').click(function (){
-        var param = ''
-        if (selectedIds.size > 0){
-            param = idSetToString(selectedIds)
-            param = param.substr(0, param.length - 1)
+    $('.editTagsIcon').click(function (){
+        if (edit){
+            $('.deleteIcon').removeAttr('hidden')
         }else{
-            param = allIds.substr(0, allIds.length - 1)
+            $('.deleteIcon').attr('hidden', 'hidden')
         }
-
-        $('form').attr('action', 'export/excel/$' + param);
+        edit = !edit
     })
 
-    $('#zip_btn').click(function (){
-        var param = ''
-        if (selectedIds.size > 0){
-            param = idSetToString(selectedIds)
-            param = param.substr(0, param.length - 1)
+    $('.addTagsIcon').click(function (){
+        if (add){
+            $('.addTagDiv').removeAttr('hidden')
         }else{
-            param = allIds.substr(0, allIds.length - 1)
+            $('.addTagDiv').attr('hidden', 'hidden')
         }
-        $('form').attr('action', 'export/zip/$' + param);
+
+        add = !add
     })
 
-
-    $(".img_box").click(function (){
-        if ($(this).hasClass('selected_img')){
-            $(this).removeClass('selected_img')
-            $(this).find(".checked_img").css('display','none')
-            selectedIds.delete($(this).children('img')[0].id)
-            idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
-        }
-        else{
-            selectedIds.add($(this).children('img')[0].id)
-            idsList.push($(this).children('img')[0].id)
-            $(this).addClass('selected_img')
-            $(this).find(".checked_img").css('display','block')
-        }
-
-        if (selectedIds.size === 0){
-            $("#excel_btn").html('Export all to excel')
-            $("#zip_btn").html('Export all to zip')
-        }else{
-            $("#excel_btn").html('Export to excel')
-            $("#zip_btn").html('Export to zip')
-        }
+    $('.deleteIcon').click(function (){
+        $(this).parent() //  <span class="tag">
+            .remove()
     })
-
-    function divClicked(tagCounter, resultCounter) {
-        // concatenate numbers
-        var str = tagCounter.toString() + resultCounter.toString();
-
-        // get elements
-        var tagsDiv = document.getElementById("tagsDiv" + str);
-        var textArea = document.getElementById("tagsTextarea" + str);
-
-        // change display style
-        tagsDiv.style.display = "none";
-        textArea.style.display = "block";
-    }
-
-    function closeModal(tagCounter, resultCounter) {
-        // concatenate numbers
-        var str = tagCounter.toString() + resultCounter.toString();
-
-        // get elements
-        var tagsDiv = document.getElementById("tagsDiv" + str);
-        var textArea = document.getElementById("tagsTextarea" + str);
-
-        // change display style
-        tagsDiv.style.display = "block";
-        textArea.style.display = "none";
-    }
 
         function idSetToString(set){
             var ids = ''
@@ -174,22 +113,56 @@
         //Get the button:
         mybutton = document.getElementById("scrollBtn");
 
-        // When the user scrolls down 20px from the top of the document, show the button
-        window.onscroll = function() {scrollFunction()};
+    $('.addTag').click(function (){
+        var input = $(this).parent().children('input');
+        var val = input.val();
 
-        function scrollFunction() {
-          if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-            mybutton.style.display = "block";
-          } else {
-            mybutton.style.display = "none";
-          }
+        if (val === null || val.trim().length === 0)
+            return false;
+
+        const newTag = "<span class='tag'>\#" + val + "<i hidden class='deleteIcon fas fa-times' title='delete this tag'></i></span>";
+        $(this).parent().parent().children('.tagsDiv').append(newTag);
+        input.val("")
+    })
+
+    $('.view').click(function (){
+        $('.addTagDiv').attr('hidden', 'hidden')
+        $('.deleteIcon').attr('hidden', 'hidden');
+        edit = add = true;
+    })
+
+    $('.submitBtn').click(function (){
+        var form = $(this).parent().parent();
+        var tags = form.find('.tagsDiv').children('.tag');
+        var postBody = ''
+
+        for (let i = 0; i < tags.length; i++){
+            postBody += tags[i].innerText.trim().split("\n")[0]
         }
 
-        // When the user clicks on the button, scroll to the top of the document
-        function topFunction() {
-          document.body.scrollTop = 0; // For Safari
-          document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        form.find('.postInput').val(postBody)
+        return true;
+    })
+
+    //Get the button:
+    mybutton = document.getElementById("scrollBtn");
+
+    // When the user scrolls down 20px from the top of the document, show the button
+    window.onscroll = function() {scrollFunction()};
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            mybutton.style.display = "block";
+        } else {
+            mybutton.style.display = "none";
+        }
     }
 
-    </script>
+    // When the user clicks on the button, scroll to the top of the document
+    function topFunction() {
+        document.body.scrollTop = 0; // For Safari
+        document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+
+</script>
 {% endblock %}

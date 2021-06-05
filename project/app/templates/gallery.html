@@ -2,53 +2,96 @@
 {% load static %}
 
 {% block content %}
-    <div class="container centerGalleryDiv">
-        <div id="insertion_calendar" style="width: 1000vw; height: 30vh;"></div>
-        <div id="creation_calendar" style="width: 1000vw; height: 700vh;"></div>
+    <div class="flex-container centerGalleryDiv">
+        <div id="insertion_calendar" style="width: 60vw; flex: 1; height: 45%; margin-top: 2vh"></div>
+        <div id="creation_calendar" style="width: 60vw; flex: 1; height: 45%; margin-top: 4vh"></div>
     </div>
 
 
     <script type="text/javascript">
-      google.charts.load("current", {packages:["calendar"]});
-      google.charts.setOnLoadCallback(drawCalendarChart);
-      google.charts.setOnLoadCallback(drawCalendarChartByCreation);
 
-   function drawCalendarChart() {
-       datesDjango = {{ datesInsertion|safe }};
-       var dataTable = new google.visualization.DataTable();
-       dataTable.addColumn({ type: 'date', id: 'Date' });
-       dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
-       for (var key in datesDjango) {
-            dataTable.addRow([new Date(key), datesDjango[key]]);
+    drawCalendarChartByInsertion();
+    function drawCalendarChartByInsertion() {
+        datesDjango = {{ datesInsertion|safe }};
+        var dataPoints = [];
+        for (var key in datesDjango) {
+            dataPoints.push({ 'y': datesDjango[key], 'label': key});
         }
+        var chart = new CanvasJS.Chart("insertion_calendar", {
+            animationEnabled: true,
+            exportEnabled: true,
+            title:{
+                text: "New Images Calendar",
+                fontFamily: "arial",
+                fontStyle: "bold",
+            },
+            axisX:{
+                valueFormatString: "YYYY DD MMM",
+                labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            axisY: {
+                interval: 1,
+                labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            data: [{
+                type: "line",
+                xValueFormatString: "YYYY DD MMM",
+                toolTipContent: "<b>{label}</b>: {y} image(s) taken on this day",
+                color: "#0000ff",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
+    }
 
-       var chart = new google.visualization.Calendar(document.getElementById('insertion_calendar'));
-
-       var options = {
-         title: "New images Calendar",
-         height: "100%",
-       };
-
-       chart.draw(dataTable, options);
-   }
-
-   function drawCalendarChartByCreation() {
-       datesByCreationDjango = {{ datesCreation|safe }};
-       var dataTable = new google.visualization.DataTable();
-       dataTable.addColumn({ type: 'date', id: 'Date' });
-       dataTable.addColumn({ type: 'number', id: 'Won/Loss' });
-       for (var key in datesByCreationDjango) {
-            dataTable.addRow([new Date(key), datesByCreationDjango[key]]);
+    drawCalendarChartByCreation();
+    function drawCalendarChartByCreation() {
+        datesByCreationDjango = {{ datesCreation|safe }};
+        var dataPoints = [];
+        for (var key in datesByCreationDjango) {
+            dataPoints.push({ 'y': datesByCreationDjango[key], 'label': key});
         }
-
-       var chart = new google.visualization.Calendar(document.getElementById('creation_calendar'));
-
-       var options = {
-         title: "Images' creation date Calendar",
-         height: "100%",
-       };
-
-       chart.draw(dataTable, options);
-   }
+        var chart = new CanvasJS.Chart("creation_calendar", {
+            animationEnabled: true,
+            exportEnabled: true,
+            title:{
+                text: "Images' Creation Date Calendar",
+                fontFamily: "arial",
+                fontStyle: "bold",
+            },
+            axisX:{
+                valueFormatString: "YYYY DD MMM",
+                labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            axisY: {
+                interval: 1,
+                labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
+            },
+            data: [{
+                type: "line",
+                xValueFormatString: "YYYY DD MMM",
+                toolTipContent: "<b>{label}</b>: {y} image(s) taken on this day",
+                color: "#0000ff",
+                dataPoints: dataPoints
+            }]
+        });
+        chart.render();
+    }
     </script>
 {% endblock %}

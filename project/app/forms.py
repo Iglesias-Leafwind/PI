@@ -110,7 +110,7 @@ class PersonsForm(forms.Form):
             # data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger"
 
             self.initial[field_image] = rel[0].icon
-            self.initial[field_name] = rel[1].name + ' -- ' + str(rel[0].confiance)
+            self.initial[field_name] = rel[1].name # + ' -- ' + str(rel[0].confiance)
             self.initial[field_person_before] = rel[1].name
             self.initial[field_image_id] = rel[2].hash
             self.initial[field_verified] = rel[0].approved
