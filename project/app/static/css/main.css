@@ -887,6 +887,12 @@ fa.redo:hover{
   margin: 0 auto;
 }
 
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .tagsDiv span{
   padding: 5px;
   background-color: #2D95DF;

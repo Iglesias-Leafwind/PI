@@ -34,6 +34,6 @@ urlpatterns = [
     path('objects', views.objectsGallery, name='objectsGallery'),
     path('people', views.peopleGallery, name='peopleGallery'),
     path('scenes', views.scenesGallery, name='placesGallery'),
-    path('locations', views.locationsGallery, name='locationsGallery'),
+    path('text', views.textGallery, name='textGallery'),
     path('gallery', views.calendarGallery, name='gallery'),
 ]

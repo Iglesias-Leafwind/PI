@@ -296,7 +296,7 @@ def dashboard(request):
 
     ## original tag source statistics
     countOriginalTagSource = {}
-    allTagLabels = {"ocr": "text from image", "manual": "manual", "object": "objects", "places": "places",
+    allTagLabels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
                     "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
@@ -416,19 +416,20 @@ def scenesGallery(request):
                   {'form': form, 'image_form': image, 'placesTags': allTags})
 
 
-def locationsGallery(request):
+def textGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    locations = {}
+    allTags = []
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
-            location = img.location
-            if location not in locations:
-                locations[location] = 1
-            else:
-                locations[location] += 1
-            print(location)
-    return render(request, 'locationsGallery.html',
-                  {'form': form, 'image_form': image, 'locations': locations})
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            if originalTagSource == "ocr" and tag.name not in allTags:
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
+
+    return render(request, 'textGallery.html',
+                  {'form': form, 'image_form': image, 'textTags': allTags})
 

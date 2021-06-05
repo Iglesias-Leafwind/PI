@@ -8,10 +8,10 @@
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           <li class="sadnav-item nav-item">
-            <a href="{% url 'locationsGallery' %}" class="nav-link">
+            <a href="{% url 'textGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-map-marked-alt"></i>
               <span>
-                Locations
+                Text
               </span>
             </a>
           </li>
@@ -59,8 +59,8 @@
 
     <div class="mygrid">
         <div class="locations-div">
-            <h1 class="stats-text">{{ numbers.location }}</h1>
-            <p class="stats-text" style="margin-top: -4vh">locations</p>
+            <h1 class="stats-text">{{ countTagSource.text }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">text</p>
         </div>
 
         <div class="people-div">
