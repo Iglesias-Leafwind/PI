@@ -88,7 +88,7 @@ def index(request):
             image = SearchForImageForm()  # fetching the images form
             query_text = request.GET.get("query")  # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
-            tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+            tag = "#" + " #".join(query_text.split(" "))  # arranging tags with '#' before
 
             result_hashs = list(
                 map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
