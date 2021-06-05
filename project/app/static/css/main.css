@@ -790,8 +790,8 @@ fa.redo:hover{
   grid-template-rows: 5vh 20vh 10vh 40vh 10vh 40vh;
 }
 
-.locations-div{
-  background-image: url("../img/compass-fill.svg");
+.text-div {
+  background-image: url("../img/chat-right-quote-fill.svg");
   background-size: 30%;
   background-position: 90% 85%;
   background-repeat: no-repeat;

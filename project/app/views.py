@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
@@ -223,16 +223,11 @@ def updateFolders(request):
 
 def update_faces(request):
     if request.method != 'POST':
-        print('method not post!!!')
-        pass
+        redirect('/people')
 
     form = PersonsForm(request.POST)
     if not form.is_valid():
         print('invalid form!!!')
-        # return or smth
-
-    if request.POST.get("close"):
-        print('close was called, do something!!')  # TODO
 
     print(form.cleaned_data)
     data = form.cleaned_data
@@ -246,7 +241,7 @@ def update_faces(request):
         new_personname = data['person_name_%s' % str(i)]
 
         # retirar isto abaixo dps!!!
-        new_personname = new_personname.split(' ')[0]
+        #new_personname = new_personname.split(' ')[0]
         old_personname = data['person_before_%s' % str(i)]
         verified = True
         if not data['person_verified_%s' % str(i)]:
@@ -356,7 +351,9 @@ def calendarGallery(request):
             else:
                 continue
 
+    datesInsertion = dict(sorted(datesInsertion.items(), key=lambda item: item[0]))
     datesInsertion = json.dumps(datesInsertion)
+    datesCreation = dict(sorted(datesCreation.items(), key=lambda item: item[0]))
     datesCreation = json.dumps(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
