@@ -215,8 +215,8 @@ def processing(dirFiles):
 
         commit = True
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
+        db.begin()  # start the transaction
         for index, img_name in enumerate(img_list):
-            db.begin()  # start the transaction
             try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
@@ -371,7 +371,11 @@ def processing(dirFiles):
                 print("Error during processing: ", e)
 
         if not commit:
+            db.rollback()
             fs.deleteFolderFromFs(dir)
+        else:
+            db.commit()
+
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
