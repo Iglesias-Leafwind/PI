@@ -87,7 +87,6 @@ net = cv2.dnn.readNet(east)
 # load installed tesseract-ocr from users pc
 pytesseract.pytesseract.tesseract_cmd = ocrPath
 
-
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -368,6 +367,7 @@ def processing(dirFiles):
                     commit &= True
             except Exception as e:
                 db.rollback()
+
                 commit &= False
                 print("Error during processing: ", e)
 
