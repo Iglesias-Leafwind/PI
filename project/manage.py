@@ -29,7 +29,7 @@ def main():
 
 def openES():
     global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
+    elasticsearchClient = Elasticsearch()
 
 
 def closeES():
