@@ -93,8 +93,10 @@ net = cv2.dnn.readNet(east)
 #pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 # Wei:
-pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
+#pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
 
+
+pytesseract.pytesseract.tesseract_cmd = ocrPath
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -334,9 +336,6 @@ def processing(dirFiles):
                         if object in ['cat', 'dog']:
                             classifyBreedPart(read_image, tags, image)
 
-
-
-                    # !!!
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()

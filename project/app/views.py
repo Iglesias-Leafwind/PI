@@ -6,12 +6,13 @@ from collections import defaultdict
 import cv2
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, FilterSearchForm, PeopleFilterForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
 from manage import es
 from app.nlpFilterSearch import processQuery
+from app.utils import searchFilterOptions, showDict
 import re
 import itertools
 
@@ -58,6 +59,11 @@ from app.utils import showDict
 
 
 def index(request):
+    # para os filtros
+    opts = searchFilterOptions
+    opts['current_url'] = request.get_full_path()
+    filters = FilterSearchForm(initial=opts)
+
     if request.method == 'POST':  # if it's a POST, we know it's from search by image
         query = SearchForm()  # query form stays the same
         image = SearchForImageForm(request.POST, request.FILES)  # fetching image form response
@@ -71,7 +77,7 @@ def index(request):
                 if getresult:  # if it exists
                     results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
             return render(request, "index.html",
-                          {'form': query, 'image_form': image, 'results': results, 'error': False})
+                          {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
             results = {}  # blank results dictionary
             for tag in Tag.nodes.all():  # looping through all tag nodes
@@ -80,28 +86,19 @@ def index(request):
                 for lstImage in results["#" + tag.name]:  # for each image of the value of this tag
                     results["#" + tag.name][count] = (lstImage, lstImage.tag.all())  # replace it by a tuple w/ its tags
                     count += 1  # increase counter
-            return render(request, 'index.html',
-                          {'form': query, 'image_form': image, 'results': results, 'error': True})
+            return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
-            query = SearchForm()  # cleaning this form
-            image = SearchForImageForm()  # fetching the images form
-            query_text = request.GET.get("query")  # fetching the inputted query
-            query_array = processQuery(query_text)  # processing query with nlp
-            tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+            query = SearchForm()    # cleaning this form
+            image = SearchForImageForm()    # fetching the images form
 
-            result_hashs = list(
-                map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
-            results = {tag: []}  # blank results dictionary
-            for hash in result_hashs:  # iterating through the result's hashes
-                img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
-                if img is None:  # if there is no image with this hash in DB
-                    continue  # ignore, advance
-                tags = img.tag.all()  # get all tags from the image
-                results[tag].append((img, tags))  # insert tags in the dictionary
+            query_text = request.GET.get("query")   # fetching the inputted query
 
-            return render(request, "index.html",
-                          {'form': query, 'image_form': image, 'results': results, 'error': False})
+            # acho eu (?)
+            query_text = query_text.lower()
+
+            results = get_image_results(query_text)
+            return render(request, "index.html", {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
             query = SearchForm()
@@ -114,8 +111,123 @@ def index(request):
                 for lstImage in results["#" + tag.name]:
                     results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
                     count += 1
-            return render(request, 'index.html',
-                          {'form': query, 'image_form': image, 'results': results, 'error': False})
+            return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
+
+def change_filters(request):
+    if request.method != 'POST':
+        print('shouldnt happen!!')
+        return redirect('/')
+
+    form = FilterSearchForm(request.POST)
+    form.is_valid() # ele diz que o form é invalido se algum
+                    # checkbox for False, idk why..
+    form = form.cleaned_data
+    searchFilterOptions['automatic'] = form['automatic']
+    searchFilterOptions['manual'] = form['manual']
+    searchFilterOptions['folder_name'] = form['folder_name']
+    searchFilterOptions['people'] = form['people']
+    searchFilterOptions['text'] = form['text']
+    searchFilterOptions['places'] = form['places']
+    searchFilterOptions['breeds'] = form['breeds']
+    searchFilterOptions['exif'] = form['exif']
+
+    return redirect(form['current_url'])
+
+
+def get_image_results(query_text):
+    query_array = processQuery(query_text)  # processing query with nlp
+    tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+
+    result_hashs = list(map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
+    results = {tag: []}  # blank results dictionary
+    for hash in result_hashs:  # iterating through the result's hashes
+        # remove = False # flag
+
+        remove = set()
+
+        print('results?')
+
+        img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
+        #tags = img.tag.all()  # get all tags from the image
+        #relationships = [ img.tag.relationship(t) for t in tags ]
+
+        if img is None:  # if there is no image with this hash in DB
+            continue  # ignore, advance
+
+        # -- people --
+        people = img.person.all()
+        # verifica se a query ta dentro do nome
+        dentro = any([q in p.name.lower() for q in query_array for p in people])
+        if not searchFilterOptions['people'] and dentro:
+            print('entrou.... (people)')
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)  # se estiver dentro vai adicionar False (não remove)
+                                    # se estiver fora vai adicionar True (remove..)
+
+        # -- manual TODO test --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['manual'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- object --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['automatic'] and dentro: # objects
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- folder name --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['folder_name'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+
+        # -- ocr --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['text'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- exif --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['exif'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- places --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['places'] and dentro:
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        # -- breeds --
+        tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
+        dentro = any([q in t for q in query_array for t in tags])
+        if not searchFilterOptions['breeds'] and dentro:
+            print('entrou breeds!!', dentro)
+            print(query_array)
+            print(tags)
+            remove.add(dentro)
+        else:
+            remove.add(not dentro)
+
+        if not all(remove):
+            results[tag].append((img, tags))  # insert tags in the dictionary
+    return results
 
 
 def delete(request, path):
