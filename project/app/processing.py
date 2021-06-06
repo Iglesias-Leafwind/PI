@@ -84,19 +84,7 @@ THUMBNAIL_PIXELS=100
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
-# load installed tesseract-ocr from users pc
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Windows Iglesias:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-
-# Ubuntu:
-#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
-
-# Wei:
-# pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
-
-# Ubuntu:
-#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = ocrPath
 
 custom_config = r'--oem 3 --psm 6'
 
