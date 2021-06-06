@@ -148,7 +148,7 @@ def get_image_results(query_text):
         print('results?')
 
         img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
-        tags = img.tag.all()  # get all tags from the image
+        #tags = img.tag.all()  # get all tags from the image
         #relationships = [ img.tag.relationship(t) for t in tags ]
 
         if img is None:  # if there is no image with this hash in DB
