@@ -3,11 +3,8 @@
 import os
 import subprocess
 import sys
-import time
-
-from elasticsearch import Elasticsearch
-from scripts.pcVariables import essPath
-
+from scripts.esScript import closeES,openES
+from scripts.neoScript import closeNeo4j,openNeo4j
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
@@ -19,30 +16,12 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-
-    #openES()
-    #time.sleep(5)
+    openES()
+    openNeo4j()
     execute_from_command_line(sys.argv)
-    #closeES()
+    closeES()
+    closeNeo4j()
 
-esPath = essPath
-
-def openES():
-    global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
-
-
-def closeES():
-    elasticsearchClient.terminate()
-    print("---------------------------------------------terminate---------------------------------------------")
-    time.sleep(1)
-    if elasticsearchClient.returncode is None:
-        # It has not terminated. Kill it.
-        elasticsearchClient.kill()
-        print("---------------------------------------------kill---------------------------------------------")
-
-
-es = Elasticsearch()
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,6 @@
 import json
 import string
+import reverse_geocoder as rg
 
 from app.breed_classifier import BreedClassifier
 import time
@@ -9,13 +10,13 @@ from os.path import join
 import random
 import numpy as np
 import requests
-from neomodel import db
+from neomodel import db 
 from numpyencoder import NumpyEncoder
 from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
-from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
+from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail, processingLock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -31,13 +32,13 @@ from nltk.corpus import stopwords, words
 from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
-from manage import es
+from scripts.esScript import es
 import app.utils
 from scripts.pathsPC import do,numThreads
 import logging
 
 import psutil, time
-from scripts.pcVariables import ocrPath
+from scripts.pcVariables import ocrPath 
 
 cpuPerThread = 1
 ramPerThread = 1
@@ -50,8 +51,7 @@ def testingThreadCapacity():
     cpuHigh = 0
     ramHigh = 0
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    head,_ = os.path.split(dir_path)
-    dir_path = os.path.join(head,"tests")
+    dir_path = os.path.join(dir_path,"static/tests")
     wait = do(processing, {dir_path: ["face.jpg"]})
     while not wait.done():
         cpuCurr = psutil.cpu_percent()
@@ -83,18 +83,6 @@ THUMBNAIL_PIXELS=100
 # used in getOCR
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
-
-# load installed tesseract-ocr from users pc
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Windows Iglesias:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-
-# Ubuntu:
-#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
-
-# Wei:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
-
 
 pytesseract.pytesseract.tesseract_cmd = ocrPath
 custom_config = r'--oem 3 --psm 6'
@@ -131,7 +119,7 @@ def filterSentence(sentence):
 
 def uploadImages(uri):
     print("----------------------------------------------")
-    print("            featrue extraction starts         ")
+    print("            feature extraction starts         ")
     print("----------------------------------------------")
 
     dirFiles = getImagesPerUri(uri)
@@ -223,11 +211,11 @@ def processing(dirFiles):
             lastNode = fs.createUriInNeo4j(dir)
         else:
             lastNode = fs.getLastNode(dir)
-
-        commit = True
+        commit = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
+        
         for index, img_name in enumerate(img_list):
-            db.begin()  # start the transaction
+            db.begin()  # start the transaction 
             try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
@@ -236,6 +224,7 @@ def processing(dirFiles):
                 read_image = cv2.imread(img_path)
                 if read_image is None:
                     print('read img is none')
+                    db.commit()
                     continue
                 hash = dhash(read_image)
 
@@ -247,10 +236,14 @@ def processing(dirFiles):
                     logging.info("Image " + img_path + " has already been processed")
 
                     if existed.folder_uri == dir:
+                        db.commit()
+                        commit |= True
                         continue
 
                     # if the current image's folder is different
                     existed.folder.connect(folderNeoNode)
+                    db.commit()
+                    commit |= True
                 else:
                     tags = []
 
@@ -283,83 +276,98 @@ def processing(dirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    lock.acquire()
+                    processingLock.acquire()
                     existed = ImageNeo.nodes.get_or_none(hash=hash)
-                    if existed:
+                    if ImageNeo.nodes.get_or_none(hash=hash):
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        lock.release()
+                        processingLock.release()
+                        db.commit()
                         continue
                     try:
                         image.save()
                     except Exception as e:
                         print(e)
-                        db.commit()
+                        db.commit() 
                         continue
                     finally:
-                        lock.release()
+                        processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                        location = Location.nodes.get(name=propertiesdict["location"])
-                        if location is None:
-                            location = Location(name=propertiesdict["location"]).save()
+                        # crc = [city,region,country] names array
+                        crc = getLocations(propertiesdict["latitude"], propertiesdict["longitude"])
 
-                        tags.append(location)
+                        location = Location.nodes.get_or_none(name=crc[0])
+                        if location is None:
+                            location = Location(name=crc[0]).save()
+
+                        tags.append(crc[0])
                         image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
-                        city = City.nodes.get(name=propertiesdict["city"])
+                        city = City.nodes.get_or_none(name=crc[0])
                         if city is None:
-                            city = City(name=propertiesdict["city"]).save()
+                            city = City(name=crc[0]).save()
 
-                        tags.append(city)
+                        tags.append(crc[0])
                         location.city.connect(city)
 
-                        country = Country.nodes.get(name=propertiesdict["country"])
-                        if country is None:
-                            country = Country(name=propertiesdict["country"]).save()
+                        region = Region.nodes.get_or_none(name=crc[1])
+                        if region is None:
+                            region = Region(name=crc[1]).save()
+                        tags.append(crc[1])
+                        city.region.connect(region)
 
-                        tags.append(country)
-                        city.country.connect(country)
+                        country = Country.nodes.get_or_none(name=crc[2])
+                        if country is None:
+                            country = Country(name=crc[2]).save()
+
+                        tags.append(crc[2])
+                        region.country.connect(country)
 
                     image.folder.connect(folderNeoNode)
 
                     res = obj_extr.get_objects(img_path)
 
-                    for object in res["name"]:
+
+                    for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
-                            tag = Tag(name=object).save()
-                        tags.append(object)
-                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
+                            tag = Tag(name=object,
+                                        originalTagName=object,
+                                        originalTagSource='object').save()
 
-                        if object in ['cat', 'dog']:
-                            classifyBreedPart(read_image, tags, image)
+                        tags.append(object)
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    places = getPlaces(img_path)
-                    if places:
+                    placesList = getPlaces(img_path)
+                    for places, prob in placesList:
                         places = places.split("/")
                         for place in places:
                             p = " ".join(place.split("_")).strip()
                             t = Tag.nodes.get_or_none(name=p)
                             if t is None:
-                                t = Tag(name=p).save()
+                                t = Tag(name=p,
+                                        originalTagName=p,
+                                        originalTagSource='places').save()
                             tags.append(p)
-                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places'})
+                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places', 'score':prob})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             t = Tag.nodes.get_or_none(name=word)
                             if t is None:
-                                t = Tag(name=word).save()
+                                t = Tag(name=word,
+                                        originalTagName=word,
+                                        originalTagSource='ocr').save()
                             tags.append(word)
-                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr'})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -371,15 +379,18 @@ def processing(dirFiles):
 
                     print("extracting feature from image %s " % (img_path))
                     db.commit()
-                    commit &= True
+                    commit |= True
             except Exception as e:
                 db.rollback()
-                fs.deleteFolderFromFs(dir)
-                commit &= False
-                print("Error during processing: ", e)
+                commit |= False
+                print("Error during processing: ", e) 
+        if not commit: 
+            fs.deleteFolderFromFs(dir) 
 
-        if not commit:
-            fs.deleteFolderFromFs(dir)
+def getLocations(latitude,longitude):
+    results = rg.search((latitude,longitude))
+    return [results[0]['name'],results[0]['admin2'],results[0]['admin1']]
+
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -396,7 +407,7 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
-        frr.removeImage(di.hash)
+        #frr.removeImage(di.hash)
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)
@@ -431,7 +442,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return classes[idx[0]] if probs[0] > 0.6 else None
+    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
 
 
 def getOCR(image):
@@ -463,6 +474,7 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
+
     ocrLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
@@ -644,17 +656,19 @@ def getExif(img_path):
                 if ("pixel_y_dimension" in current_image.list_all()):
                     returning["height"] = current_image.pixel_y_dimension
                 if ("gps_latitude" in current_image.list_all()):
-                    returning["latitude"] = current_image.gps_latitude
+                    latitude = current_image.gps_latitude[0]
+                    latitude += current_image.gps_latitude[1]/60
+                    latitude += current_image.gps_latitude[2]/3600
+                    if (current_image.gps_latitude_ref == "S"):
+                        latitude *= -1
+                    returning["latitude"] = latitude
                 if ("gps_longitude" in current_image.list_all()):
-                    returning["longitude"] = current_image.gps_longitude
-
-                if 'latitude' in returning and 'longitude' in returning:
-                    geoInfos = requests.get(
-                        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
-                        + returning["latitude"] + "&longitude=" + returning["longitude"]).json()
-                    returning['location'] = geoInfos['city']
-                    returning['city'] = geoInfos['city']
-                    returning['country'] = geoInfos['countryName']
+                    longitude = current_image.gps_longitude[0]
+                    longitude += current_image.gps_longitude[1]/60
+                    longitude += current_image.gps_longitude[2]/3600
+                    if (current_image.gps_longitude_ref == "W"):
+                        longitude *= -1
+                    returning["longitude"] = longitude
             else:
                 raise Exception("No exif")
     except Exception as e:

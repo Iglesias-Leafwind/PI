@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-    <div style="align-items: center">
-        <div class="centerGalleryDiv" style="align-content: center; margin-top: 2vh">
-            <h2>All Object Tags List</h2>
+    <div class="container centerGalleryDiv">
+        <div id="locations_chart" style="width: 60vw; height: 45vh; margin-top: 2vh">
+            <h2>All Text Tags List</h2>
                 <ul>
-                    {% for elem in objectTags %}
+                    {% for elem in textTags %}
                   <li>{{ elem }}</li>
                     {% endfor %}
                 </ul>

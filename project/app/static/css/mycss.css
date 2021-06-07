@@ -1,0 +1,16 @@
+.img_box{
+    cursor: pointer;
+}
+
+.selected_img{
+    transform: scale(1.05, 1.05);
+}
+
+.checked_img{
+    position: absolute;
+    right: 5%;
+    bottom: 15%;
+    width: 20%;
+    height: 20%;
+    display: none;
+}

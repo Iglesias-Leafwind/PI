@@ -5,20 +5,10 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty, \
     ArrayProperty
 from neomodel import db
-from manage import es
-import scripts.pcVariables as vars
+from scripts.esScript import es
+from scripts.pcVariables import dbsPath
 
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Wei:
-#config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
-#Iglesias:
-#config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
-#Alexa:
-#config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
-#Anthony:
-#config.DATABASE_URL = 'bolt://neo4j:pass@localhost:7687'
-
-config.DATABASE_URL = vars.dbsPath
+config.DATABASE_URL = dbsPath
 
 # for elastic search ↓
 class ImageES(Document):
@@ -100,12 +90,16 @@ class Person(StructuredNode):
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
+    region = RelationshipFrom('Region', IsIn.rel, model=IsIn)
 
+class Region(StructuredNode):
+    name = StringProperty(unique_index=True, required=True)
+    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
 
 class City(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    region = RelationshipTo(Region, IsIn.rel, model=IsIn)
     location = RelationshipFrom('Location', IsIn.rel, model=IsIn)
 
 

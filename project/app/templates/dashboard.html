@@ -11,12 +11,12 @@
             <a href="{% url 'locationsGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-map-marked-alt"></i>
               <span>
-                Locations
+                Text
               </span>
             </a>
           </li>
           <li class="sadnav-item nav-item">
-            <a href="../gallery.html" class="nav-link">
+            <a href="{% url 'placesGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-search-location"></i>
               <span>
                 Scenes
@@ -24,7 +24,7 @@
             </a>
           </li>
           <li class="sadnav-item nav-item">
-            <a href="../gallery.html" class="nav-link">
+            <a href="{% url 'peopleGallery' %}" class="nav-link">
               <i class="nav-icon fa fa-users"></i>
               <span>
                 People
@@ -59,8 +59,8 @@
 
     <div class="mygrid">
         <div class="locations-div">
-            <h1 class="stats-text">{{ numbers.location }}</h1>
-            <p class="stats-text" style="margin-top: -4vh">locations</p>
+            <h1 class="stats-text">{{ countTagSource.text }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">text</p>
         </div>
 
         <div class="people-div">

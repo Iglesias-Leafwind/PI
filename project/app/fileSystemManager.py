@@ -3,7 +3,8 @@ import re
 import sys
 
 from app.models import *
-from app.utils import getRandomNumber, ImageFeature, lock
+from scripts.esScript import es
+from app.utils import getRandomNumber, ImageFeature, processingLock
 
 
 class Node:
@@ -112,7 +113,7 @@ class SimpleFileSystemManager:
 
     def createUriInNeo4j(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
-        lock.acquire()
+        processingLock.acquire()
 
         if root in self.trees:
             node = self.trees[root]
@@ -135,7 +136,7 @@ class SimpleFileSystemManager:
                 newNode.parent = node
                 node.children[folder] = node = newNode
 
-        lock.release()
+        processingLock.release()
 
         return node
 
