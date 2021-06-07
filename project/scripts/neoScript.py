@@ -13,6 +13,8 @@ dir_path = os.path.join(head, "app/resources/neoServer/bin/neo4j")
 
 neo4j = None
 def openNeo4j():
+
+    print("--------------------------NEO--------------------")
     global neo4j
     subprocess.Popen(dir_path + "-admin set-initial-password 12345", shell=True)
     neo4j = subprocess.Popen(dir_path + " console", shell=True)
