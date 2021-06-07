@@ -2,7 +2,6 @@ import json
 import string
 import reverse_geocoder as rg
 
-#from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
 import time
 import sys
@@ -13,6 +12,7 @@ import numpy as np
 import requests
 from neomodel import db 
 from numpyencoder import NumpyEncoder
+from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
@@ -70,8 +70,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
-#bc = BreedClassifier()
+frr = FaceRecognition()
+bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -85,7 +85,6 @@ east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
 pytesseract.pytesseract.tesseract_cmd = ocrPath
-
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -212,7 +211,6 @@ def processing(dirFiles):
             lastNode = fs.createUriInNeo4j(dir)
         else:
             lastNode = fs.getLastNode(dir)
-        
         commit = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         
@@ -342,11 +340,9 @@ def processing(dirFiles):
                         tags.append(object)
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
-
-                    #faceRecLock.acquire()
-                    #face_rec_part(read_image, img_path, tags, image)
-                    #faceRecLock.release()
-
+                    faceRecLock.acquire()
+                    face_rec_part(read_image, img_path, tags, image)
+                    faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
                     placesList = getPlaces(img_path)
@@ -371,7 +367,7 @@ def processing(dirFiles):
                                         originalTagName=word,
                                         originalTagSource='ocr').save()
                             tags.append(word)
-                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -394,6 +390,7 @@ def processing(dirFiles):
 def getLocations(latitude,longitude):
     results = rg.search((latitude,longitude))
     return [results[0]['name'],results[0]['admin2'],results[0]['admin1']]
+
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -723,7 +720,7 @@ def generateThumbnail(imagepath, hash):
         thumbnailW = int(w * ratio)
         paddingLR = int((thumbnailH-thumbnailW)/2)
 
-    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_CONSTANT)
+    image = cv2.copyMakeBorder(image, paddingTB, paddingTB, paddingLR, paddingLR, cv2.BORDER_REPLICATE)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"

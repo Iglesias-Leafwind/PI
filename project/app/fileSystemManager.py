@@ -24,6 +24,9 @@ class Node:
     def __str__(self):
         return self.name
 
+    def deleteNode(self, node):
+        if node.name in self.children:
+            self.children.pop(node.name)
 
 class SimpleFileSystemManager:
     def __init__(self):
@@ -153,15 +156,10 @@ class SimpleFileSystemManager:
 
     def deleteFolderFromFs(self, uri):
         if self.exist(uri):
-            folders, root = self.__splitUriAndGetRoot__(uri)
-
-            node = self.trees[root]
-            for i in range(1, len(folders)):
-                folder = folders[i]
-                node = node.children[folder]
+            node = self.getLastNode(uri)
 
             if node.parent:
-                node.parent.children.pop(node.name)
+                node.parent.deleteNode(node)
 
             folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
 
@@ -205,6 +203,8 @@ class SimpleFileSystemManager:
             while node.parent:
                 parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
                 if not parentFolder:
+                    node.parent.deleteNode(node)
+                    node = node.parent
                     continue
                 currNode = node
                 node = node.parent
