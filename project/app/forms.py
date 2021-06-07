@@ -136,5 +136,8 @@ class FilterSearchForm(forms.Form):
     breeds = forms.BooleanField(required=False, label='Pet breeds identified')
     current_url = forms.CharField(required=True, widget=HiddenInput)
 
+    
+
+
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)
