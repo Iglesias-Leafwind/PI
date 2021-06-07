@@ -3,6 +3,8 @@ from app.models import ImageNeo
 from app.face_recognition import FaceRecognition
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
+head,_ = os.path.split(dir_path)
+dir_path = os.path.join(head,"app/static/tests")
 
 class FaceRecogTestCase(TestCase):
 

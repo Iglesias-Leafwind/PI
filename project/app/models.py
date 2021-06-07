@@ -5,7 +5,7 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty, \
     ArrayProperty
 from neomodel import db
-from manage import es
+from scripts.esScript import es
 from scripts.pcVariables import dbsPath
 
 config.DATABASE_URL = dbsPath
