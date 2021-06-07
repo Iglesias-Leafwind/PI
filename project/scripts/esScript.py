@@ -11,9 +11,9 @@ def openES():
 
     while 1:
         try:
-            elasticsearchClient = Elasticsearch()
-            elasticsearchClient.cluster.health(wait_for_status='yellow')
-            return elasticsearchClient
+            es = Elasticsearch()
+            es.cluster.health(wait_for_status='yellow')
+            return es
         except Exception:
             print("---- connection error ----")
             time.sleep(1)

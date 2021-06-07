@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from scripts.esScript import closeES
-
+from scripts.neoScript import closeNeo4j
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
@@ -19,6 +19,7 @@ def main():
 
     execute_from_command_line(sys.argv)
     closeES()
+    closeNeo4j()
 
 
 if __name__ == '__main__':
