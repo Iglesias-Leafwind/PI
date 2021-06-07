@@ -90,12 +90,16 @@ class Person(StructuredNode):
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
+    region = RelationshipFrom('Region', IsIn.rel, model=IsIn)
 
+class Region(StructuredNode):
+    name = StringProperty(unique_index=True, required=True)
+    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
 
 class City(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    region = RelationshipTo(Region, IsIn.rel, model=IsIn)
     location = RelationshipFrom('Location', IsIn.rel, model=IsIn)
 
 

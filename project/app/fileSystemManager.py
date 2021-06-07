@@ -3,6 +3,7 @@ import re
 import sys
 
 from app.models import *
+from scripts.esScript import es
 from app.utils import getRandomNumber, ImageFeature, processingLock
 
 
