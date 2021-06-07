@@ -13,7 +13,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
-from manage import es
+from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 import re
 import itertools

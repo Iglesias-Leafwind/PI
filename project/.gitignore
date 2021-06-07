@@ -26,6 +26,7 @@
 */face-thumbnails/*
 */thumbnails/*
 */resources/breedclassifier-model/
+*/resources/neoServer/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 
