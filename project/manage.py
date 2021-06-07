@@ -3,10 +3,7 @@
 import os
 import subprocess
 import sys
-import time
-
-from elasticsearch import Elasticsearch
-from scripts.pcVariables import essPath
+from scripts.esScript import closeES
 
 def main():
     """Run administrative tasks."""
@@ -20,28 +17,9 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    global elasticsearchClient
-    elasticsearchClient = openES()
     execute_from_command_line(sys.argv)
     closeES()
 
-esPath = essPath
-
-def openES():
-    elasticsearchClient = Elasticsearch()
-    while 1:
-        try:
-            elasticsearchClient.cluster.health(wait_for_status='yellow')
-            return elasticsearchClient
-        except ConnectionError:
-            print("---- connection error ----")
-            time.sleep(1)
-
-def closeES():
-    print("---------------------------------------------terminate---------------------------------------------")
-    elasticsearchClient.close()
-
-es = Elasticsearch()
 
 if __name__ == '__main__':
     main()

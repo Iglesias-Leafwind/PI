@@ -31,7 +31,7 @@ from nltk.corpus import stopwords, words
 from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
-from manage import es
+from scripts.esScript import es
 import app.utils
 from scripts.pathsPC import do,numThreads
 import logging
