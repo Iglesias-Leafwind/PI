@@ -136,7 +136,15 @@ class FilterSearchForm(forms.Form):
     breeds = forms.BooleanField(required=False, label='Pet breeds identified')
     current_url = forms.CharField(required=True, widget=HiddenInput)
 
-    
+    objects_range_min = forms.IntegerField(required=False, label='Min confiance object extraction')
+    objects_range_max = forms.IntegerField(required=False, label='Max confiance object extraction')
+
+    people_range_min = forms.IntegerField(required=False, label='Min confiance people identified')
+    people_range_max = forms.IntegerField(required=False, label='Max confiance people identified')
+
+    breeds_range_min = forms.IntegerField(required=False, label='Min confiance pet breeds identified')
+    breeds_range_max = forms.IntegerField(required=False, label='Min confiance pet breeds identified')
+
 
 
 class EditTagForm(forms.Form):

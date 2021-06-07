@@ -13,6 +13,10 @@ lock = Lock()
 faceRecLock= Lock()
 ocrLock= Lock()
 
+objectExtractionThreshold = 0.1
+faceRecThreshold = 0.35
+placesThreshold = 0
+breedsThreshold = 0.7
 
 searchFilterOptions = {
     'automatic': True, # isto sao os objects
@@ -22,7 +26,19 @@ searchFilterOptions = {
     'text': True,
     'exif': True,
     'places' : True,
-    'breeds': True
+    'breeds': True,
+
+    'objects_range_min' : int(objectExtractionThreshold * 100),
+    'objects_range_max' : 100,
+
+    'people_range_min': int(faceRecThreshold * 100),
+    'people_range_max': 100,
+
+    'places_range_min' : int(placesThreshold * 100), # todo
+    'places_range_max' : 100,
+
+    'breeds_range_min' : int(breedsThreshold * 100),
+    'breeds_range_max': 100,
 }
 
 def getImagesPerUri(pathName):

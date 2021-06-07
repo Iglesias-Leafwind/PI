@@ -206,7 +206,7 @@ def face_rec_part(read_image, img_path, tags, image):
 
 def classifyBreedPart(read_image, tags, imageDB):
     breed, breed_conf = bc.predict_image(read_image)
-    if breed_conf > 0.7:  # TODO: adapt!
+    if breed_conf > app.utils.breedsThreshold:  # TODO: adapt!
         tags.append(breed)
 
         tag = Tag.nodes.get_or_none(name=breed)
@@ -326,12 +326,12 @@ def processing(dirFiles):
 
                     res = obj_extr.get_objects(img_path)
 
-                    for object in res["name"]:
+                    for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
                         if tag is None:
                             tag = Tag(name=object).save()
                         tags.append(object)
-                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object'})
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score':confidence})
 
                         if object in ['cat', 'dog']:
                             classifyBreedPart(read_image, tags, image)
