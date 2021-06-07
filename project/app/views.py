@@ -279,13 +279,14 @@ def get_image_results(query_text):
         else:
             remove.add(not dentro)
 
+        # --- RANGES ---
         # -- object range --
         if searchFilterOptions['automatic']:
             tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
             relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
             minn = searchFilterOptions['objects_range_min']
             maxx = searchFilterOptions['objects_range_max']
-            outside_limits = any([rel.score < minn or rel.score > maxx for rel in relationships])
+            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
             remove.add(outside_limits)
 
         # -- face range --
@@ -294,7 +295,7 @@ def get_image_results(query_text):
             relationships = [ img.person.relationship(t) for t in people if t.name in query_array ]
             minn = searchFilterOptions['people_range_min']
             maxx = searchFilterOptions['people_range_max']
-            outside_limits = any([rel.confiance < minn or rel.confiance > maxx for rel in relationships])
+            outside_limits = any([rel.confiance*100 < minn or rel.confiance*100 > maxx for rel in relationships])
             remove.add(outside_limits)
 
         # -- breeds range --
@@ -303,7 +304,7 @@ def get_image_results(query_text):
             relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
             minn = searchFilterOptions['breeds_range_min']
             maxx = searchFilterOptions['breeds_range_max']
-            outside_limits = any([rel.score < minn or rel.score > maxx for rel in relationships])
+            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
             remove.add(outside_limits)
 
 
