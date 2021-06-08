@@ -30,6 +30,7 @@ urlpatterns = [
     path('upload', views.upload, name='uploadFolder'),
     path('searchtag', views.searchtag, name='searchtag'),
     path('update_faces', views.update_faces, name='update_faces'),
+    path('change_filters', views.change_filters, name='change_filters'),
     path('dashboard', views.dashboard, name='dashboard'),
     path('export/zip/<str:ids>', views.exportToZip, name='export_zip'),
     path('export/excel/<str:ids>', views.exportToExcel, name='export_excel'),
