@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
@@ -104,19 +104,19 @@ def index(request):
                 results[tag].append((img, tags))    # insert tags in the dictionary
                 img.features = None
 
-            if len(query_array) > 1:
-                def sortFunction(elem):
+            if len(query_array) > 0:
+                def sortByScore(elem):
                     image = elem[0]
                     tags = elem[1]
                     score = 0
-                    for t in tags:
+                    for t in tags: # t -> Tag (NeoNode)
                         for q in query_array:
                             if q in t.name:
                                 score += image.tag.relationship(t).score
                                 break
                     return - (score / len(query_array))
 
-                results[tag].sort(key=sortFunction)
+                results[tag].sort(key=sortByScore)
 
             query_text = request.GET.get("query")   # fetching the inputted query
 

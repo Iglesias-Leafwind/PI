@@ -3,10 +3,10 @@
 
 {% block content %}
 <div class="results">
-        <form id="showingform" action="export/zip/$" style="display: none">
-            <button style="margin: 0vh 1vw 0vh 3vw;" type="submit" id="excel_btn" class="btn btn-primary">Export to excel</button>
-            <button type="submit" id="zip_btn" class="btn btn-primary">Export to zip</button>
-        </form>
+        <div id="exportDiv" style="display: none">
+            <button style="margin: 0vh 1vw 0vh 3vw;" type="button" id="excel_btn" class="btn btn-primary">Export to excel</button>
+            <button type="button" id="zip_btn" class="btn btn-primary">Export to zip</button>
+        </div>
         {% for tag_cluster in results.items %}
         <div class="album py-5 bg-mine">
             <div class="container">
@@ -97,7 +97,7 @@
     var idsList = []
 
     if (images){
-        $('#showingform').css('display', 'block')
+        $('#exportDiv').css('display', 'block')
     }
 
     $('#excel_btn').click(function (){
@@ -109,7 +109,7 @@
             param = allIds.substr(0, allIds.length - 1)
         }
 
-        $('form').attr('action', 'export/excel/$' + param);
+        createExportFrom("excel", param)
     })
 
     $('#zip_btn').click(function (){
@@ -120,9 +120,20 @@
         }else{
             param = allIds.substr(0, allIds.length - 1)
         }
-        $('form').attr('action', 'export/zip/$' + param);
+
+        createExportFrom("zip", param)
     })
 
+    function createExportFrom(type, param){
+        var form_ = document.createElement("form");
+        form_.id = "exportForm";
+        form_.name = "exportForm";
+        form_.method = "get";
+        form_.action = "export/" + type + "/$" + param;
+        document.body.appendChild(form_);
+        form_.submit();
+        document.body.removeChild(form_);
+    }
 
     $(".img_box").click(function (){
         if ($(this).hasClass('selected_img')){
@@ -174,15 +185,15 @@
             .remove()
     })
 
-        function idSetToString(set){
-            var ids = ''
-            set.forEach(id => {
-                ids += id + '&';
-            })
-            return ids;
-        }
-        //Get the button:
-        mybutton = document.getElementById("scrollBtn");
+    function idSetToString(set){
+        var ids = ''
+        set.forEach(id => {
+            ids += id + '&';
+        })
+        return ids;
+    }
+    //Get the button:
+    mybutton = document.getElementById("scrollBtn");
 
     $('.addTag').click(function (){
         var input = $(this).parent().children('input');
