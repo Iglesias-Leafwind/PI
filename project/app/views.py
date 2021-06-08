@@ -26,7 +26,7 @@ def landingpage(request):
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
 def updateTags(request, hash):
-    newTagsString = request.POST.get("tagsTextarea")
+    newTagsString = request.POST.get("tags")
     newTags = re.split('\s|\s+|\t|#', newTagsString)
     newTags = [tag for tag in newTags if tag != ""]
     print(newTags)
@@ -89,8 +89,21 @@ def index(request):
             return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
-            query = SearchForm()    # cleaning this form
-            image = SearchForImageForm()    # fetching the images form
+            query = SearchForm()  # cleaning this form
+            image = SearchForImageForm()  # fetching the images form
+            query_text = request.GET.get("query")  # fetching the inputted query
+            query_array = processQuery(query_text)  # processing query with nlp
+            tag = "#" + " #".join(query_text.split(" "))  # arranging tags with '#' before
+
+            result_hashs = list(
+                map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
+            results = {tag: []}  # blank results dictionary
+            for hash in result_hashs:  # iterating through the result's hashes
+                img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
+                if img is None:  # if there is no image with this hash in DB
+                    continue  # ignore, advance
+                tags = img.tag.all()  # get all tags from the image
+                results[tag].append((img, tags))  # insert tags in the dictionary
 
             query_text = request.GET.get("query")   # fetching the inputted query
 
@@ -408,7 +421,7 @@ def dashboard(request):
 
     ## original tag source statistics
     countOriginalTagSource = {}
-    allTagLabels = {"ocr": "text from image", "manual": "manual", "object": "objects", "places": "places",
+    allTagLabels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
                     "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
@@ -463,9 +476,10 @@ def calendarGallery(request):
             else:
                 continue
 
+    datesInsertion = dict(sorted(datesInsertion.items(), key=lambda item: item[0]))
     datesInsertion = json.dumps(datesInsertion)
+    datesCreation = dict(sorted(datesCreation.items(), key=lambda item: item[0]))
     datesCreation = json.dumps(datesCreation)
-    # print(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
@@ -479,21 +493,72 @@ def objectsGallery(request):
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            # print(tag.name, originalTagSource)
             if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name]
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
 
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allTags})
 
 
 def peopleGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allNames = []
+
+    for person in Person.nodes.all():
+        name = person.name
+        imgList = person.image.all()
+        for img in imgList:
+            rel = img.person.relationship(person)
+            verified = rel.approved
+            if verified == True:
+                allNames += [name]
+                break
+            else:
+                break
+
+    allNames = sorted(allNames)
+
+    return render(request, 'peopleGallery.html',
+                  {'form': form, 'image_form': image, 'people': allNames})
 
 
 def scenesGallery(request):
-    return None
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            if originalTagSource == "places" and tag.name not in allTags:
+                allTags += [tag.name.lower()]
 
+    allTags = sorted(allTags)
+
+    return render(request, 'placesGallery.html',
+                  {'form': form, 'image_form': image, 'placesTags': allTags})
+
+
+def textGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    allTags = []
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            rel = img.tag.relationship(tag)
+            originalTagSource = rel.originalTagSource
+            if originalTagSource == "ocr" and tag.name not in allTags:
+                allTags += [tag.name.lower()]
+
+    allTags = sorted(allTags)
+
+    return render(request, 'textGallery.html',
+                  {'form': form, 'image_form': image, 'textTags': allTags})
 
 def locationsGallery(request):
     form = SearchForm()
@@ -510,4 +575,5 @@ def locationsGallery(request):
             print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
+
 

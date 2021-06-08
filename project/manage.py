@@ -20,16 +20,16 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    #openES()
+    # openES()
     #time.sleep(5)
     execute_from_command_line(sys.argv)
     #closeES()
 
-esPath = essPath
+# esPath = essPath
 
 def openES():
     global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
+    elasticsearchClient = Elasticsearch()
 
 
 def closeES():

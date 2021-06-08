@@ -124,7 +124,7 @@ def filterSentence(sentence):
     english_vocab = set(w.lower() for w in words.words())
     stop_words = set(w.lower() for w in stopwords.words('english'))
     word_tokens = word_tokenize(sentence)
-    filtered = [word for word in word_tokens if word not in stop_words if
+    filtered = [word.lower() for word in word_tokens if word not in stop_words if
                 len(word) >= 4 and (len(word) <= 8 or word in english_vocab)]
     return filtered
 
@@ -374,7 +374,6 @@ def processing(dirFiles):
                     commit &= True
             except Exception as e:
                 db.rollback()
-                fs.deleteFolderFromFs(dir)
                 commit &= False
                 print("Error during processing: ", e)
 
