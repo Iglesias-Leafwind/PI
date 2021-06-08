@@ -1,16 +1,19 @@
+import csv
+import io
 import json
 import os
-import re
+import zipfile
 from collections import defaultdict
 
 import cv2
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, FilterSearchForm, PeopleFilterForm
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag
-from manage import es
+from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict
 import re
@@ -25,10 +28,11 @@ def landingpage(request):
     path_form = EditFoldersForm()
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
+
 def updateTags(request, hash):
     newTagsString = request.POST.get("tags")
-    newTags = re.split('\s|\s+|\t|#', newTagsString)
-    newTags = [tag for tag in newTags if tag != ""]
+    newTags = re.split('#', newTagsString)
+    newTags = [tag.strip() for tag in newTags if tag.strip() != ""]
     print(newTags)
     image = ImageNeo.nodes.get_or_none(hash=hash)
     oldTags = [x.name for x in image.tag.all()]
@@ -44,13 +48,7 @@ def updateTags(request, hash):
 
     query = SearchForm()
     image = SearchForImageForm()
-    results = {}
-    for tag in Tag.nodes.all():
-        results["#" + tag.name] = tag.image.all()
-        count = 0
-        for lstImage in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
-            count += 1
+    results = getAllImages()
 
     return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
 
@@ -93,17 +91,32 @@ def index(request):
             image = SearchForImageForm()  # fetching the images form
             query_text = request.GET.get("query")  # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
-            tag = "#" + " #".join(query_text.split(" "))  # arranging tags with '#' before
+            tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+            result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
 
-            result_hashs = list(
-                map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
-            results = {tag: []}  # blank results dictionary
-            for hash in result_hashs:  # iterating through the result's hashes
-                img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
-                if img is None:  # if there is no image with this hash in DB
-                    continue  # ignore, advance
-                tags = img.tag.all()  # get all tags from the image
-                results[tag].append((img, tags))  # insert tags in the dictionary
+            results = {tag: []} # blank results dictionary
+
+            for hash in result_hashs:   # iterating through the result's hashes
+                img = ImageNeo.nodes.get_or_none(hash=hash) # fetching the reuslts nodes from DB
+                if img is None: # if there is no image with this hash in DB
+                    continue    # ignore, advance
+                tags = img.tag.all()    # get all tags from the image
+                results[tag].append((img, tags))    # insert tags in the dictionary
+                img.features = None
+
+            if len(query_array) > 1:
+                def sortFunction(elem):
+                    image = elem[0]
+                    tags = elem[1]
+                    score = 0
+                    for t in tags:
+                        for q in query_array:
+                            if q in t.name:
+                                score += image.tag.relationship(t).score
+                                break
+                    return - (score / len(query_array))
+
+                results[tag].sort(key=sortFunction)
 
             query_text = request.GET.get("query")   # fetching the inputted query
 
@@ -116,7 +129,6 @@ def index(request):
         else:  # first time in the page - no forms filled
             query = SearchForm()
             image = SearchForImageForm()
-
             results = {}
             for tag in Tag.nodes.all():
                 results["#" + tag.name] = tag.image.all()
@@ -560,6 +572,67 @@ def textGallery(request):
     return render(request, 'textGallery.html',
                   {'form': form, 'image_form': image, 'textTags': allTags})
 
+def exportToZip(request, ids):
+    ids = ids[1:]
+    if ids.strip() == '':
+        return HttpResponse(content_type='text/json')
+
+    ids = ids.split("&")
+    # Create zip
+    buffer = io.BytesIO()
+    zip_file = zipfile.ZipFile(buffer, 'w')
+    for id in ids:
+        img = ImageNeo.nodes.get_or_none(hash=id)
+        if not img: continue
+
+        path = os.path.join(img.folder_uri, img.name)
+        zip_file.writestr(re.split("[\\\/]+", path)[-1],
+                          open(path, 'rb').read())
+    zip_file.close()
+    # Return zip
+    response = HttpResponse(buffer.getvalue())
+    response['Content-Type'] = 'application/x-zip-compressed'
+    response['Content-Disposition'] = 'attachment; filename=images.zip'
+    return response
+
+def exportToExcel(request, ids):
+    ids = ids[1:]
+    if ids.strip() == '':
+        return HttpResponse(content_type='text/json')
+
+    ids = ids.split("&")
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="images.csv"'
+
+    csv_file = csv.writer(response)
+    csv_file.writerow(['uri', 'creation time', 'insertion time', 'format', 'width', 'height', 'tags', 'persons', 'locations'])
+
+    for id in ids:
+        img = ImageNeo.nodes.get_or_none(hash=id)
+        if not img: continue
+
+        uri = os.path.join(img.folder_uri, img.name)
+        creation_time = img.creation_date
+        insertion_date = img.insertion_date
+        format = img.format
+        width = img.width
+        height = img.height
+        tags = [t.name for t in img.tag]
+        persons = [p.name for p in img.person]
+        locations = []
+        for l in img.location:
+            locations.append(l.name)
+            for city in l.city:
+                locations.append(city.name)
+                for country in city.country:
+                    locations.append(country.name)
+
+        csv_file.writerow([uri, creation_time, insertion_date, format, width,
+                           height, tags, persons, locations])
+
+    return response
+  
 def locationsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -575,5 +648,3 @@ def locationsGallery(request):
             print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
-
-

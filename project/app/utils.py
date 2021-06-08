@@ -6,8 +6,10 @@ from threading import Lock
 import imghdr
 
 from app.models import Tag, ImageNeo, ImageES
-from manage import es
+from scripts.esScript import es
 
+processingLock = Lock()
+resultsLock = Lock()
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()
 faceRecLock= Lock()

@@ -103,6 +103,15 @@
             .remove()
     })
 
+        function idSetToString(set){
+            var ids = ''
+            set.forEach(id => {
+                ids += id + '&';
+            })
+            return ids;
+        }
+        //Get the button:
+        mybutton = document.getElementById("scrollBtn");
 
     $('.addTag').click(function (){
         var input = $(this).parent().children('input');

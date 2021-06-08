@@ -15,4 +15,4 @@ class ObjectExtract:
         results = self.model(image_path)
 
         res = results.pandas().xyxy[0][['confidence', 'name']]
-        return res
+        return [ (res['name'][i], res['confidence'][i]) for i in range(res.shape[0]) if res['confidence'][i] >= 0.1]
