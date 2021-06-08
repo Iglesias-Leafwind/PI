@@ -11,10 +11,10 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 head, _ = os.path.split(dir_path)
 dir_path = os.path.join(head, "app/resources/neoServer/bin/neo4j")
 
-neo4j = None
 def openNeo4j():
     print("--------------------------NEO--------------------")
     global neo4j
+    global neo
     subprocess.Popen(dir_path + "-admin set-initial-password 12345", shell=True)
     neo4j = subprocess.Popen(dir_path + " console", shell=True)
     uri = "bolt://localhost:7687"
@@ -37,5 +37,3 @@ def closeNeo4j():
             # It has not terminated. Kill it.
             neo4j.kill()
             print("---------------------------------------------kill---------------------------------------------")
-
-neo = openNeo4j()

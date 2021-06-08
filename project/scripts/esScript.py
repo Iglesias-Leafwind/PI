@@ -7,6 +7,7 @@ esPath = essPath
 
 def openES():
     global elasticsearchClient
+    global es
     elasticsearchClient = subprocess.Popen(esPath)
     print("------------------ES----------------------------")
 
@@ -27,5 +28,3 @@ def closeES():
         # It has not terminated. Kill it.
         elasticsearchClient.kill()
         print("---------------------------------------------kill---------------------------------------------")
-
-es = openES()

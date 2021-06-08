@@ -28,8 +28,7 @@ searchFilterOptions = {
     'text': True,
     'exif': True,
     'places' : True,
-    'breeds': True,
-
+    'breeds': True
     'objects_range_min' : int(objectExtractionThreshold * 100),
     'objects_range_max' : 100,
 

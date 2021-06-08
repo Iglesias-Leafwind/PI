@@ -1,6 +1,6 @@
 import json
 import string
-
+import reverse_geocoder as rg
 
 from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
@@ -14,7 +14,7 @@ import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
-from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
+from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
 from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail, processingLock
 import torch
@@ -70,7 +70,6 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-
 frr = FaceRecognition()
 bc = BreedClassifier()
 
@@ -120,7 +119,7 @@ def filterSentence(sentence):
 
 def uploadImages(uri):
     print("----------------------------------------------")
-    print("            featrue extraction starts         ")
+    print("            feature extraction starts         ")
     print("----------------------------------------------")
 
     dirFiles = getImagesPerUri(uri)
@@ -295,26 +294,35 @@ def processing(dirFiles):
                         processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                        location = Location.nodes.get(name=propertiesdict["location"])
-                        if location is None:
-                            location = Location(name=propertiesdict["location"]).save()
+                        # crc = [city,region,country] names array
+                        crc = getLocations(propertiesdict["latitude"], propertiesdict["longitude"])
 
-                        tags.append(location)
+                        location = Location.nodes.get_or_none(name=crc[0])
+                        if location is None:
+                            location = Location(name=crc[0]).save()
+
+                        tags.append(crc[0])
                         image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
 
-                        city = City.nodes.get(name=propertiesdict["city"])
+                        city = City.nodes.get_or_none(name=crc[0])
                         if city is None:
-                            city = City(name=propertiesdict["city"]).save()
+                            city = City(name=crc[0]).save()
 
-                        tags.append(city)
+                        tags.append(crc[0])
                         location.city.connect(city)
 
-                        country = Country.nodes.get(name=propertiesdict["country"])
-                        if country is None:
-                            country = Country(name=propertiesdict["country"]).save()
+                        region = Region.nodes.get_or_none(name=crc[1])
+                        if region is None:
+                            region = Region(name=crc[1]).save()
+                        tags.append(crc[1])
+                        city.region.connect(region)
 
-                        tags.append(country)
-                        city.country.connect(country)
+                        country = Country.nodes.get_or_none(name=crc[2])
+                        if country is None:
+                            country = Country(name=crc[2]).save()
+
+                        tags.append(crc[2])
+                        region.country.connect(country)
 
                     image.folder.connect(folderNeoNode)
 
@@ -325,13 +333,11 @@ def processing(dirFiles):
                         if tag is None:
                             tag = Tag(name=object).save()
                         tags.append(object)
-                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score':confidence})
-
+                        image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
 
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
-                    
                     #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
@@ -352,7 +358,7 @@ def processing(dirFiles):
                             if t is None:
                                 t = Tag(name=word).save()
                             tags.append(word)
-                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr'})
+                            image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
 
                     # add features to "cache"
                     ftManager.npFeatures.append(norm_feat)
@@ -371,6 +377,11 @@ def processing(dirFiles):
                 print("Error during processing: ", e) 
         if not commit: 
             fs.deleteFolderFromFs(dir)
+
+def getLocations(latitude,longitude):
+    results = rg.search((latitude,longitude))
+    return [results[0]['name'],results[0]['admin2'],results[0]['admin1']]
+
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -635,17 +646,19 @@ def getExif(img_path):
                 if ("pixel_y_dimension" in current_image.list_all()):
                     returning["height"] = current_image.pixel_y_dimension
                 if ("gps_latitude" in current_image.list_all()):
-                    returning["latitude"] = current_image.gps_latitude
+                    latitude = current_image.gps_latitude[0]
+                    latitude += current_image.gps_latitude[1]/60
+                    latitude += current_image.gps_latitude[2]/3600
+                    if (current_image.gps_latitude_ref == "S"):
+                        latitude *= -1
+                    returning["latitude"] = latitude
                 if ("gps_longitude" in current_image.list_all()):
-                    returning["longitude"] = current_image.gps_longitude
-
-                if 'latitude' in returning and 'longitude' in returning:
-                    geoInfos = requests.get(
-                        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
-                        + returning["latitude"] + "&longitude=" + returning["longitude"]).json()
-                    returning['location'] = geoInfos['city']
-                    returning['city'] = geoInfos['city']
-                    returning['country'] = geoInfos['countryName']
+                    longitude = current_image.gps_longitude[0]
+                    longitude += current_image.gps_longitude[1]/60
+                    longitude += current_image.gps_longitude[2]/3600
+                    if (current_image.gps_longitude_ref == "W"):
+                        longitude *= -1
+                    returning["longitude"] = longitude
             else:
                 raise Exception("No exif")
     except Exception as e:

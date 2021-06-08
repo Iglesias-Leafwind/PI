@@ -145,7 +145,5 @@ class FilterSearchForm(forms.Form):
     breeds_range_min = forms.IntegerField(required=False, label='Min confiance pet breeds identified')
     breeds_range_max = forms.IntegerField(required=False, label='Min confiance pet breeds identified')
 
-
-
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)

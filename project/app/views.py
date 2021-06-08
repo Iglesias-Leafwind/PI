@@ -277,7 +277,6 @@ def get_image_results(query_text):
             remove.add(dentro)
         else:
             remove.add(not dentro)
-
         # -- exif --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
         dentro = any([q in t for q in query_array for t in tags])
@@ -634,9 +633,24 @@ def scenesGallery(request):
                 allTags += [tag.name.lower()]
 
     allTags = sorted(allTags)
-
     return render(request, 'placesGallery.html',
                   {'form': form, 'image_form': image, 'placesTags': allTags})
+  
+def locationsGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    locations = {}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            location = img.location
+            if location not in locations:
+                locations[location] = 1
+            else:
+                locations[location] += 1
+            print(location)
+    return render(request, 'locationsGallery.html',
+                  {'form': form, 'image_form': image, 'locations': locations})
 
 
 def textGallery(request):
