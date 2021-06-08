@@ -123,7 +123,7 @@ def index(request):
             # acho eu (?)
             query_text = query_text.lower()
 
-            results = get_image_results(query_text)
+            #results = get_image_results(query_text)
             return render(request, "index.html", {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
