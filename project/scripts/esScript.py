@@ -8,6 +8,7 @@ esPath = essPath
 def openES():
     global elasticsearchClient
     elasticsearchClient = subprocess.Popen(esPath)
+    print("------------------ES----------------------------")
 
     while 1:
         try:

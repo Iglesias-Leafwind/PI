@@ -51,8 +51,7 @@ def testingThreadCapacity():
     cpuHigh = 0
     ramHigh = 0
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    head,_ = os.path.split(dir_path)
-    dir_path = os.path.join(head,"tests")
+    dir_path = os.path.join(dir_path,"static/tests")
     wait = do(processing, {dir_path: ["face.jpg"]})
     while not wait.done():
         cpuCurr = psutil.cpu_percent()
@@ -238,11 +237,13 @@ def processing(dirFiles):
 
                     if existed.folder_uri == dir:
                         db.commit()
+                        commit |= True
                         continue
 
                     # if the current image's folder is different
                     existed.folder.connect(folderNeoNode)
                     db.commit()
+                    commit |= True
                 else:
                     tags = []
 

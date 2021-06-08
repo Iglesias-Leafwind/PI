@@ -3,6 +3,8 @@ from app.models import ImageNeo
 from app.utils import getImagesPerUri,getRandomNumber
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
+head,_ = os.path.split(dir_path)
+dir_path = os.path.join(head,"app/static/tests")
 
 class BGGTestCase(TestCase):
 
