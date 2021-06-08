@@ -15,6 +15,18 @@ lock = Lock()
 faceRecLock= Lock()
 ocrLock= Lock()
 
+
+searchFilterOptions = {
+    'automatic': True, # isto sao os objects
+    'manual': True,
+    'folder_name': True,
+    'people': True,
+    'text': True,
+    'exif': True,
+    'places' : True,
+    'breeds': True
+}
+
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
 
