@@ -2,9 +2,15 @@
 {% load static %}
 
 {% block content %}
-    <div class="container centerGalleryDiv">
-        <div id="objects" style="width: 60vw; height: 45vh; margin-top: 2vh">
-            <p>{{ objectTags }}</p>
+    <div style="align-items: center">
+        <div class="centerGalleryDiv" style="align-content: center; margin-top: 2vh">
+            <h2>All Object Tags List</h2>
+                <ul>
+                    {% for elem in objectTags %}
+                  <li>{{ elem }}</li>
+                    {% endfor %}
+                </ul>
         </div>
     </div>
+
 {% endblock %}

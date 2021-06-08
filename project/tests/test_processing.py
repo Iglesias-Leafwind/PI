@@ -3,7 +3,10 @@ from app.models import ImageNeo
 from app.processing import *
 import cv2
 import os
-img_path = os.path.dirname(os.path.realpath(__file__)) + "/face.jpg"
+img_path = os.path.dirname(os.path.realpath(__file__))
+head,_ = os.path.split(img_path)
+img_path = os.path.join(head,"app/static/tests") + "/face.jpg"
+
 class ProcessingTestCase(TestCase):
 
     def setUp(self):

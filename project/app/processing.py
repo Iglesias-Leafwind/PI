@@ -1,6 +1,8 @@
 import json
 import string
 
+
+from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
 import time
 import sys
@@ -11,11 +13,10 @@ import numpy as np
 import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
-from app.face_recognition import FaceRecognition
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, lock,faceRecLock, ocrLock, get_and_save_thumbnail, processingLock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -31,7 +32,7 @@ from nltk.corpus import stopwords, words
 from nltk.tokenize import word_tokenize
 from exif import Image as ImgX
 from app.VGG_ import VGGNet
-from manage import es
+from scripts.esScript import es
 import app.utils
 from scripts.pathsPC import do,numThreads
 import logging
@@ -50,8 +51,7 @@ def testingThreadCapacity():
     cpuHigh = 0
     ramHigh = 0
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    head,_ = os.path.split(dir_path)
-    dir_path = os.path.join(head,"tests")
+    dir_path = os.path.join(dir_path,"static/tests")
     wait = do(processing, {dir_path: ["face.jpg"]})
     while not wait.done():
         cpuCurr = psutil.cpu_percent()
@@ -70,6 +70,7 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
+
 frr = FaceRecognition()
 bc = BreedClassifier()
 
@@ -83,18 +84,6 @@ THUMBNAIL_PIXELS=100
 # used in getOCR
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
-
-# load installed tesseract-ocr from users pc
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Windows Iglesias:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
-
-# Ubuntu:
-#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
-
-# Wei:
-#pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
-
 
 pytesseract.pytesseract.tesseract_cmd = ocrPath
 custom_config = r'--oem 3 --psm 6'
@@ -124,7 +113,7 @@ def filterSentence(sentence):
     english_vocab = set(w.lower() for w in words.words())
     stop_words = set(w.lower() for w in stopwords.words('english'))
     word_tokens = word_tokenize(sentence)
-    filtered = [word for word in word_tokens if word not in stop_words if
+    filtered = [word.lower() for word in word_tokens if word not in stop_words if
                 len(word) >= 4 and (len(word) <= 8 or word in english_vocab)]
     return filtered
 
@@ -223,8 +212,7 @@ def processing(dirFiles):
             lastNode = fs.createUriInNeo4j(dir)
         else:
             lastNode = fs.getLastNode(dir)
-
-        commit = True
+        commit = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         for index, img_name in enumerate(img_list):
             db.begin()  # start the transaction
@@ -236,6 +224,7 @@ def processing(dirFiles):
                 read_image = cv2.imread(img_path)
                 if read_image is None:
                     print('read img is none')
+                    db.commit()
                     continue
                 hash = dhash(read_image)
 
@@ -247,10 +236,14 @@ def processing(dirFiles):
                     logging.info("Image " + img_path + " has already been processed")
 
                     if existed.folder_uri == dir:
+                        db.commit()
+                        commit |= True
                         continue
 
                     # if the current image's folder is different
                     existed.folder.connect(folderNeoNode)
+                    db.commit()
+                    commit |= True
                 else:
                     tags = []
 
@@ -283,13 +276,14 @@ def processing(dirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    lock.acquire()
+                    processingLock.acquire()
                     existed = ImageNeo.nodes.get_or_none(hash=hash)
-                    if existed:
+                    if ImageNeo.nodes.get_or_none(hash=hash):
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        lock.release()
+                        processingLock.release()
+                        db.commit()
                         continue
                     try:
                         image.save()
@@ -298,7 +292,7 @@ def processing(dirFiles):
                         db.commit()
                         continue
                     finally:
-                        lock.release()
+                        processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         location = Location.nodes.get(name=propertiesdict["location"])
@@ -333,12 +327,11 @@ def processing(dirFiles):
                         tags.append(object)
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score':confidence})
 
-                        if object in ['cat', 'dog']:
-                            classifyBreedPart(read_image, tags, image)
 
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
+                    
                     #     p = Person.nodes.get_or_none(name=name)
 
                     places = getPlaces(img_path)
@@ -371,14 +364,12 @@ def processing(dirFiles):
 
                     print("extracting feature from image %s " % (img_path))
                     db.commit()
-                    commit &= True
+                    commit |= True
             except Exception as e:
                 db.rollback()
-                fs.deleteFolderFromFs(dir)
-                commit &= False
-                print("Error during processing: ", e)
-
-        if not commit:
+                commit |= False
+                print("Error during processing: ", e) 
+        if not commit: 
             fs.deleteFolderFromFs(dir)
 
 def alreadyProcessed(img_path):
@@ -396,7 +387,6 @@ def deleteFolder(uri):
 
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
-        frr.removeImage(di.hash)
         imgfs.remove(di)
 
     ftManager.imageFeatures = list(imgfs)
@@ -431,7 +421,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return classes[idx[0]] if probs[0] > 0.6 else None
+    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
 
 
 def getOCR(image):
@@ -463,6 +453,7 @@ def getOCR(image):
     # the model to obtain the two output layer sets
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
+
     ocrLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)

@@ -1,0 +1,16 @@
+{% extends 'topbar.html' %}
+{% load static %}
+
+{% block content %}
+    <div style="align-items: center">
+        <div class="centerGalleryDiv" style="align-content: center; margin-top: 2vh">
+            <h2>All People List</h2>
+                <ul>
+                    {% for elem in people %}
+                  <li>{{ elem }}</li>
+                    {% endfor %}
+                </ul>
+        </div>
+    </div>
+
+{% endblock %}
