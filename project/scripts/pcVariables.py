@@ -2,10 +2,8 @@
 dbsPath = 'bolt://neo4j:12345@localhost:7687'
 
 ## Windows Iglesias:
-
 ocrPath = r'D:\Programs\tesseract-OCR\tesseract'
 essPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch.bat"
-
 
 
 ## Windows Wei:

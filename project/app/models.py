@@ -7,7 +7,6 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
 from neomodel import db
 from scripts.esScript import es
 from scripts.pcVariables import dbsPath
-
 config.DATABASE_URL = dbsPath
 
 # for elastic search ↓

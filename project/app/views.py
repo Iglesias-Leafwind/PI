@@ -9,10 +9,11 @@ import cv2
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
-from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm,FilterSearchForm
+from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
-from app.utils import addTag, deleteTag, addTagWithOldTag
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
+from manage import es
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict
@@ -77,8 +78,14 @@ def index(request):
             return render(request, "index.html",
                           {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
-            results = getAllImages()
-            return render(request, 'index.html', {'form': query, 'image_form': image, 'results': results, 'error': True})
+            results = {}  # blank results dictionary
+            for tag in Tag.nodes.all():  # looping through all tag nodes
+                results["#" + tag.name] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
+                count = 0  # counter
+                for lstImage in results["#" + tag.name]:  # for each image of the value of this tag
+                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())  # replace it by a tuple w/ its tags
+                    count += 1  # increase counter
+            return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
             query = SearchForm()  # cleaning this form
@@ -150,6 +157,60 @@ def change_filters(request):
     searchFilterOptions['breeds'] = form['breeds']
     searchFilterOptions['exif'] = form['exif']
 
+    # -- confiance object extraction --
+    max_obj_extr = form['objects_range_max']
+    min_obj_extr = form['objects_range_min']
+
+    if min_obj_extr < objectExtractionThreshold * 100:
+        min_obj_extr = objectExtractionThreshold * 100
+    elif min_obj_extr > 100:
+        min_obj_extr = 100
+
+    if max_obj_extr < min_obj_extr:
+        max_obj_extr = min_obj_extr
+    elif max_obj_extr > 100:
+        max_obj_extr = 100
+
+    searchFilterOptions['objects_range_max'] = int(max_obj_extr)
+    searchFilterOptions['objects_range_min'] = int(min_obj_extr)
+    # -- end confiance object extraction --
+    # -- confiance face rec --
+    max_face = form['people_range_max']
+    min_face = form['people_range_min']
+
+    if min_face < faceRecThreshold * 100:
+        min_face = faceRecThreshold * 100
+    elif min_face > 100:
+        min_face = 100
+
+    if max_face < min_obj_extr:
+        max_face = min_obj_extr
+    elif max_face > 100:
+        max_face = 100
+
+    searchFilterOptions['people_range_max'] = int(max_face)
+    searchFilterOptions['people_range_min'] = int(min_face)
+    # -- end confiance face rec --
+
+
+    # -- confiance breeds --
+    max_breeds = form['breeds_range_max']
+    min_breeds = form['breeds_range_min']
+
+    if min_breeds < breedsThreshold * 100:
+        min_breeds = breedsThreshold * 100
+    elif min_breeds > 100:
+        min_breeds = 100
+
+    if max_breeds < min_breeds:
+        max_breeds = min_breeds
+    elif max_breeds > 100:
+        max_breeds = 100
+
+    searchFilterOptions['breeds_range_max'] = int(max_breeds)
+    searchFilterOptions['breeds_range_min'] = int(min_breeds)
+    # -- end confiance breeds --
+
     return redirect(form['current_url'])
 
 
@@ -216,7 +277,6 @@ def get_image_results(query_text):
             remove.add(dentro)
         else:
             remove.add(not dentro)
-
         # -- exif --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
         dentro = any([q in t for q in query_array for t in tags])
@@ -243,6 +303,35 @@ def get_image_results(query_text):
             remove.add(dentro)
         else:
             remove.add(not dentro)
+
+        # --- RANGES ---
+        # -- object range --
+        if searchFilterOptions['automatic']:
+            tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
+            relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
+            minn = searchFilterOptions['objects_range_min']
+            maxx = searchFilterOptions['objects_range_max']
+            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
+            remove.add(outside_limits)
+
+        # -- face range --
+        if searchFilterOptions['people']:
+            people = img.person.all()
+            relationships = [ img.person.relationship(t) for t in people if t.name in query_array ]
+            minn = searchFilterOptions['people_range_min']
+            maxx = searchFilterOptions['people_range_max']
+            outside_limits = any([rel.confiance*100 < minn or rel.confiance*100 > maxx for rel in relationships])
+            remove.add(outside_limits)
+
+        # -- breeds range --
+        if searchFilterOptions['breeds']:
+            tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
+            relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
+            minn = searchFilterOptions['breeds_range_min']
+            maxx = searchFilterOptions['breeds_range_max']
+            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
+            remove.add(outside_limits)
+
 
         if not all(remove):
             results[tag].append((img, tags))  # insert tags in the dictionary
@@ -482,7 +571,9 @@ def calendarGallery(request):
             else:
                 continue
 
+    datesInsertion = dict(sorted(datesInsertion.items(), key=lambda item: item[0]))
     datesInsertion = json.dumps(datesInsertion)
+    datesCreation = dict(sorted(datesCreation.items(), key=lambda item: item[0]))
     datesCreation = json.dumps(datesCreation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
@@ -639,3 +730,19 @@ def exportToExcel(request, ids):
                            height, tags, persons, locations])
 
     return response
+  
+def locationsGallery(request):
+    form = SearchForm()
+    image = SearchForImageForm()
+    locations = {}
+    for tag in Tag.nodes.all():
+        imgList = tag.image.all()
+        for img in imgList:
+            location = img.location
+            if location not in locations:
+                locations[location] = 1
+            else:
+                locations[location] += 1
+            print(location)
+    return render(request, 'locationsGallery.html',
+                  {'form': form, 'image_form': image, 'locations': locations})

@@ -8,6 +8,7 @@ import numpy as np
 #import face_recognition as fr
 
 from app.models import Person, DisplayA, ImageNeo, ImageES
+from app.utils import faceRecThreshold
 from manage import es
 
 PEN_THRESHOLD = 50
@@ -119,9 +120,9 @@ class FaceRecognition:
 
         print('fim')
         maxx = max(matches.keys())
-        if maxx < 0.35:
+        if maxx < faceRecThreshold:
             return None, encoding, 1
-            return None, encoding, 1
+
         #name = None if unknown>maxx else matches[maxx]
         name = matches[maxx]
         return name, encoding, maxx
