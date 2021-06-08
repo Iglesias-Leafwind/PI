@@ -84,8 +84,19 @@ THUMBNAIL_PIXELS=100
 east = "frozen_east_text_detection.pb"
 net = cv2.dnn.readNet(east)
 
-pytesseract.pytesseract.tesseract_cmd = ocrPath
+# load installed tesseract-ocr from users pc
+# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#Windows Iglesias:
+#pytesseract.pytesseract.tesseract_cmd = r'D:\Programs\tesseract-OCR\tesseract'
 
+# Ubuntu:
+#pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
+# Wei:
+#pytesseract.pytesseract.tesseract_cmd = r'D:\OCR\tesseract'
+
+
+pytesseract.pytesseract.tesseract_cmd = ocrPath
 custom_config = r'--oem 3 --psm 6'
 
 # used in getPlaces
@@ -215,8 +226,8 @@ def processing(dirFiles):
 
         commit = True
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
-        db.begin()  # start the transaction
         for index, img_name in enumerate(img_list):
+            db.begin()  # start the transaction
             try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
@@ -325,9 +336,6 @@ def processing(dirFiles):
                         if object in ['cat', 'dog']:
                             classifyBreedPart(read_image, tags, image)
 
-
-
-                    # !!!
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
@@ -366,16 +374,11 @@ def processing(dirFiles):
                     commit &= True
             except Exception as e:
                 db.rollback()
-
                 commit &= False
                 print("Error during processing: ", e)
 
         if not commit:
-            db.rollback()
             fs.deleteFolderFromFs(dir)
-        else:
-            db.commit()
-
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)

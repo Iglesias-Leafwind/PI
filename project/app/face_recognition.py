@@ -230,8 +230,14 @@ class FaceRecognition:
 
     def changeNameTagES(self, image_hash, new_personname, old_personname):
         img = ImageES.get(using=es, id=image_hash)
-        newtags = [ t if t != old_personname else new_personname for t in img.tags ]
-        img.tags = newtags
+        img_tags = img.tags
+        if old_personname in img_tags:
+            ind = img_tags.index(old_personname)
+            img_tags.pop(ind)
+        # newtags = [ t if t != old_personname else new_personname for t in img.tags ]
+
+        img_tags.append(new_personname)
+        img.tags = img_tags
         img.update(using=es, tags=img.tags)
         img.save(using=es)
 

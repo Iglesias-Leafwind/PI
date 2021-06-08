@@ -125,5 +125,16 @@ class PersonsForm(forms.Form):
                 # if self[field_name]
                 yield self[field_name]
 
+class FilterSearchForm(forms.Form):
+    automatic = forms.BooleanField(required=False, label='Objects detected')
+    manual = forms.BooleanField(required=False, label='Manual tags')
+    folder_name = forms.BooleanField(required=False, label='Folder name')
+    people = forms.BooleanField(required=False, label='People identified')
+    text = forms.BooleanField(required=False, label='Text detected')
+    exif = forms.BooleanField(required=False, label='Image metadata')
+    places = forms.BooleanField(required=False, label='Scenes detected')
+    breeds = forms.BooleanField(required=False, label='Pet breeds identified')
+    current_url = forms.CharField(required=True, widget=HiddenInput)
+
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)
