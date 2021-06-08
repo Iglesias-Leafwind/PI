@@ -334,22 +334,26 @@ def processing(dirFiles):
                             tag = Tag(name=object).save()
                         tags.append(object)
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
+                        if object in ['cat', 'dog']:
+                            classifyBreedPart(read_image, tags, image)
 
                     faceRecLock.acquire()
                     face_rec_part(read_image, img_path, tags, image)
                     faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    places = getPlaces(img_path)
-                    if places:
+                    placesList = getPlaces(img_path)
+                    for places, prob in placesList:
                         places = places.split("/")
                         for place in places:
                             p = " ".join(place.split("_")).strip()
                             t = Tag.nodes.get_or_none(name=p)
                             if t is None:
-                                t = Tag(name=p).save()
+                                t = Tag(name=p,
+                                        originalTagName=p,
+                                        originalTagSource='places').save()
                             tags.append(p)
-                            image.tag.connect(t,{'originalTagName': p, 'originalTagSource': 'places'})
+                            image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
 
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:

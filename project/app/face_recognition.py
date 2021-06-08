@@ -5,11 +5,11 @@ from collections import defaultdict
 import cv2
 import numpy as np
 
-#import face_recognition as fr
+import face_recognition as fr
 
 from app.models import Person, DisplayA, ImageNeo, ImageES
 from app.utils import faceRecThreshold
-from manage import es
+from scripts.esScript import es
 
 PEN_THRESHOLD = 50
 

@@ -5,9 +5,9 @@ from django.forms import CheckboxInput, HiddenInput
 from django.utils.safestring import mark_safe
 from neomodel import match
 from neomodel.match import Traversal
-# from neomodel import Traversal
+from neomodel import Traversal
 from app.utils import showDict
-import app.models
+from scripts.esScript import es
 from app.models import Person, DisplayA, ImageNeo
 
 from app.models import Person
