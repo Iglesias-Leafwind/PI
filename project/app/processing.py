@@ -214,7 +214,9 @@ def processing(dirFiles):
         commit = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         for index, img_name in enumerate(img_list):
+
             db.begin()  # start the transaction
+
             try:
                 img_path = os.path.join(dir, img_name)
                 print("I am in: ",img_path)
@@ -247,7 +249,7 @@ def processing(dirFiles):
                     tags = []
 
                     # extract infos
-                    norm_feat, height, width = model.vgg_extract_feat(img_path)
+                    norm_feat = model.vgg_extract_feat(img_path)
                     f = json.dumps(norm_feat, cls=NumpyEncoder)
                     i.features = f
                     iJson = json.dumps(i.__dict__)
@@ -260,8 +262,8 @@ def processing(dirFiles):
                                          name=img_name,
                                          processing=iJson,
                                          format=img_name.split(".")[1],
-                                         width=width,
-                                         height=height,
+                                         width=propertiesdict["width"],
+                                         height=propertiesdict["height"],
                                          hash=hash,
                                          creation_date=propertiesdict["datetime"],
                                          insertion_date=datetime.now())
@@ -270,14 +272,14 @@ def processing(dirFiles):
                                          name=img_name,
                                          processing=iJson,
                                          format=img_name.split(".")[1],
-                                         width=width,
-                                         height=height,
+                                         width=propertiesdict["width"],
+                                         height=propertiesdict["height"],
                                          hash=hash,
                                          insertion_date=datetime.now())
 
                     processingLock.acquire()
                     existed = ImageNeo.nodes.get_or_none(hash=hash)
-                    if ImageNeo.nodes.get_or_none(hash=hash):
+                    if existed:
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)

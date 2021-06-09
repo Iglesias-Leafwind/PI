@@ -159,16 +159,18 @@ class FaceRecognition:
         if img is None:
             print('IMAGE IS NONE')
             print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
+            return
 
         # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
         new_person = Person.nodes.get_or_none(name=new_personname)
         if new_person is None:
             new_person = Person(name=new_personname).save()
             print('new person was created')
-
+            return
         old_person = Person.nodes.get_or_none(name=old_personname)
         if old_person is None:
             print('OLD PERSON IS NONE')
+            return
 
         print(new_person)
         print(old_person)
@@ -230,7 +232,7 @@ class FaceRecognition:
         img.person.connect(new_person, neww)
 
     def changeNameTagES(self, image_hash, new_personname, old_personname):
-        img = ImageES.get(using=es, id=image_hash)
+        img = ImageES.get(using=es, hash=image_hash)
         img_tags = img.tags
         if old_personname in img_tags:
             ind = img_tags.index(old_personname)

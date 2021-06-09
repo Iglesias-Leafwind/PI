@@ -251,11 +251,18 @@ class SimpleFileSystemManager:
                 l.delete()
                 return
 
-            ct = cy.country[0]
+            rg = cy.region[0]
 
-            if len(ct.city) == 1:
+            if len(rg.city) > 1:
+                cy.delete()
+                return
+
+            ct = rg.country[0]
+
+            if len(ct.region) == 1:
                 ct.delete()
 
+            rg.delete()
             cy.delete()
             l.delete()
 

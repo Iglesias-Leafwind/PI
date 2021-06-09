@@ -87,7 +87,7 @@ def addTag(hashcode, tagName):
         return
     if t is None:
         t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': tagName, 'originalTagSource': "manual", 'manual': True})
+    i.tag.connect(t, {'originalTagName': tagName, 'originalTagSource': "manual", 'manual': True, 'score': 1})
     addESTag(hashcode, tagName)
 
 

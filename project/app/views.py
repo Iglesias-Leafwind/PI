@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
@@ -19,15 +19,12 @@ from app.utils import searchFilterOptions, showDict
 import re
 import itertools
 
-
-
 def landingpage(request):
     query = SearchForm()  # query form stays the same
     image = SearchForImageForm()  # fetching image form response
     folders = len(fs.getAllUris())
     path_form = EditFoldersForm()
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
-
 
 def updateTags(request, hash):
     newTagsString = request.POST.get("tags")
@@ -48,13 +45,19 @@ def updateTags(request, hash):
 
     query = SearchForm()
     image = SearchForImageForm()
-    results = getAllImages()
-
-    return render(request, "index.html", {'form': query, 'image_form': image, 'results': results, 'error': False})
-
+    results = {}
+    for tag in ImageNeo.nodes.get(hash=hash).tag.all():
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lstImage in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+            count += 1
+    strForQuery = ""
+    for tag in newTags:
+        strForQuery += tag + " "
+    return redirect("/results?query=" + strForQuery)
 
 from app.utils import showDict
-
 
 def index(request):
     # para os filtros
@@ -212,7 +215,6 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
-
 def get_image_results(query_text):
     query_array = processQuery(query_text)  # processing query with nlp
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
@@ -336,7 +338,6 @@ def get_image_results(query_text):
             results[tag].append((img, tags))  # insert tags in the dictionary
     return results
 
-
 def delete(request, path):
     form = SearchForm()
     image = SearchForImageForm()
@@ -345,7 +346,6 @@ def delete(request, path):
     folders = fs.getAllUris()
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
-
 
 def managefolders(request):
     if 'path' in request.GET:
@@ -363,7 +363,6 @@ def managefolders(request):
         folders = fs.getAllUris()
         return render(request, 'managefolders.html',
                       {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
-
 
 def managepeople(request):
     if request.method == 'POST':
@@ -398,12 +397,10 @@ def managepeople(request):
     return render(request, 'renaming.html',
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
 
-
 def search(tags):
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
     return s.execute()
-
 
 def alreadyProcessed(img_path):
     image = cv2.imread(img_path)
@@ -412,12 +409,10 @@ def alreadyProcessed(img_path):
 
     return True if existed else False
 
-
 def upload(request):
     data = json.loads(request.body)
     uploadImages(data["path"])
-    return render(request, 'index.html')
-
+    return redirect('/folders')
 
 def searchtag(request):
     get = [request.GET.get('tag')]
@@ -428,7 +423,6 @@ def searchtag(request):
         print(i)
     return render(request, 'index.html')
 
-
 def updateFolders(request):
     folders = fs.getAllUris()
     for folder in folders:
@@ -438,7 +432,6 @@ def updateFolders(request):
     pathf = EditFoldersForm()
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
-
 
 def update_faces(request):
     if request.method != 'POST':
@@ -481,7 +474,6 @@ def update_faces(request):
         frr.reload()
 
     return redirect('/people')
-
 
 def dashboard(request):
     form = SearchForm()
@@ -540,7 +532,6 @@ def dashboard(request):
                   {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
                    'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
 
-
 def calendarGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -577,7 +568,6 @@ def calendarGallery(request):
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
 
-
 def objectsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -595,7 +585,6 @@ def objectsGallery(request):
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allTags})
 
-
 def peopleGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -605,19 +594,18 @@ def peopleGallery(request):
         name = person.name
         imgList = person.image.all()
         for img in imgList:
-            rel = img.person.relationship(person)
-            verified = rel.approved
-            if verified == True:
-                allNames += [name]
-                break
-            else:
-                break
+            for rel in img.person.all_relationships(person):
+                verified = rel.approved
+                if verified:
+                    allNames += [name]
+                    break
+                else:
+                    continue
 
-    allNames = sorted(allNames)
+    allNames = sorted(list(set(allNames)))
 
     return render(request, 'peopleGallery.html',
                   {'form': form, 'image_form': image, 'people': allNames})
-
 
 def scenesGallery(request):
     form = SearchForm()
@@ -650,7 +638,6 @@ def locationsGallery(request):
             print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
-
 
 def textGallery(request):
     form = SearchForm()
@@ -722,8 +709,10 @@ def exportToExcel(request, ids):
             locations.append(l.name)
             for city in l.city:
                 locations.append(city.name)
-                for country in city.country:
-                    locations.append(country.name)
+                for region in city.region:
+                    locations.append(region.name)
+                    for country in region.country:
+                        locations.append(country.name)
 
         csv_file.writerow([uri, creation_time, insertion_date, format, width,
                            height, tags, persons, locations])
