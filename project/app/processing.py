@@ -245,11 +245,9 @@ def processing(uriAndDirFiles):
         else:
             lastNode = fs.getLastNode(dir)
 
-        commit = False
+        atLeastOne = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         for index, img_name in enumerate(img_list):
-
-            #db.begin()  # start the transaction
 
             try:
                 img_path = os.path.join(dir, img_name)
@@ -260,7 +258,6 @@ def processing(uriAndDirFiles):
                 (H, W) = read_image.shape[:2]
                 if read_image is None:
                     print('read img is none')
-                    #db.commit()
                     continue
                 hash = dhash(read_image)
 
@@ -272,14 +269,12 @@ def processing(uriAndDirFiles):
                     logging.info("Image " + img_path + " has already been processed")
 
                     if existed.folder_uri == dir:
-                        #db.commit()
-                        commit |= True
+                        atLeastOne |= True
                         continue
 
                     # if the current image's folder is different
                     existed.folder.connect(folderNeoNode)
-                    #db.commit()
-                    commit |= True
+                    atLeastOne |= True
                 else:
                     tags = []
 
@@ -312,30 +307,23 @@ def processing(uriAndDirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    print("antes de save", threading.current_thread().name)
                     processingLock.acquire()
                     existed = ImageNeo.nodes.get_or_none(hash=hash)
                     if existed:
-                        print("antes de existed", threading.current_thread().name)
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
                         processingLock.release()
-                        # db.commit()
-                        commit |= True
-                        print("depois de existed", threading.current_thread().name)
+                        atLeastOne |= True
                         continue
                     try:
                         image.save()
                     except Exception as e:
                         print(e)
-                        #db.commit()
                         continue
                     finally:
-                        print("depois de save", threading.current_thread().name)
                         processingLock.release()
 
-                    print("antes de latitude", threading.current_thread().name)
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         # crc = [city,region,country] names array
                         crc = getLocations(propertiesdict["latitude"], propertiesdict["longitude"])
@@ -369,9 +357,6 @@ def processing(uriAndDirFiles):
 
                     image.folder.connect(folderNeoNode)
 
-                    print("depois de latitude ", threading.current_thread().name)
-                    print("antes de get_objects ", threading.current_thread().name)
-
                     objectLock.acquire()
                     res = obj_extr.get_objects(img_path)
                     objectLock.release()
@@ -385,13 +370,11 @@ def processing(uriAndDirFiles):
                         if object in ['cat', 'dog']:
                             classifyBreedPart(read_image, tags, image)
 
-                    print("depois de get_objects ", threading.current_thread().name)
                     #faceRecLock.acquire()
                     #face_rec_part(read_image, img_path, tags, image)
                     #faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    print("antes de getPlaces ", threading.current_thread().name)
                     processingLock.acquire()
                     placesList = getPlaces(img_path)
                     processingLock.release()
@@ -406,9 +389,7 @@ def processing(uriAndDirFiles):
                                         originalTagSource='places').save()
                             tags.append(p)
                             image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
-                    print("depois de getPlaces ", threading.current_thread().name)
 
-                    print("antes de ocr ", threading.current_thread().name)
                     wordList = getOCR(read_image)
                     if wordList and len(wordList) > 0:
                         for word in wordList:
@@ -418,7 +399,6 @@ def processing(uriAndDirFiles):
                             tags.append(word)
                             image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
 
-                    print("depois de ocr ", threading.current_thread().name)
 
                     # add features to "cache"
                     resultsLock.acquire()
@@ -427,21 +407,16 @@ def processing(uriAndDirFiles):
                     ftManager.imageFeatures.append(i)
                     resultsLock.release()
 
-                    print('tags: ', tags)
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
                     print("extracting feature from image %s " % (img_path))
-                    #db.commit()
-                    commit |= True
+                    atLeastOne |= True
             except Exception as e:
-                #db.rollback()
-                commit |= False
                 print("Error during processing: ", e, threading.current_thread().name)
-        if not commit:
+        if not atLeastOne:
             processingLock.acquire()
             fs.deleteFolderFromFs(dir)
             processingLock.release()
-            print("depois de delete", threading.current_thread().name)
 
     try:
         uploadLock.acquire()
