@@ -86,6 +86,11 @@ class Person(StructuredNode):
         results, meta = db.cypher_query(query, {"id": self.id})
         return [row[0] for row in results]
 
+    def getVerified(self):
+        query = "MATCH (p:Person)-[r:Display a {approved: true}]->(i:ImageNeo)  RETURN p.name"
+        results, meta = db.cypher_query(query)
+        return [row[0] for row in results]
+
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
@@ -93,19 +98,18 @@ class Country(StructuredNode):
 
 class Region(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    country = RelationshipTo('Country', IsIn.rel, model=IsIn)
     city = RelationshipFrom('City', IsIn.rel, model=IsIn)
 
 class City(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    region = RelationshipTo(Region, IsIn.rel, model=IsIn)
+    region = RelationshipTo('Region', IsIn.rel, model=IsIn)
     location = RelationshipFrom('Location', IsIn.rel, model=IsIn)
-
 
 class Location(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    image = RelationshipFrom(ImageNeo, WasTakenIn.rel, model=WasTakenIn)
-    city = RelationshipTo(City, IsIn.rel, model=IsIn)
+    image = RelationshipFrom('ImageNeo', WasTakenIn.rel, model=WasTakenIn)
+    city = RelationshipTo('City', IsIn.rel, model=IsIn)
 
 
 class Folder(StructuredNode):

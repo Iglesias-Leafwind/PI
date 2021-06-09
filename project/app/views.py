@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
@@ -588,19 +588,7 @@ def objectsGallery(request):
 def peopleGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allNames = []
-
-    for person in Person.nodes.all():
-        name = person.name
-        imgList = person.image.all()
-        for img in imgList:
-            for rel in img.person.all_relationships(person):
-                verified = rel.approved
-                if verified:
-                    allNames += [name]
-                    break
-                else:
-                    continue
+    allNames = Person().getVerified()
 
     allNames = sorted(list(set(allNames)))
 

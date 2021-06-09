@@ -232,7 +232,7 @@ class FaceRecognition:
         img.person.connect(new_person, neww)
 
     def changeNameTagES(self, image_hash, new_personname, old_personname):
-        img = ImageES.get(using=es, hash=image_hash)
+        img = ImageES.get(using=es, id=image_hash)
         img_tags = img.tags
         if old_personname in img_tags:
             ind = img_tags.index(old_personname)

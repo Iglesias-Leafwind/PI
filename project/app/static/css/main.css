@@ -269,8 +269,6 @@ legend {
   margin-top: 3vh;
   margin-left: 12vh;
 }
-<<<<<<< HEAD
-=======
 
 #scrollBtn {
   display: none; /* Hidden by default */
@@ -288,7 +286,6 @@ legend {
   font-size: 18px; /* Increase font size */
 }
 
->>>>>>> develop
 /*===============================
 =            Choices            =
 ===============================*/
@@ -488,6 +485,8 @@ button:focus{
 }
 .imageThumbnailInMenu {
   object-fit: cover;
+  width: 240px;
+  height: 240px;
 }
 .imagePath {
   margin: 2% 0%;

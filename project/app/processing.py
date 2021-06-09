@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 
-from app.face_recognition import FaceRecognition
-from app.breed_classifier import BreedClassifier
+#from app.face_recognition import FaceRecognition
+#from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -70,8 +70,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-frr = FaceRecognition()
-bc = BreedClassifier()
+#frr = FaceRecognition()
+#bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -223,6 +223,7 @@ def processing(dirFiles):
                 i = ImageFeature()
 
                 read_image = cv2.imread(img_path)
+                (H, W) = read_image.shape[:2]
                 if read_image is None:
                     print('read img is none')
                     db.commit()
@@ -262,8 +263,8 @@ def processing(dirFiles):
                                          name=img_name,
                                          processing=iJson,
                                          format=img_name.split(".")[1],
-                                         width=propertiesdict["width"],
-                                         height=propertiesdict["height"],
+                                         width=W,
+                                         height=H,
                                          hash=hash,
                                          creation_date=propertiesdict["datetime"],
                                          insertion_date=datetime.now())
@@ -272,8 +273,8 @@ def processing(dirFiles):
                                          name=img_name,
                                          processing=iJson,
                                          format=img_name.split(".")[1],
-                                         width=propertiesdict["width"],
-                                         height=propertiesdict["height"],
+                                         width=W,
+                                         height=H,
                                          hash=hash,
                                          insertion_date=datetime.now())
 
@@ -339,9 +340,9 @@ def processing(dirFiles):
                         if object in ['cat', 'dog']:
                             classifyBreedPart(read_image, tags, image)
 
-                    faceRecLock.acquire()
-                    face_rec_part(read_image, img_path, tags, image)
-                    faceRecLock.release()
+                    #faceRecLock.acquire()
+                    #face_rec_part(read_image, img_path, tags, image)
+                    #faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
                     placesList = getPlaces(img_path)
@@ -414,7 +415,7 @@ def deleteFolder(uri):
     ftManager.npFeatures = f
 
 def findSimilarImages(uri):
-    norm_feat, height, width = model.vgg_extract_feat(uri)  # extrair infos
+    norm_feat = model.vgg_extract_feat(uri)  # extrair infos
     feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
@@ -647,10 +648,7 @@ def getExif(img_path):
             if (current_image.has_exif):
                 if ("datetime" in current_image.list_all()):
                     returning["datetime"] = current_image.datetime
-                if ("pixel_x_dimension" in current_image.list_all()):
-                    returning["width"] = current_image.pixel_x_dimension
-                if ("pixel_y_dimension" in current_image.list_all()):
-                    returning["height"] = current_image.pixel_y_dimension
+
                 if ("gps_latitude" in current_image.list_all()):
                     latitude = current_image.gps_latitude[0]
                     latitude += current_image.gps_latitude[1]/60
@@ -667,11 +665,14 @@ def getExif(img_path):
                     returning["longitude"] = longitude
             else:
                 raise Exception("No exif")
+
     except Exception as e:
-        image = cv2.imread(img_path)
-        (H, W) = image.shape[:2]
-        returning["height"] = H
-        returning["width"] = W
+        pass
+
+    image = cv2.imread(img_path)
+    (H, W) = image.shape[:2]
+    returning["height"] = H
+    returning["width"] = W
     return returning
 
 
@@ -721,7 +722,7 @@ def generateThumbnail(imagepath, hash):
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
     saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
     cv2.imwrite(saving, resized, [cv2.IMWRITE_JPEG_QUALITY, 25])
-    image = cv2.imread(saving)
+
     # 83 087 673
     # 00 288 957
     # 99,65 %
