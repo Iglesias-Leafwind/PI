@@ -11,6 +11,7 @@ from scripts.esScript import es
 processingLock = Lock()
 resultsLock = Lock()
 uploadLock = Lock()
+objectLock = Lock()
 
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()

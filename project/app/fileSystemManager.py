@@ -113,7 +113,6 @@ class SimpleFileSystemManager:
 
     def createUriInNeo4j(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
-        processingLock.acquire()
 
         if root in self.trees:
             node = self.trees[root]
@@ -136,8 +135,6 @@ class SimpleFileSystemManager:
                 newNode.parent = node
                 node.children[folder] = node = newNode
 
-        processingLock.release()
-
         return node
 
     def __splitUriAndGetRoot__(self, uri):
@@ -155,81 +152,73 @@ class SimpleFileSystemManager:
         return path
 
     def deleteFolderFromFs(self, uri):
+        if self.exist(uri):
+            node = self.getLastNode(uri)
 
-        processingLock.acquire()
-        try:
-            if self.exist(uri):
-                node = self.getLastNode(uri)
+            if node.parent:
+                node.parent.deleteNode(node)
 
-                if node.parent:
+            folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
+
+            deletedImages = []
+            while folderstoBeDeleted != []:
+                f = folderstoBeDeleted.pop()
+                if not f:
+                    continue
+
+                images = f.getImages()
+
+                if images is not None:
+                    for image in images:
+                        self.deleteConnectedTagsAndPersons(image)
+                        self.deleteLocations(image)
+
+                        if len(image.folder) > 1:
+                            currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
+                            currentImageUri = self.__builFullPath__(currentImageUri)
+                            if currentImageUri == self.__fullPathForFolderNode__(f):
+                                for folder in image.folder:
+                                    if folder.id != f.id:
+                                        image.folder_uri = self.__fullPathForFolderNode__(folder)
+                                        image.save()
+                                        esImage = ImageES.get(using=es, index='image', id=image.hash)
+                                        esImage.uri = image.folder_uri
+                                        esImage.save(using=es)
+                                        break
+                        else:
+                            image.delete()
+                            thumbnail = os.path.join("app", "static", "thumbnails", str(image.hash)) + ".jpg"
+                            os.remove(thumbnail)
+
+                            esImage = ImageES.get(using=es, index='image', id=image.hash)
+                            esImage.delete(using=es)
+                            deletedImages.append(ImageFeature(hash=image.hash))
+
+                childrenFolders = f.getChildren()
+                if childrenFolders:
+                    folderstoBeDeleted.extend(list(childrenFolders))
+                f.delete()
+
+            while node.parent:
+                parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
+                if not parentFolder:
                     node.parent.deleteNode(node)
-
-                folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
-
-                deletedImages = []
-                while folderstoBeDeleted != []:
-                    f = folderstoBeDeleted.pop()
-                    if not f:
-                        continue
-
-                    images = f.getImages()
-
-                    if images is not None:
-                        for image in images:
-                            self.deleteConnectedTagsAndPersons(image)
-                            self.deleteLocations(image)
-
-                            if len(image.folder) > 1:
-                                currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
-                                currentImageUri = self.__builFullPath__(currentImageUri)
-                                if currentImageUri == self.__fullPathForFolderNode__(f):
-                                    for folder in image.folder:
-                                        if folder.id != f.id:
-                                            image.folder_uri = self.__fullPathForFolderNode__(folder)
-                                            image.save()
-                                            esImage = ImageES.get(using=es, index='image', id=image.hash)
-                                            esImage.uri = image.folder_uri
-                                            esImage.save(using=es)
-                                            break
-                            else:
-                                image.delete()
-                                thumbnail = os.path.join("app", "static", "thumbnails", str(image.hash)) + ".jpg"
-                                os.remove(thumbnail)
-
-                                esImage = ImageES.get(using=es, index='image', id=image.hash)
-                                esImage.delete(using=es)
-                                deletedImages.append(ImageFeature(hash=image.hash))
-
-                    childrenFolders = f.getChildren()
-                    if childrenFolders:
-                        folderstoBeDeleted.extend(list(childrenFolders))
-                    f.delete()
-
-                while node.parent:
-                    parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
-                    if not parentFolder:
-                        node.parent.deleteNode(node)
-                        node = node.parent
-                        continue
-                    currNode = node
                     node = node.parent
-                    children = parentFolder.getChildren()
-                    if len(children) == 0 and not parentFolder.terminated:
-                        parentFolder.delete()
-                        if currNode.name in node.children:
-                            node.children.pop(currNode.name)
-                    else: break
+                    continue
+                currNode = node
+                node = node.parent
+                children = parentFolder.getChildren()
+                if len(children) == 0 and not parentFolder.terminated:
+                    parentFolder.delete()
+                    if currNode.name in node.children:
+                        node.children.pop(currNode.name)
+                else: break
 
-                if node.name in self.trees:
-                    if len(node.children) == 0:
-                        self.trees.pop(node.name)
+            if node.name in self.trees:
+                if len(node.children) == 0:
+                    self.trees.pop(node.name)
 
-                return deletedImages
-        except:
-            return []
-
-        finally:
-            processingLock.release()
+            return deletedImages
 
 
     def __fullPathForFolderNode__(self, f):

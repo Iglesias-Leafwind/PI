@@ -16,7 +16,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -144,8 +144,8 @@ def uploadImages(uri):
 
     cpuCurr = psutil.cpu_percent()
     ramCurr = psutil.virtual_memory().percent
-    freeCPU = (100 - cpuCurr) / 10 * 4
-    freeRAM = (100 - ramCurr) / 10 * 4
+    freeCPU = (100 - cpuCurr) / 5
+    freeRAM = (100 - ramCurr) / 5
     threads = freeCPU / cpuPerThread
     threadsRAM = freeRAM / ramPerThread
 
@@ -154,6 +154,7 @@ def uploadImages(uri):
     threads = int(threads)
     if(threads > numThreads):
         threads = numThreads
+
     if(threads <= 0):
         threads = 1
 
@@ -235,9 +236,15 @@ def processing(uriAndDirFiles):
         img_list = dirFiles[dir]
 
         if not fs.exist(dir):
-            lastNode = fs.createUriInNeo4j(dir)
+            processingLock.acquire()
+            if not fs.exist(dir):
+                lastNode = fs.createUriInNeo4j(dir)
+            else:
+                lastNode = fs.getLastNode(dir)
+            processingLock.release()
         else:
             lastNode = fs.getLastNode(dir)
+
         commit = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         for index, img_name in enumerate(img_list):
@@ -365,7 +372,9 @@ def processing(uriAndDirFiles):
                     print("depois de latitude ", threading.current_thread().name)
                     print("antes de get_objects ", threading.current_thread().name)
 
+                    objectLock.acquire()
                     res = obj_extr.get_objects(img_path)
+                    objectLock.release()
 
                     for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
@@ -427,19 +436,21 @@ def processing(uriAndDirFiles):
             except Exception as e:
                 #db.rollback()
                 commit |= False
-               # print("Error during processing: ", e, threading.current_thread().name)
-                import traceback
-                traceback.print_exception()
-            finally:
-                uploadLock.acquire()
-                on_processing[uri]["finished"] += 1
-                if on_processing[uri]["tasks"] == on_processing[uri]["finished"]:
-                    on_processing.pop(uri)
-                uploadLock.release()
-
+                print("Error during processing: ", e, threading.current_thread().name)
         if not commit:
+            processingLock.acquire()
             fs.deleteFolderFromFs(dir)
+            processingLock.release()
             print("depois de delete", threading.current_thread().name)
+
+    try:
+        uploadLock.acquire()
+        on_processing[uri]["finished"] += 1
+        if on_processing[uri]["tasks"] == on_processing[uri]["finished"]:
+            on_processing.pop(uri)
+    finally:
+        uploadLock.release()
+
 
 def getLocations(latitude,longitude):
     results = rg.search((latitude,longitude))
@@ -454,11 +465,10 @@ def alreadyProcessed(img_path):
     return existed
 
 def deleteFolder(uri):
-
+    print("delete folder....")
+    processingLock.acquire()
     deletedImages = fs.deleteFolderFromFs(uri)
-    if deletedImages is None:
-        return
-
+    processingLock.release()
     print("depois de deleteFolder")
     if deletedImages is None or len(deletedImages) == 0:
         return
@@ -475,11 +485,12 @@ def deleteFolder(uri):
     ftManager.npFeatures = f
 
 def findSimilarImages(uri):
+    if len(ftManager.npFeatures) == 0:
+        return []
     norm_feat = model.vgg_extract_feat(uri)  # extrair infos
     feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
-    rank_score = scores[rank]
 
     maxres = 42  # 42 imagens com maiores scores
 
