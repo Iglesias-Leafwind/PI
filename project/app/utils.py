@@ -10,6 +10,8 @@ from scripts.esScript import es
 
 processingLock = Lock()
 resultsLock = Lock()
+uploadLock = Lock()
+
 showDict = {'verified':False, 'unverified':True}
 lock = Lock()
 faceRecLock= Lock()

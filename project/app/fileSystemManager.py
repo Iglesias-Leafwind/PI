@@ -155,10 +155,10 @@ class SimpleFileSystemManager:
         return path
 
     def deleteFolderFromFs(self, uri):
-        if self.exist(uri):
-            try:
-                processingLock.acquire()
 
+        processingLock.acquire()
+        try:
+            if self.exist(uri):
                 node = self.getLastNode(uri)
 
                 if node.parent:
@@ -176,12 +176,10 @@ class SimpleFileSystemManager:
 
                     if images is not None:
                         for image in images:
-                            self.deleteConnectedTagsOrPersons(image.tag)
-                            self.deleteConnectedTagsOrPersons(image.person)
+                            self.deleteConnectedTagsAndPersons(image)
                             self.deleteLocations(image)
 
                             if len(image.folder) > 1:
-                                image.folder.disconnect(f)
                                 currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                                 currentImageUri = self.__builFullPath__(currentImageUri)
                                 if currentImageUri == self.__fullPathForFolderNode__(f):
@@ -227,12 +225,11 @@ class SimpleFileSystemManager:
                         self.trees.pop(node.name)
 
                 return deletedImages
+        except:
+            return []
 
-            except:
-                return []
-
-            finally:
-                processingLock.release()
+        finally:
+            processingLock.release()
 
 
     def __fullPathForFolderNode__(self, f):
@@ -241,10 +238,16 @@ class SimpleFileSystemManager:
         paths.append(f.name)
         return self.__builFullPath__(paths)
 
-    def deleteConnectedTagsOrPersons(self, tagsOrPersons):
-        for tg in tagsOrPersons:
-            if len(tg.image) == 1:
-                tg.delete()
+    def deleteConnectedTagsAndPersons(self, image):
+        for t in image.tag:
+            t.image.disconnect(image)
+            if len(t.image) == 0:
+                t.delete()
+
+        for p in image.person:
+            p.image.disconnect(image)
+            if len(p.image) == 0:
+                p.delete()
 
     def deleteLocations(self, image):
         if len(image.location) != 0:
