@@ -80,14 +80,30 @@ def testingThreadCapacity():
 
     if(ramPerThread <= 0):
         ramPerThread = (ramPerThread * -1) + 1
+        
 logging.info("[Loading]: [INFO] Loading Object Extraction")
-obj_extr = ObjectExtract()
-logging.info("[Loading]: [INFO] Finished loading Object Extraction")
+obj_extr = do(ObjectExtract)
+
 logging.info("[Loading]: [INFO] Loading face recognition")
-frr = FaceRecognition()
-logging.info("[Loading]: [INFO] Finished loading face recognition")
+frr = do(FaceRecognition)
+
 logging.info("[Loading]: [INFO] Loading breed classifier")
-bc = BreedClassifier()
+bc = do(BreedClassifier)
+
+while not obj_extr.done():
+    time.sleep(0.1)
+
+obj_extr = obj_extr.result()
+logging.info("[Loading]: [INFO] Finished loading Object Extraction")
+
+while not frr.done():
+    time.sleep(0.1)
+frr = frr.result()
+logging.info("[Loading]: [INFO] Finished loading face recognition")
+
+while not bc.done():
+    time.sleep(0.1)
+bc = bc.result()
 logging.info("[Loading]: [INFO] Finished loading breed classifier")
 
 ftManager = ImageFeaturesManager()
@@ -816,9 +832,18 @@ def setUp():
         i.features = np.array(json.loads(i.features))
         npfeatures.append(i.features)
         imageFeatures.append(i)
+    logging.info("[Loading]: [INFO] Loading places")
+    plc = do(loadCatgoriesPlaces)
+    logging.info("[Loading]: [INFO] Loading file system")
+    filess = do(loadFileSystemManager)
 
-    loadCatgoriesPlaces()
-    loadFileSystemManager()
+    while not plc.done():
+        time.sleep(0.1)
+    logging.info("[Loading]: [INFO] Finished loading places")
+    while not filess.done():
+        time.sleep(0.1)
+    logging.info("[Loading]: [INFO] Finished loading file system")
+
     ftManager.npFeatures = npfeatures
     ftManager.imageFeatures = imageFeatures
     testingThreadCapacity()
