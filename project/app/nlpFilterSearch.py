@@ -77,9 +77,9 @@ def processQuery(text):
 text = "loving someone is something beautiful, just like the nature. I love the world."
 text2 = "Didn't I tell you? We're moving to Ovar?"
 beginning = time.time()
-print(processQuery(text))
+#print(processQuery(text))
 end = time.time()
-print(end-beginning)
+#print(end-beginning)
 
 
 

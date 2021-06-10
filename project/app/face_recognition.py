@@ -55,12 +55,12 @@ class FaceRecognition:
         if face_encoding is None or len(face_encoding) == 0:
             return None
 
-        print('save face id ', type(face_encoding))
+        #print('save face id ', type(face_encoding))
         # guardar esses dados associados ao seu nome
         self.name2encodings[name].append((face_encoding, conf, approved, imghash))
 
         # ver o que retornar aqui para q seja guardado
-        print('guardou nova cara!! : ', name)
+        #print('guardou nova cara!! : ', name)
         return face_encoding
 
     def getTheNameOf(self, image=None, box=None, encoding=None):
@@ -82,7 +82,7 @@ class FaceRecognition:
         # print(exp)
 
 
-        print("names: ", self.name2encodings.keys())
+        #print("names: ", self.name2encodings.keys())
         for k in self.name2encodings:
             if len(self.name2encodings[k]) == 0:
                 #print('name q passou: ', k)
@@ -100,13 +100,13 @@ class FaceRecognition:
             listt = np.multiply(-1, np.add(listt, -1))
             # listt = [True if all(i) else False for i in listt]
             pen = 0 if n >= PEN_THRESHOLD else (PEN_THRESHOLD - n)/PEN_THRESHOLD
-            print('pen : ', pen)
+            #print('pen : ', pen)
 
             score = np.multiply(listt, 0.85) + np.multiply(0.15, np.array([ a[1] for a in self.name2encodings[k] ]))
-            print(k ,'score1 : ', score)
+            #print(k ,'score1 : ', score)
 
             score = np.average(score) - pen * 0.1
-            print(k, 'score2 : ', score)
+            #print(k, 'score2 : ', score)
 
             # sum(listt) vai ser o nr de 'Trues' da funcao de cima
             #matches[sum(listt)] = k
@@ -118,7 +118,7 @@ class FaceRecognition:
         if matches == {}:
             return None, encoding, 1
 
-        print('fim')
+        #print('fim')
         maxx = max(matches.keys())
         if maxx < faceRecThreshold:
             return None, encoding, 1
@@ -139,8 +139,8 @@ class FaceRecognition:
         for k in self.temp:
             # if not approved then BAD
             for enc, conf, appr, imghash in [data for data in self.temp[k] if not data[2]]:
-                print(appr , " <- should be false!!!! ")
-                print('changing some names')
+                #print(appr , " <- should be false!!!! ")
+                #print('changing some names')
                 # first: we see who it is
                 name, enc, conf = self.getTheNameOf(encoding=np.array(enc))
                 if name is None:
@@ -157,26 +157,26 @@ class FaceRecognition:
     def changeRelationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True, enc=None, thumbnail=None):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:
-            print('IMAGE IS NONE')
-            print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
+            #print('IMAGE IS NONE')
+            #print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
             return
 
         # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
         new_person = Person.nodes.get_or_none(name=new_personname)
         if new_person is None:
             new_person = Person(name=new_personname).save()
-            print('new person was created')
+            #print('new person was created')
             return
         old_person = Person.nodes.get_or_none(name=old_personname)
         if old_person is None:
-            print('OLD PERSON IS NONE')
+            #print('OLD PERSON IS NONE')
             return
 
-        print(new_person)
-        print(old_person)
+        #print(new_person)
+        #print(old_person)
         existent_rel = old_person.image.all_relationships(img)
         #existent_rel2 = img.person.all_relationships(old_person)
-        print('len', len(existent_rel))
+        #print('len', len(existent_rel))
 
         """
         coordinates = ArrayProperty()
@@ -186,7 +186,7 @@ class FaceRecognition:
         approved = BooleanProperty()
         """
 
-        print('change relationship')
+        #print('change relationship')
         to_stay = []
         neww = {}
         for ex_rel in existent_rel:
@@ -199,14 +199,14 @@ class FaceRecognition:
             }
 
             if (enc is not None and all([ex_rel.encodings[i] == enc[i] for i in range(len(enc))])) or (thumbnail is not None and thumbnail == ex_rel.icon):
-                print('found rel!!')
+                #print('found rel!!')
                 # overwrite
                 relinfo['confiance'] = confiance#[0] if not isinstance(confiance, float) else confiance,
                 relinfo['approved'] = approved
                 neww = relinfo
                 continue
             to_stay.append(relinfo)
-            print(relinfo['icon'])
+            #print(relinfo['icon'])
 
         """
         relinfo = {
@@ -221,7 +221,7 @@ class FaceRecognition:
         old_person.image.disconnect(img)
         for relinfo in to_stay:
             if isinstance(relinfo['confiance'], tuple):
-                print('is tuple')
+                #print('is tuple')
                 relinfo['confiance'] = relinfo['confiance'][0]
             old_person.image.connect(img, relinfo)
 

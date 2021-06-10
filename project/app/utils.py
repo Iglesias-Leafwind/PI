@@ -69,7 +69,8 @@ def getImagesPerUri(pathName):
                     else:
                         dirsAndFiles[pathName] = [os.path.basename(f)]
                 else:
-                    print(f, image_type)
+                    #print(f, image_type)
+                    pass
     return dirsAndFiles
 
 def getRandomNumber():
