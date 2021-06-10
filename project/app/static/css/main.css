@@ -485,8 +485,6 @@ button:focus{
 }
 .imageThumbnailInMenu {
   object-fit: cover;
-  width: 240px;
-  height: 240px;
 }
 .imagePath {
   margin: 2% 0%;
