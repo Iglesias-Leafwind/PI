@@ -597,7 +597,6 @@ def objectsGallery(request):
 
     allObjectTags = dict(sorted(allObjectTags.items()))
 
-    print(allObjectTags)
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allObjectTags})
 
@@ -635,7 +634,8 @@ def scenesGallery(request):
     allPlaceTags = dict(sorted(allPlaceTags.items()))
     return render(request, 'placesGallery.html',
                   {'form': form, 'image_form': image, 'placesTags': allPlaceTags})
-  
+
+''' 
 def locationsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -651,23 +651,33 @@ def locationsGallery(request):
             print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
+'''
 
 def textGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allTextTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "ocr" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "ocr":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allTextTags.keys():
+                    allTextTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allTextTags[firstLetter]:
+                        allTextTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allTextTags:
+        value = allTextTags[key]
+        value = value.sort()
+
+    allTextTags = dict(sorted(allTextTags.items()))
 
     return render(request, 'textGallery.html',
-                  {'form': form, 'image_form': image, 'textTags': allTags})
+                  {'form': form, 'image_form': image, 'textTags': allTextTags})
 
 def exportToZip(request, ids):
     ids = ids[1:]
