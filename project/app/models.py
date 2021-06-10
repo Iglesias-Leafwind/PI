@@ -131,6 +131,11 @@ class Folder(StructuredNode):
         results, meta = db.cypher_query(query, {"id_": self.id_})
         return [self.inflate(row[0]) for row in results]
 
+    def isChildOf(self, folderId):
+        query = "MATCH (f:Folder{id_:$id_})-[*]->(p:Folder{id_:$folderId}) return p"
+        results, meta = db.cypher_query(query, {"id_": self.id_, "folderId": folderId})
+        return len([path[0] for path in results]) != 0
+
     def getFullPath(self):
         query = "MATCH (f:Folder {id_:$id_})-[*]-> (c:Folder) RETURN c.name"
         results, meta = db.cypher_query(query, {"id_": self.id_})

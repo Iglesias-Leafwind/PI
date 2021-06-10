@@ -113,7 +113,7 @@ class SimpleFileSystemManager:
 
     def createUriInNeo4j(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
-
+        print("created  folder", folders)
         if root in self.trees:
             node = self.trees[root]
         else:
@@ -128,6 +128,8 @@ class SimpleFileSystemManager:
             else:
                 savedNode = Folder(id_=getRandomNumber(), name=folder,
                                    terminated=True if i == len(folders) - 1 else False).save()
+
+
                 parent = Folder.nodes.get(id_=node.id)
                 savedNode.parent.connect(parent)
 
@@ -155,12 +157,13 @@ class SimpleFileSystemManager:
         if self.exist(uri):
             node = self.getLastNode(uri)
 
-            if node.parent:
+            if node and node.parent:
                 node.parent.deleteNode(node)
 
             folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
 
             deletedImages = []
+
             while folderstoBeDeleted != []:
                 f = folderstoBeDeleted.pop()
                 if not f:
@@ -170,15 +173,12 @@ class SimpleFileSystemManager:
 
                 if images is not None:
                     for image in images:
-                        self.deleteConnectedTagsAndPersons(image)
-                        self.deleteLocations(image)
-
-                        if len(image.folder) > 1:
+                        if len(image.folder) > 1: # if image is in different folders
                             currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                             currentImageUri = self.__builFullPath__(currentImageUri)
                             if currentImageUri == self.__fullPathForFolderNode__(f):
                                 for folder in image.folder:
-                                    if folder.id != f.id:
+                                    if folder.id != f.id and not folder.isChildOf(f.id_):
                                         image.folder_uri = self.__fullPathForFolderNode__(folder)
                                         image.save()
                                         esImage = ImageES.get(using=es, index='image', id=image.hash)
@@ -186,7 +186,10 @@ class SimpleFileSystemManager:
                                         esImage.save(using=es)
                                         break
                         else:
+                            self.deleteConnectedTagsAndPersons(image)
+                            self.deleteLocations(image)
                             image.delete()
+
                             thumbnail = os.path.join("app", "static", "thumbnails", str(image.hash)) + ".jpg"
                             os.remove(thumbnail)
 
@@ -199,6 +202,7 @@ class SimpleFileSystemManager:
                     folderstoBeDeleted.extend(list(childrenFolders))
                 f.delete()
 
+            # if parent folders have no children folders and no images, delete it
             while node.parent:
                 parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
                 if not parentFolder:
@@ -241,15 +245,19 @@ class SimpleFileSystemManager:
     def deleteLocations(self, image):
         if len(image.location) != 0:
             for l in image.location:
-                if len(l.image) == 1:
+                l.image.disconnect(image)
+                if len(l.image) == 0:
                     l.delete()
                     for city in l.city:
+                        city.location.disconnect(l)
                         if len(city.location) == 0:
                             city.delete()
                             for region in city.region:
+                                region.city.disconnect(city)
                                 if len(region.city) == 0:
                                     region.delete()
                                     for country in region.country:
+                                        country.region.disconnect(region)
                                         if len(country.region) == 0:
                                             country.delete()
 
