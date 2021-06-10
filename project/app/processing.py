@@ -70,8 +70,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
-#bc = BreedClassifier()
+frr = FaceRecognition()
+bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
