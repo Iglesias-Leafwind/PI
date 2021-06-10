@@ -157,20 +157,18 @@ class FaceRecognition:
     def changeRelationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True, enc=None, thumbnail=None):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:
-            #print('IMAGE IS NONE')
-            #print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
-            return
+            print('IMAGE IS NONE')
+            print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
 
         # all_rels = [(person.image.relationship(img), person, img) for person in people for img in person.image.all()]
         new_person = Person.nodes.get_or_none(name=new_personname)
         if new_person is None:
             new_person = Person(name=new_personname).save()
             #print('new person was created')
-            return
+
         old_person = Person.nodes.get_or_none(name=old_personname)
         if old_person is None:
-            #print('OLD PERSON IS NONE')
-            return
+            print('OLD PERSON IS NONE')
 
         #print(new_person)
         #print(old_person)

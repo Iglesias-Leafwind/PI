@@ -87,7 +87,7 @@ class Person(StructuredNode):
         return [row[0] for row in results]
 
     def getVerified(self):
-        query = "MATCH (p:Person)-[r:`Display a` {approved: true}]->(i:ImageNeo)  RETURN p.name"
+        query = "MATCH (p:Person)<-[r:`Display a` {approved: true}]-(i:ImageNeo)  RETURN p.name"
         results, meta = db.cypher_query(query)
         return [row[0] for row in results]
 
