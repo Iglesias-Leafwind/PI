@@ -8,14 +8,16 @@ essPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch.bat"
 """
 
 ## Windows Wei:
+'''
 ocrPath = r'D:\OCR\tesseract'
 essPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
+'''
 
 ## Ubuntu Anthony:
-"""
-ocrPath = r''
-essPath = ""
-"""
+
+ocrPath = r'/usr/bin/tesseract'
+essPath = "/home/anth0nypereira/elasticsearch-7.12.1/bin/elasticsearch"
+
 
 ## Ubuntu Alexa:
 """

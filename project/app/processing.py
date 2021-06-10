@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 
-#from app.face_recognition import FaceRecognition
-#from app.breed_classifier import BreedClassifier
+from app.face_recognition import FaceRecognition
+from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
