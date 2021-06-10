@@ -6,8 +6,9 @@ import zipfile
 from collections import defaultdict
 
 import cv2
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
@@ -350,12 +351,14 @@ def delete(request, path):
 def managefolders(request):
     if 'path' in request.GET:
         uploadImages(request.GET.get('path'))
+        '''
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
-        return render(request, 'managefolders.html',
-                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+        '''
+        response = redirect('/folders')
+        return response
     else:
         form = SearchForm()
         image = SearchForImageForm()
@@ -430,8 +433,11 @@ def updateFolders(request):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
+    return HttpResponseRedirect(reverse('managefolders'))
+    '''
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    '''
 
 def update_faces(request):
     if request.method != 'POST':

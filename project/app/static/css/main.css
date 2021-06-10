@@ -946,3 +946,21 @@ fa.redo:hover{
   display: flex;
   justify-content: center;
 }
+
+/*===============================
+=          Landing Page          =
+===============================*/
+
+.landingPageLogo {
+  width: 36vw;
+  height: auto;
+  margin-left: 3%;
+  margin-top: 1.5%;
+  display: inline-block;
+}
+
+.landingPageParagraph {
+  display: inline-block;
+  font-size: 3vw;
+}
+
