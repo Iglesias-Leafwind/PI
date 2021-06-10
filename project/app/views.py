@@ -605,10 +605,23 @@ def peopleGallery(request):
     image = SearchForImageForm()
     allNames = Person().getVerified()
 
+    # allNames = ["hello"]
+
     allNames = sorted(list(set(allNames)))
 
+    print(allNames)
+
+    allNamesDict = {}
+
+    for name in allNames:
+        firstLetter = name[0]
+        if firstLetter not in allNamesDict.keys():
+            allNamesDict[firstLetter] = [name]
+        else:
+            allNamesDict[firstLetter] += [name]
+    print(allNamesDict)
     return render(request, 'peopleGallery.html',
-                  {'form': form, 'image_form': image, 'people': allNames})
+                  {'form': form, 'image_form': image, 'people': allNamesDict})
 
 def scenesGallery(request):
     form = SearchForm()
