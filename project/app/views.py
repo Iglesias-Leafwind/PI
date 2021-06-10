@@ -14,7 +14,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
-from app.processing import frr
+#from app.processing import frr
 
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es

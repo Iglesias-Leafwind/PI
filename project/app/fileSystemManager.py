@@ -128,12 +128,20 @@ class SimpleFileSystemManager:
             else:
                 savedNode = Folder(id_=getRandomNumber(), name=folder,
                                    terminated=True if i == len(folders) - 1 else False).save()
+
                 parent = Folder.nodes.get(id_=node.id)
                 savedNode.parent.connect(parent)
 
                 newNode = Node(folder, savedNode.id_, savedNode.terminated)
                 newNode.parent = node
                 node.children[folder] = node = newNode
+
+                if folder == "higk":
+                    print("------------------ higk --------------------")
+                    print(len(folders))
+                    print(i)
+                    print(savedNode.terminated)
+                    print(newNode.terminated)
 
         return node
 

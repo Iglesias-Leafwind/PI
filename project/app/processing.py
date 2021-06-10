@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 import threading
-from app.face_recognition import FaceRecognition
-from app.breed_classifier import BreedClassifier
+#from app.face_recognition import FaceRecognition
+#from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -51,7 +51,7 @@ def testingThreadCapacity():
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.join(dir_path,"static/tests")
-    on_processing[dir_path] = {"tasks": 1}
+    on_processing[dir_path] = 0
     wait = do(processing, {dir_path: ["face.jpg"]})
     cpuNormal = psutil.cpu_percent()
     ramNormal = psutil.virtual_memory().percent
@@ -85,10 +85,10 @@ logging.info("[Loading]: [INFO] Loading Object Extraction")
 obj_extr = do(ObjectExtract)
 
 logging.info("[Loading]: [INFO] Loading face recognition")
-frr = do(FaceRecognition)
+#frr = do(FaceRecognition)
 
 logging.info("[Loading]: [INFO] Loading breed classifier")
-bc = do(BreedClassifier)
+#bc = do(BreedClassifier)
 
 while not obj_extr.done():
     time.sleep(0.1)
@@ -96,14 +96,14 @@ while not obj_extr.done():
 obj_extr = obj_extr.result()
 logging.info("[Loading]: [INFO] Finished loading Object Extraction")
 
-while not frr.done():
-    time.sleep(0.1)
-frr = frr.result()
+#while not frr.done():
+#    time.sleep(0.1)
+#frr = frr.result()
 logging.info("[Loading]: [INFO] Finished loading face recognition")
 
-while not bc.done():
-    time.sleep(0.1)
-bc = bc.result()
+#while not bc.done():
+#    time.sleep(0.1)
+#bc = bc.result()
 logging.info("[Loading]: [INFO] Finished loading breed classifier")
 
 ftManager = ImageFeaturesManager()
@@ -183,9 +183,11 @@ def uploadImages(uri):
         uploadLock.acquire()
         for dir_path in folders:
             if dir_path in on_processing:
-                return
+                for task in tasks:
+                    if dir_path in task.keys():
+                        task.pop(dir_path)
             else:
-                on_processing[dir_path] = {"tasks": 1}
+                on_processing[dir_path] = 0
     finally:
         uploadLock.release()
 
@@ -199,7 +201,7 @@ def divideTasksInMany(dirFiles,qty):
     threading = 0
     tasks = []
 
-    for i in range(1,qty+1):
+    for i in range(1, qty + 1):
         tasks.append({})
 
     # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, 2.jpg
@@ -252,6 +254,14 @@ def classifyBreedPart(read_image, tags, imageDB):
         imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
 
 def processing(dirFiles):
+
+    for dir in dirFiles.keys():
+        try:
+            uploadLock.acquire()
+            on_processing[dir] += 1
+        finally:
+            uploadLock.release()
+
     for dir in dirFiles.keys():
         img_list = dirFiles[dir]
         try:
@@ -435,7 +445,7 @@ def processing(dirFiles):
                     try:
                         faceRecLock.acquire()
                         db.begin()
-                        face_rec_part(read_image, img_path, tags, image)
+                        #face_rec_part(read_image, img_path, tags, image)
                     finally:
                         faceRecLock.release()
                         db.commit()
@@ -517,10 +527,17 @@ def processing(dirFiles):
 
         try:
             uploadLock.acquire()
-            on_processing.pop(dir)
+            on_processing[dir]-= 1
         finally:
             uploadLock.release()
 
+    try:
+        uploadLock.acquire()
+        for dir in on_processing:
+            if on_processing[dir] == 0:
+                on_processing.pop(dir)
+    finally:
+        uploadLock.release()
 
 def getLocations(latitude,longitude):
     results = rg.search((latitude,longitude))
