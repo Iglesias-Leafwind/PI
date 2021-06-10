@@ -375,11 +375,13 @@ def managepeople(request):
         filters = PeopleFilterForm(request.POST)
         #print('entrou aqui...')
         #print(filters)
+        filters.is_valid()
         filters2 = filters.cleaned_data
         #print('cleanded fore valid', filters2)
 
         showDict['unverified'] = filters2['unverified']
         showDict['verified'] = filters2['verified']
+        
         """
         if filters.is_valid() and filters.has_changed():
             print('entrou aqui tmb')

@@ -3,7 +3,7 @@ dbsPath = 'bolt://neo4j:12345@localhost:7687'
 ocrPath = 'app/resources/tesseract-OCR/tesseract'
 essPath = 'app/resources/elasticSearch/bin/elasticsearch.bat'
 
-var = 1
+var = 5
 ## Windows Iglesias:
 if var == 1:
     ocrPath = r'D:\Programs\tesseract-OCR\tesseract'
@@ -23,4 +23,4 @@ elif var == 4:
 ## Ubuntu Mariana:
 else:
     ocrPath = r'/usr/bin/tesseract'
-    essPath = ""
+    essPath = "/home/mar/Documents/UA/6-semester/PI/elasticsearch-7.12.0/bin/elasticsearch"
