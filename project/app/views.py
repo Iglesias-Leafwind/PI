@@ -23,6 +23,9 @@ from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
 
+from scripts.pathsPC import do
+
+
 def landingpage(request):
     query = SearchForm()  # query form stays the same
     image = SearchForImageForm()  # fetching image form response
@@ -346,7 +349,7 @@ def delete(request, path):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
-    deleteFolder(path)
+    do(deleteFolder, path)
     folders = fs.getAllUris()
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})

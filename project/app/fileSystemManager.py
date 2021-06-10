@@ -113,9 +113,12 @@ class SimpleFileSystemManager:
 
     def createUriInNeo4j(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
-
+        print(" uri ", uri, "folders", folders)
         if root in self.trees:
             node = self.trees[root]
+            if len(folders) == 1:
+                node.terminated = True
+                return node
         else:
             savedNode = Folder(id_=getRandomNumber(), name=root, root=True,
                                terminated=True if len(folders) == 1 else False).save()
@@ -125,6 +128,8 @@ class SimpleFileSystemManager:
             folder = folders[i]
             if folder in node.children:
                 node = node.children[folder]
+                if i == len(folders) - 1:
+                    node.terminated = True
             else:
                 savedNode = Folder(id_=getRandomNumber(), name=folder,
                                    terminated=True if i == len(folders) - 1 else False).save()
@@ -135,14 +140,6 @@ class SimpleFileSystemManager:
                 newNode = Node(folder, savedNode.id_, savedNode.terminated)
                 newNode.parent = node
                 node.children[folder] = node = newNode
-
-                if folder == "higk":
-                    print("------------------ higk --------------------")
-                    print(len(folders))
-                    print(i)
-                    print(savedNode.terminated)
-                    print(newNode.terminated)
-
         return node
 
     def __splitUriAndGetRoot__(self, uri):
