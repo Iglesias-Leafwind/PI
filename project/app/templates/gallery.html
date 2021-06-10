@@ -3,8 +3,8 @@
 
 {% block content %}
     <div class="flex-container centerGalleryDiv">
-        <div id="insertion_calendar" style="width: 60vw; flex: 1; height: 45%; margin-top: 2vh"></div>
-        <div id="creation_calendar" style="width: 60vw; flex: 1; height: 45%; margin-top: 4vh"></div>
+        <div id="insertion_calendar" style="width: 60vw; flex: 1; min-height: 45%; margin-top: 2vh"></div>
+        <div id="creation_calendar" style="width: 60vw; flex: 1; min-height: 45%; margin-top: 4vh"></div>
     </div>
 
 
@@ -21,7 +21,7 @@
             animationEnabled: true,
             exportEnabled: true,
             title:{
-                text: "New Images Calendar",
+                text: "Images' Insertion Date Calendar",
                 fontFamily: "arial",
                 fontStyle: "bold",
             },
@@ -34,7 +34,6 @@
                 }
             },
             axisY: {
-                interval: 1,
                 labelFontSize: 15,
                 labelAutoFit: true,
                 scaleBreaks: {
@@ -76,7 +75,6 @@
                 }
             },
             axisY: {
-                interval: 1,
                 labelFontSize: 15,
                 labelAutoFit: true,
                 scaleBreaks: {
