@@ -8,15 +8,19 @@ import imghdr
 from app.models import Tag, ImageNeo, ImageES
 from scripts.esScript import es
 
+lock = Lock()
+faceRecLock= Lock()
+ocrLock= Lock()
 processingLock = Lock()
 resultsLock = Lock()
 uploadLock = Lock()
 objectLock = Lock()
+breedLock = Lock()
+locationLock = Lock()
+placesLock = Lock()
 
 showDict = {'verified':False, 'unverified':True}
-lock = Lock()
-faceRecLock= Lock()
-ocrLock= Lock()
+
 
 objectExtractionThreshold = 0.1
 faceRecThreshold = 0.35

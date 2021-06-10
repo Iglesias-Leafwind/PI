@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 import threading
-#from app.face_recognition import FaceRecognition
-#from app.breed_classifier import BreedClassifier
+from app.face_recognition import FaceRecognition
+from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -16,7 +16,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock, breedLock,locationLock,faceRecLock,placesLock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -50,8 +50,8 @@ def testingThreadCapacity():
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.join(dir_path,"static/tests")
-    on_processing[dir_path] = {"tasks": 1, "finished": 0}
-    wait = do(processing, (dir_path, {dir_path: ["face.jpg"]}))
+    on_processing[dir_path] = {"tasks": 1}
+    wait = do(processing, {dir_path: ["face.jpg"]})
     cpuNormal = psutil.cpu_percent()
     ramNormal = psutil.virtual_memory().percent
 
@@ -81,8 +81,8 @@ def testingThreadCapacity():
         ramPerThread = (ramPerThread * -1) + 1
 
 obj_extr = ObjectExtract()
-#frr = FaceRecognition()
-#bc = BreedClassifier()
+frr = FaceRecognition()
+bc = BreedClassifier()
 
 ftManager = ImageFeaturesManager()
 fs = SimpleFileSystemManager()
@@ -127,18 +127,10 @@ def filterSentence(sentence):
                 len(word) >= 4 and (len(word) <= 8 or word in english_vocab)]
     return filtered
 
-
 def uploadImages(uri):
     print("----------------------------------------------")
     print("            feature extraction starts         ")
     print("----------------------------------------------")
-
-    uploadLock.acquire()
-    if uri in on_processing:
-        uploadLock.release()
-        return
-    on_processing[uri] = {}
-    uploadLock.release()
 
     dirFiles = getImagesPerUri(uri)
 
@@ -160,14 +152,24 @@ def uploadImages(uri):
 
     tasks = divideTasksInMany(dirFiles, threads)
     print("tasks ", tasks)
-    uploadLock.acquire()
-    on_processing[uri] = {"tasks": threads, "finished": 0}
-    uploadLock.release()
+    folders = []
+    for task in tasks:
+        folders += list(task.keys())
+    folders = list(set(folders))
+    try:
+        uploadLock.acquire()
+        for dir_path in folders:
+            if dir_path in on_processing:
+                return
+            else:
+                on_processing[dir_path] = {"tasks": 1}
+    finally:
+        uploadLock.release()
 
     i = 1
     for task in tasks:
         print("------------------task", i, "------------------")
-        do(processing, (uri, task))
+        do(processing, task)
         i += 1
 
 def divideTasksInMany(dirFiles,qty):
@@ -228,30 +230,24 @@ def classifyBreedPart(read_image, tags, imageDB):
             tag = Tag(name=breed).save()
         imageDB.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
 
-
-def processing(uriAndDirFiles):
-    uri = uriAndDirFiles[0]
-    dirFiles = uriAndDirFiles[1]
+@db.transaction
+def processing(dirFiles):
     for dir in dirFiles.keys():
         img_list = dirFiles[dir]
-
-        if not fs.exist(dir):
+        try:
             processingLock.acquire()
             if not fs.exist(dir):
                 lastNode = fs.createUriInNeo4j(dir)
             else:
                 lastNode = fs.getLastNode(dir)
+        finally:
             processingLock.release()
-        else:
-            lastNode = fs.getLastNode(dir)
-
         atLeastOne = False
         folderNeoNode = Folder.nodes.get(id_=lastNode.id)
         for index, img_name in enumerate(img_list):
-
             try:
                 img_path = os.path.join(dir, img_name)
-                print("I am in: ",img_path)
+                logging.info("[Processing]: [INFO] I am in " + img_path)
                 i = ImageFeature()
 
                 read_image = cv2.imread(img_path)
@@ -266,7 +262,7 @@ def processing(uriAndDirFiles):
 
                 if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
 
-                    logging.info("Image " + img_path + " has already been processed")
+                    logging.info("[Processing]: [INFO] Image " + img_path + " has already been processed")
 
                     if existed.folder_uri == dir:
                         atLeastOne |= True
@@ -275,6 +271,7 @@ def processing(uriAndDirFiles):
                     # if the current image's folder is different
                     existed.folder.connect(folderNeoNode)
                     atLeastOne |= True
+                    continue
                 else:
                     tags = []
 
@@ -307,26 +304,27 @@ def processing(uriAndDirFiles):
                                          hash=hash,
                                          insertion_date=datetime.now())
 
-                    processingLock.acquire()
                     existed = ImageNeo.nodes.get_or_none(hash=hash)
                     if existed:
                         if existed.folder_uri != dir:
                             # if the current image's folder is different
                             existed.folder.connect(folderNeoNode)
-                        processingLock.release()
                         atLeastOne |= True
                         continue
                     try:
                         image.save()
+                        atLeastOne |= True
                     except Exception as e:
                         print(e)
                         continue
-                    finally:
-                        processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         # crc = [city,region,country] names array
-                        crc = getLocations(propertiesdict["latitude"], propertiesdict["longitude"])
+                        try:
+                            locationLock.acquire()
+                            crc = getLocations(propertiesdict["latitude"], propertiesdict["longitude"])
+                        finally:
+                            locationLock.release()
 
                         location = Location.nodes.get_or_none(name=crc[0])
                         if location is None:
@@ -357,9 +355,11 @@ def processing(uriAndDirFiles):
 
                     image.folder.connect(folderNeoNode)
 
-                    objectLock.acquire()
-                    res = obj_extr.get_objects(img_path)
-                    objectLock.release()
+                    try:
+                        objectLock.acquire()
+                        res = obj_extr.get_objects(img_path)
+                    finally:
+                        objectLock.release()
 
                     for object, confidence in res:
                         tag = Tag.nodes.get_or_none(name=object)
@@ -368,16 +368,24 @@ def processing(uriAndDirFiles):
                         tags.append(object)
                         image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
                         if object in ['cat', 'dog']:
-                            classifyBreedPart(read_image, tags, image)
+                            try:
+                                breedLock.acquire()
+                                classifyBreedPart(read_image, tags, image)
+                            finally:
+                                breedLock.release()
 
-                    #faceRecLock.acquire()
-                    #face_rec_part(read_image, img_path, tags, image)
-                    #faceRecLock.release()
+                    try:
+                        faceRecLock.acquire()
+                        face_rec_part(read_image, img_path, tags, image)
+                    finally:
+                        faceRecLock.release()
                     #     p = Person.nodes.get_or_none(name=name)
 
-                    processingLock.acquire()
-                    placesList = getPlaces(img_path)
-                    processingLock.release()
+                    try:
+                        placesLock.acquire()
+                        placesList = getPlaces(img_path)
+                    finally:
+                        placesLock.release()
                     for places, prob in placesList:
                         places = places.split("/")
                         for place in places:
@@ -389,8 +397,11 @@ def processing(uriAndDirFiles):
                                         originalTagSource='places').save()
                             tags.append(p)
                             image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
-
-                    wordList = getOCR(read_image)
+                    try:
+                        ocrLock.acquire()
+                        wordList = getOCR(read_image)
+                    finally:
+                        ocrLock.release()
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             t = Tag.nodes.get_or_none(name=word)
@@ -401,11 +412,13 @@ def processing(uriAndDirFiles):
 
 
                     # add features to "cache"
-                    resultsLock.acquire()
-                    ftManager.npFeatures.append(norm_feat)
-                    i.features = norm_feat
-                    ftManager.imageFeatures.append(i)
-                    resultsLock.release()
+                    try:
+                        resultsLock.acquire()
+                        ftManager.npFeatures.append(norm_feat)
+                        i.features = norm_feat
+                        ftManager.imageFeatures.append(i)
+                    finally:
+                        resultsLock.release()
 
                     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
@@ -414,17 +427,17 @@ def processing(uriAndDirFiles):
             except Exception as e:
                 print("Error during processing: ", e, threading.current_thread().name)
         if not atLeastOne:
-            processingLock.acquire()
-            fs.deleteFolderFromFs(dir)
-            processingLock.release()
+            try:
+                processingLock.acquire()
+                fs.deleteFolderFromFs(dir)
+            finally:
+                processingLock.release()
 
-    try:
-        uploadLock.acquire()
-        on_processing[uri]["finished"] += 1
-        if on_processing[uri]["tasks"] == on_processing[uri]["finished"]:
-            on_processing.pop(uri)
-    finally:
-        uploadLock.release()
+        try:
+            uploadLock.acquire()
+            on_processing.pop(dir)
+        finally:
+            uploadLock.release()
 
 
 def getLocations(latitude,longitude):
@@ -441,9 +454,11 @@ def alreadyProcessed(img_path):
 
 def deleteFolder(uri):
     print("delete folder....")
-    processingLock.acquire()
-    deletedImages = fs.deleteFolderFromFs(uri)
-    processingLock.release()
+    try:
+        processingLock.acquire()
+        deletedImages = fs.deleteFolderFromFs(uri)
+    finally:
+        processingLock.release()
     print("depois de deleteFolder")
     if deletedImages is None or len(deletedImages) == 0:
         return
@@ -518,10 +533,8 @@ def getOCR(image):
     blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
 
-    ocrLock.acquire()
     net.setInput(blob)
     (scores, geometry) = net.forward(layerNames)
-    ocrLock.release()
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
