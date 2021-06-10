@@ -38,12 +38,12 @@
 </head>
 <body>
 <div class="topbar">
-        <a href="{% url 'landingpage' %}" class="links small"><h4 class="our-title">Imageable</h4></a>
+        <a title="HomePage" href="{% url 'landingpage' %}" class="links small"><h4 class="our-title">Imageable</h4></a>
         <form class="small mar-left" action="{% url 'index' %}" method="get" enctype="multipart/form-data">
         <div class="inner-form">
             {{ form.query }}
             <span class="hovering">
-                <button class="search-btn pointer no-focus" type="button" data-bs-toggle="modal" data-bs-target="#searchByPhoto"><i class="fa fa-camera"></i></button>
+                <button title="Search By Similar Photo" class="search-btn pointer no-focus" type="button" data-bs-toggle="modal" data-bs-target="#searchByPhoto"><i class="fa fa-camera"></i></button>
             </span>
         </div>
         {% for field in form %}
@@ -51,9 +51,9 @@
         {% endfor %}
         </form>
         <span class="btn-group-span" style="width: 20vw; display: inline-block">
-            <a href="{% url 'managepeople' %}"><i class="fa fa-user"></i></a>
-            <a href="{% url 'managefolders' %}"><i class="fa fa-folder-open"></i></a>
-            <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i></a>
+            <a title="Manage People" href="{% url 'managepeople' %}"><i class="fa fa-user"></i></a>
+            <a title="Manage Folders" href="{% url 'managefolders' %}"><i class="fa fa-folder-open"></i></a>
+            <a title="Dashboard" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i></a>
         </span>
 </div>
 <div class="modal fade" id="searchByPhoto" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
