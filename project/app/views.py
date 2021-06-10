@@ -577,19 +577,29 @@ def calendarGallery(request):
 def objectsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allObjectTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "object":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allObjectTags.keys():
+                    allObjectTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allObjectTags[firstLetter]:
+                        allObjectTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allObjectTags:
+        value = allObjectTags[key]
+        value = value.sort()
 
+    allObjectTags = dict(sorted(allObjectTags.items()))
+
+    print(allObjectTags)
     return render(request, 'objectsGallery.html',
-                  {'form': form, 'image_form': image, 'objectTags': allTags})
+                  {'form': form, 'image_form': image, 'objectTags': allObjectTags})
 
 def peopleGallery(request):
     form = SearchForm()
