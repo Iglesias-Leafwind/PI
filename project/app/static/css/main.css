@@ -952,16 +952,28 @@ fa.redo:hover{
 ===============================*/
 
 .landingPageLogo {
-  width: 36vw;
+  width: 28vw;
   height: auto;
   margin-left: 3%;
-  margin-top: 1.5%;
+  margin-top: 8%;
   display: inline-block;
 }
 
-.landingPageParagraph {
+.landingPageTitle {
   display: inline-block;
-  font-size: 3vw;
+  font-size: 5vw;
+  color: white;
+  text-align: right;
+  width: 60vw;
+}
+
+.landingPageParagraph {
+  font-size: 1vw;
+  font-style: italic;
+  color: white;
+  text-align: right;
+  width: 87vw;
+  margin-top: -15vw;
 }
 
 .context {
