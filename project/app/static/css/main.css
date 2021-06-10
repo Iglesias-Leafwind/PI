@@ -884,6 +884,14 @@ fa.redo:hover{
 =          Gallery Page          =
 ===============================*/
 
+.title {
+  margin-top: 1%;
+  margin-bottom: 5%
+}
+.centerAll {
+   overflow:hidden;
+   position:relative;
+}
 .centerGalleryDiv {
   width: 60%;
   margin: 0 auto;
