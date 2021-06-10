@@ -1,10 +1,27 @@
 {% extends 'topbar.html' %}
 {% load static %}
 {%  block content %}
-<body style="vertical-align: center; background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%); ">
 
-<div></div>
+<style>
+    html, body {
+        overflow: hidden;
+    }
+</style>
+<div style="overflow-y: hidden; width:100%; height: 100vh; margin-top: -1.5%" class="area" >
+            <ul class="circles">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+            </ul>
 <img class="landingPageLogo" src="{% static '/img/imageable.png' %}">
 <p class="landingPageParagraph">Reimagine your past</p>
-</body>
+    </div >
+
 {% endblock %}
