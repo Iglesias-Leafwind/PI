@@ -6,13 +6,16 @@ import zipfile
 from collections import defaultdict
 
 import cv2
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
+
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
 from app.processing import frr
+
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
@@ -351,12 +354,14 @@ def delete(request, path):
 def managefolders(request):
     if 'path' in request.GET:
         uploadImages(request.GET.get('path'))
+        '''
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
-        return render(request, 'managefolders.html',
-                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+        '''
+        response = redirect('/folders')
+        return response
     else:
         form = SearchForm()
         image = SearchForImageForm()
@@ -431,8 +436,11 @@ def updateFolders(request):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
+    return HttpResponseRedirect(reverse('managefolders'))
+    '''
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    '''
 
 def update_faces(request):
     if request.method != 'POST':
@@ -583,19 +591,29 @@ def calendarGallery(request):
 def objectsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allObjectTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "object":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allObjectTags.keys():
+                    allObjectTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allObjectTags[firstLetter]:
+                        allObjectTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allObjectTags:
+        value = allObjectTags[key]
+        value = value.sort()
 
+    allObjectTags = dict(sorted(allObjectTags.items()))
+
+    print(allObjectTags)
     return render(request, 'objectsGallery.html',
-                  {'form': form, 'image_form': image, 'objectTags': allTags})
+                  {'form': form, 'image_form': image, 'objectTags': allObjectTags})
 
 def peopleGallery(request):
     form = SearchForm()
