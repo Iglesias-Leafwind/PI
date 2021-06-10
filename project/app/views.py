@@ -6,16 +6,20 @@ import zipfile
 from collections import defaultdict
 
 import cv2
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder#, frr
+
+from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
+from app.processing import frr
+
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
-from app.utils import searchFilterOptions, showDict
+from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
 
@@ -30,10 +34,10 @@ def updateTags(request, hash):
     newTagsString = request.POST.get("tags")
     newTags = re.split('#', newTagsString)
     newTags = [tag.strip() for tag in newTags if tag.strip() != ""]
-    print(newTags)
+    #print(newTags)
     image = ImageNeo.nodes.get_or_none(hash=hash)
     oldTags = [x.name for x in image.tag.all()]
-    print(oldTags)
+    #print(oldTags)
 
     for indx, tag in enumerate(newTags):
         if tag not in oldTags:
@@ -143,7 +147,7 @@ def index(request):
 
 def change_filters(request):
     if request.method != 'POST':
-        print('shouldnt happen!!')
+        #print('shouldnt happen!!')
         return redirect('/')
 
     form = FilterSearchForm(request.POST)
@@ -226,7 +230,7 @@ def get_image_results(query_text):
 
         remove = set()
 
-        print('results?')
+        #print('results?')
 
         img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
         #tags = img.tag.all()  # get all tags from the image
@@ -240,7 +244,7 @@ def get_image_results(query_text):
         # verifica se a query ta dentro do nome
         dentro = any([q in p.name.lower() for q in query_array for p in people])
         if not searchFilterOptions['people'] and dentro:
-            print('entrou.... (people)')
+            #print('entrou.... (people)')
             remove.add(dentro)
         else:
             remove.add(not dentro)  # se estiver dentro vai adicionar False (não remove)
@@ -298,9 +302,9 @@ def get_image_results(query_text):
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
         dentro = any([q in t for q in query_array for t in tags])
         if not searchFilterOptions['breeds'] and dentro:
-            print('entrou breeds!!', dentro)
-            print(query_array)
-            print(tags)
+            #print('entrou breeds!!', dentro)
+            #print(query_array)
+            #print(tags)
             remove.add(dentro)
         else:
             remove.add(not dentro)
@@ -350,12 +354,14 @@ def delete(request, path):
 def managefolders(request):
     if 'path' in request.GET:
         uploadImages(request.GET.get('path'))
+        '''
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
-        return render(request, 'managefolders.html',
-                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+        '''
+        response = redirect('/folders')
+        return response
     else:
         form = SearchForm()
         image = SearchForImageForm()
@@ -367,10 +373,10 @@ def managefolders(request):
 def managepeople(request):
     if request.method == 'POST':
         filters = PeopleFilterForm(request.POST)
-        print('entrou aqui...')
-        print(filters)
+        #print('entrou aqui...')
+        #print(filters)
         filters2 = filters.cleaned_data
-        print('cleanded fore valid', filters2)
+        #print('cleanded fore valid', filters2)
 
         showDict['unverified'] = filters2['unverified']
         showDict['verified'] = filters2['verified']
@@ -419,8 +425,8 @@ def searchtag(request):
     q = Q('bool', should=[Q('term', tags=tag) for tag in get], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
     execute = s.execute()
-    for i in execute:
-        print(i)
+    #for i in execute:
+    #    print(i)
     return render(request, 'index.html')
 
 def updateFolders(request):
@@ -430,8 +436,11 @@ def updateFolders(request):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
+    return HttpResponseRedirect(reverse('managefolders'))
+    '''
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    '''
 
 def update_faces(request):
     if request.method != 'POST':
@@ -441,7 +450,7 @@ def update_faces(request):
     if not form.is_valid():
         print('invalid form!!!')
 
-    print(form.cleaned_data)
+    #print(form.cleaned_data)
     data = form.cleaned_data
 
     imgs = int(len(form.cleaned_data) / 5)
@@ -463,15 +472,26 @@ def update_faces(request):
 
         # if old_personname != new_personname:
         image_hash = data['person_image_id_%s' % str(i)]
-        frr.changeRelationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
-        if old_personname != new_personname:
-            frr.changeNameTagES(image_hash, new_personname, old_personname)
-
-    frr.update_data()
+        try:
+            faceRecLock.acquire()
+            frr.changeRelationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
+            if old_personname != new_personname:
+                frr.changeNameTagES(image_hash, new_personname, old_personname)
+        finally:
+            faceRecLock.release()
+    try:
+        faceRecLock.acquire()
+        frr.update_data()
+    finally:
+        faceRecLock.release()
 
     if 'reload' in request.POST:
-        print('reload was called')
-        frr.reload()
+        #print('reload was called')
+        try:
+            faceRecLock.acquire()
+            frr.reload()
+        finally:
+            faceRecLock.release()
 
     return redirect('/people')
 
@@ -527,7 +547,7 @@ def dashboard(request):
             countOriginalTagSource[label] = 0
 
     countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1]))
-    print(countOriginalTagSource)
+    #print(countOriginalTagSource)
     return render(request, 'dashboard.html',
                   {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
                    'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
@@ -571,19 +591,29 @@ def calendarGallery(request):
 def objectsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allObjectTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "object" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "object":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allObjectTags.keys():
+                    allObjectTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allObjectTags[firstLetter]:
+                        allObjectTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allObjectTags:
+        value = allObjectTags[key]
+        value = value.sort()
 
+    allObjectTags = dict(sorted(allObjectTags.items()))
+
+    print(allObjectTags)
     return render(request, 'objectsGallery.html',
-                  {'form': form, 'image_form': image, 'objectTags': allTags})
+                  {'form': form, 'image_form': image, 'objectTags': allObjectTags})
 
 def peopleGallery(request):
     form = SearchForm()
@@ -623,7 +653,7 @@ def locationsGallery(request):
                 locations[location] = 1
             else:
                 locations[location] += 1
-            print(location)
+            #print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
 
@@ -719,6 +749,6 @@ def locationsGallery(request):
                 locations[location] = 1
             else:
                 locations[location] += 1
-            print(location)
+            #print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})

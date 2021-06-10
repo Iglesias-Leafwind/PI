@@ -8,15 +8,19 @@ import imghdr
 from app.models import Tag, ImageNeo, ImageES
 from scripts.esScript import es
 
+lock = Lock()
+faceRecLock= Lock()
+ocrLock= Lock()
 processingLock = Lock()
 resultsLock = Lock()
 uploadLock = Lock()
 objectLock = Lock()
+breedLock = Lock()
+locationLock = Lock()
+placesLock = Lock()
 
 showDict = {'verified':False, 'unverified':True}
-lock = Lock()
-faceRecLock= Lock()
-ocrLock= Lock()
+
 
 objectExtractionThreshold = 0.1
 faceRecThreshold = 0.35
@@ -65,7 +69,8 @@ def getImagesPerUri(pathName):
                     else:
                         dirsAndFiles[pathName] = [os.path.basename(f)]
                 else:
-                    print(f, image_type)
+                    #print(f, image_type)
+                    pass
     return dirsAndFiles
 
 def getRandomNumber():

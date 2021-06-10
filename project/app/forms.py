@@ -62,8 +62,8 @@ class PersonsForm(forms.Form):
         people = self.removeRepeated(people, lambda x : x[0].name + '-' + x[1].name)
             #print(p[0].name , '-', p[1].name)
 
-        print('people' , len(people))
-        print('showDict', showDict)
+        #print('people' , len(people))
+        #print('showDict', showDict)
         all_rels = []
         if showDict['unverified']:
             all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if not pp.approved]
@@ -86,7 +86,7 @@ class PersonsForm(forms.Form):
             neww.append(r)
         all_rels = neww
         """
-        print(len(all_rels))
+        #print(len(all_rels))
         for index, rel in enumerate(all_rels):
             field_name = 'person_name_%s' % (index,)
             field_image = 'person_image_%s' % (index,)
