@@ -14,7 +14,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
-#from app.processing import frr
+from app.processing import frr
 
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
@@ -223,6 +223,25 @@ def change_filters(request):
     searchFilterOptions['breeds_range_min'] = int(min_breeds)
     # -- end confiance breeds --
 
+
+    # -- confiance places --
+    max_places = form['places_range_max']
+    min_places = form['places_range_min']
+
+    if min_places < breedsThreshold * 100:
+        min_places = breedsThreshold * 100
+    elif min_places > 100:
+        min_places = 100
+
+    if max_places < min_places:
+        max_places = min_places
+    elif max_places > 100:
+        max_places = 100
+
+    searchFilterOptions['places_range_max'] = int(max_places)
+    searchFilterOptions['places_range_min'] = int(min_places)
+    # -- end confiance places --
+
     return redirect(form['current_url'])
 
 def get_image_results(query_array):
@@ -231,16 +250,8 @@ def get_image_results(query_array):
     result_hashs = list(map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
-        # remove = False # flag
-
         remove = set()
-
-        #print('results?')
-
         img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
-        #tags = img.tag.all()  # get all tags from the image
-        #relationships = [ img.tag.relationship(t) for t in tags ]
-
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
@@ -256,7 +267,7 @@ def get_image_results(query_array):
                 remove.add(True)
             else:
                 people = img.person.all()
-                relationships = [img.person.all_relationships(t) for t in people if t.name.lower() in query_array]
+                relationships = [img.person.all_relationships(t) for t in people if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [rel for r in relationships for rel in r]
                 print('len rels', len(relationships))
                 # if len(relationships) > 0:
@@ -281,7 +292,7 @@ def get_image_results(query_array):
                 remove.add(True)
             else:
                 tags = [t for t in img.tag.match(originalTagSource='object')]
-                relationships = [ img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array ]
+                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [ rel for r in relationships for rel in r]
                 # if len(relationships) > 0:
                 minn = searchFilterOptions['objects_range_min']
@@ -319,8 +330,18 @@ def get_image_results(query_array):
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
-            remove.add(not searchFilterOptions['places'])
-
+            if not searchFilterOptions['breeds']:
+                remove.add(True)
+            else:
+                tags = [t for t in img.tag.match(originalTagSource='places')]
+                # relationships = [img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array]
+                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+                relationships = [rel for r in relationships for rel in r]
+                #if len(relationships) > 0:
+                minn = searchFilterOptions['places_range_min']
+                maxx = searchFilterOptions['places_range_max']
+                outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
+                remove.add(outside_limits)
 
         # -- breeds --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
@@ -330,7 +351,7 @@ def get_image_results(query_array):
             if not searchFilterOptions['breeds']:
                 remove.add(True)
             else:
-                tags = [t for t in img.tag.match(originalTagSource='breeds')] # TODO usar isto do disjoint nos outros lados!! e tirar os prints
+                tags = [t for t in img.tag.match(originalTagSource='breeds')]
                 # relationships = [img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array]
                 relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [rel for r in relationships for rel in r]

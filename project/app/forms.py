@@ -139,6 +139,9 @@ class FilterSearchForm(forms.Form):
     objects_range_min = forms.IntegerField(required=False, label='Min confiance object extraction')
     objects_range_max = forms.IntegerField(required=False, label='Max confiance object extraction')
 
+    places_range_min = forms.IntegerField(required=False, label='Min confiance places extraction')
+    places_range_max = forms.IntegerField(required=False, label='Max confiance places extraction')
+
     people_range_min = forms.IntegerField(required=False, label='Min confiance people identified')
     people_range_max = forms.IntegerField(required=False, label='Max confiance people identified')
 

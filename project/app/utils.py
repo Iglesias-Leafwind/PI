@@ -24,7 +24,7 @@ showDict = {'verified':False, 'unverified':True}
 
 objectExtractionThreshold = 0.1
 faceRecThreshold = 0.35
-placesThreshold = 0
+placesThreshold = 0.1
 breedsThreshold = 0.7
 
 searchFilterOptions = {
@@ -43,7 +43,7 @@ searchFilterOptions = {
     'people_range_min': int(faceRecThreshold * 100),
     'people_range_max': 100,
 
-    'places_range_min': int(placesThreshold * 100), #TODO
+    'places_range_min': int(placesThreshold * 100),
     'places_range_max': 100,
 
     'breeds_range_min': int(breedsThreshold * 100),

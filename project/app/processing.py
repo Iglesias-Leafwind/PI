@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 import threading
-#from app.face_recognition import FaceRecognition
-#from app.breed_classifier import BreedClassifier
+from app.face_recognition import FaceRecognition
+from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -85,10 +85,10 @@ logging.info("[Loading]: [INFO] Loading Object Extraction")
 obj_extr = do(ObjectExtract)
 
 logging.info("[Loading]: [INFO] Loading face recognition")
-#frr = do(FaceRecognition)
+frr = do(FaceRecognition)
 
 logging.info("[Loading]: [INFO] Loading breed classifier")
-#bc = do(BreedClassifier)
+bc = do(BreedClassifier)
 
 while not obj_extr.done():
     time.sleep(0.1)
@@ -96,14 +96,14 @@ while not obj_extr.done():
 obj_extr = obj_extr.result()
 logging.info("[Loading]: [INFO] Finished loading Object Extraction")
 
-#while not frr.done():
-#    time.sleep(0.1)
-#frr = frr.result()
+while not frr.done():
+    time.sleep(0.1)
+frr = frr.result()
 logging.info("[Loading]: [INFO] Finished loading face recognition")
 
-#while not bc.done():
-#    time.sleep(0.1)
-#bc = bc.result()
+while not bc.done():
+    time.sleep(0.1)
+bc = bc.result()
 logging.info("[Loading]: [INFO] Finished loading breed classifier")
 
 ftManager = ImageFeaturesManager()
@@ -598,7 +598,7 @@ def getPlaces(img_path):
     h_x = F.softmax(logit, 1).data.squeeze()
     probs, idx = h_x.sort(0, True)
 
-    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > 0.1]
+    return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > app.utils.placesThreshold]
 
 
 def getOCR(image):
