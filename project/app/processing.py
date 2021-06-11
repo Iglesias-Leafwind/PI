@@ -2,8 +2,8 @@ import json
 import string
 import reverse_geocoder as rg
 import threading
-from app.face_recognition import FaceRecognition
-from app.breed_classifier import BreedClassifier
+#from app.face_recognition import FaceRecognition
+#from app.breed_classifier import BreedClassifier
 import time
 import sys
 from datetime import datetime
@@ -43,7 +43,7 @@ from scripts.pcVariables import ocrPath
 logging.basicConfig(level=logging.INFO)
 cpuPerThread = 1
 ramPerThread = 1
-on_processing = {}
+threadTasks = {}
 
 def testingThreadCapacity():
     global cpuPerThread
@@ -51,7 +51,7 @@ def testingThreadCapacity():
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.join(dir_path,"static/tests")
-    on_processing[dir_path] = {"tasks": 1}
+    threadTasks[dir_path] = 0
     wait = do(processing, {dir_path: ["face.jpg"]})
     cpuNormal = psutil.cpu_percent()
     ramNormal = psutil.virtual_memory().percent
@@ -80,14 +80,30 @@ def testingThreadCapacity():
 
     if(ramPerThread <= 0):
         ramPerThread = (ramPerThread * -1) + 1
+        
 logging.info("[Loading]: [INFO] Loading Object Extraction")
-obj_extr = ObjectExtract()
-logging.info("[Loading]: [INFO] Finished loading Object Extraction")
+obj_extr = do(ObjectExtract)
+
 logging.info("[Loading]: [INFO] Loading face recognition")
-frr = FaceRecognition()
-logging.info("[Loading]: [INFO] Finished loading face recognition")
+#frr = do(FaceRecognition)
+
 logging.info("[Loading]: [INFO] Loading breed classifier")
-bc = BreedClassifier()
+#bc = do(BreedClassifier)
+
+while not obj_extr.done():
+    time.sleep(0.1)
+
+obj_extr = obj_extr.result()
+logging.info("[Loading]: [INFO] Finished loading Object Extraction")
+
+#while not frr.done():
+#    time.sleep(0.1)
+#frr = frr.result()
+logging.info("[Loading]: [INFO] Finished loading face recognition")
+
+#while not bc.done():
+#    time.sleep(0.1)
+#bc = bc.result()
 logging.info("[Loading]: [INFO] Finished loading breed classifier")
 
 ftManager = ImageFeaturesManager()
@@ -166,24 +182,29 @@ def uploadImages(uri):
     try:
         uploadLock.acquire()
         for dir_path in folders:
-            if dir_path in on_processing:
-                return
+            if dir_path in threadTasks:
+                for task in tasks:
+                    if dir_path in task.keys():
+                        task.pop(dir_path)
             else:
-                on_processing[dir_path] = {"tasks": 1}
+                threadTasks[dir_path] = 0
     finally:
         uploadLock.release()
 
     i = 1
     for task in tasks:
         logging.info("------------------task " + str(i) +" ------------------")
+        if task == {}:
+            continue
         do(processing, task)
+
         i += 1
 
 def divideTasksInMany(dirFiles,qty):
     threading = 0
     tasks = []
 
-    for i in range(1,qty+1):
+    for i in range(1, qty + 1):
         tasks.append({})
 
     # dirFiles -> {key: values}  key -> C:users/user/databse, values-> 1.jpg, 2.jpg
@@ -237,6 +258,13 @@ def classifyBreedPart(read_image, tags, imageDB):
 
 def processing(dirFiles):
     for dir in dirFiles.keys():
+        try:
+            uploadLock.acquire()
+            threadTasks[dir] += 1
+        finally:
+            uploadLock.release()
+
+    for dir in dirFiles.keys():
         img_list = dirFiles[dir]
         try:
             processingLock.acquire()
@@ -278,11 +306,9 @@ def processing(dirFiles):
 
                     try:
                         processingLock.acquire()
-                        db.begin()
                         # if the current image's folder is different
                         existed.folder.connect(folderNeoNode)
                     finally:
-                        db.commit()
                         processingLock.release()
                     atLeastOne |= True
                     continue
@@ -322,7 +348,6 @@ def processing(dirFiles):
 
                     try:
                         processingLock.acquire()
-                        db.begin()
                         existed = ImageNeo.nodes.get_or_none(hash=hash)
                         if existed:
                             if existed.folder_uri != dir:
@@ -337,7 +362,6 @@ def processing(dirFiles):
                             logging.info("[Processing]: " + threading.current_thread().name + " [ERR] Saving image err " + str(e))
                             continue
                     finally:
-                        db.commit()
                         processingLock.release()
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
@@ -378,8 +402,11 @@ def processing(dirFiles):
 
                             tags.append(crc[2])
                             region.country.connect(country)
-                        finally:
                             db.commit()
+                        except:
+                            db.rollback()
+                            continue
+                        finally:
                             processingLock.release()
 
                     image.folder.connect(folderNeoNode)
@@ -396,30 +423,26 @@ def processing(dirFiles):
                     for object, confidence in res:
                         try:
                             processingLock.acquire()
-                            db.begin()
                             tag = Tag.nodes.get_or_none(name=object)
                             if tag is None:
                                 tag = Tag(name=object).save()
                             tags.append(object)
                             image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
                         finally:
-                            db.commit()
                             processingLock.release()
 
                         if object in ['cat', 'dog']:
                             logging.info("[Processing]: " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
                             try:
                                 breedLock.acquire()
-                                db.begin()
                                 classifyBreedPart(read_image, tags, image)
                             finally:
                                 breedLock.release()
-                                db.commit()
 
                     try:
                         faceRecLock.acquire()
                         db.begin()
-                        face_rec_part(read_image, img_path, tags, image)
+                        #face_rec_part(read_image, img_path, tags, image)
                     finally:
                         faceRecLock.release()
                         db.commit()
@@ -437,7 +460,6 @@ def processing(dirFiles):
                         for place in places:
                             try:
                                 processingLock.acquire()
-                                db.begin()
                                 p = " ".join(place.split("_")).strip()
                                 t = Tag.nodes.get_or_none(name=p)
                                 if t is None:
@@ -447,26 +469,25 @@ def processing(dirFiles):
                                 tags.append(p)
                                 image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
                             finally:
-                                db.commit()
                                 processingLock.release()
                     logging.info("[Processing]: " + threading.current_thread().name + " [INFO] OCR of " + img_path)
+
                     try:
                         ocrLock.acquire()
                         wordList = getOCR(read_image)
                     finally:
                         ocrLock.release()
+
                     if wordList and len(wordList) > 0:
                         for word in wordList:
                             try:
                                 processingLock.acquire()
-                                db.begin()
                                 t = Tag.nodes.get_or_none(name=word)
                                 if t is None:
                                     t = Tag(name=word).save()
                                 tags.append(word)
                                 image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
                             finally:
-                                db.commit()
                                 processingLock.release()
 
                     # add features to "cache"
@@ -477,13 +498,9 @@ def processing(dirFiles):
                         ftManager.imageFeatures.append(i)
                     finally:
                         resultsLock.release()
-                    try:
-                        processingLock.acquire()
-                        db.begin()
-                        ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
-                    finally:
-                        db.commit()
-                        processingLock.release()
+
+                    ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
+
 
                     completed = index+1
                     logging.info("[Processing]: " + threading.current_thread().name + " [INFO] Finished " + img_path)
@@ -501,10 +518,17 @@ def processing(dirFiles):
 
         try:
             uploadLock.acquire()
-            on_processing.pop(dir)
+            threadTasks[dir]-= 1
         finally:
             uploadLock.release()
 
+    try:
+        uploadLock.acquire()
+        for dir in threadTasks:
+            if threadTasks[dir] == 0:
+                threadTasks.pop(dir)
+    finally:
+        uploadLock.release()
 
 def getLocations(latitude,longitude):
     results = rg.search((latitude,longitude))
@@ -520,11 +544,16 @@ def alreadyProcessed(img_path):
 
 def deleteFolder(uri):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
-    try:
-        processingLock.acquire()
-        deletedImages = fs.deleteFolderFromFs(uri)
-    finally:
-        processingLock.release()
+    deletedImages = None
+    if fs.exist(uri):
+        try:
+            processingLock.acquire()
+            deletedImages = fs.deleteFolderFromFs(uri)
+        finally:
+            processingLock.release()
+    else:
+        return
+
     logging.info("[Deleting]: [INFO] Finished deleting folder " + uri)
     if deletedImages is None or len(deletedImages) == 0:
         return
@@ -816,9 +845,18 @@ def setUp():
         i.features = np.array(json.loads(i.features))
         npfeatures.append(i.features)
         imageFeatures.append(i)
+    logging.info("[Loading]: [INFO] Loading places")
+    plc = do(loadCatgoriesPlaces)
+    logging.info("[Loading]: [INFO] Loading file system")
+    filess = do(loadFileSystemManager)
 
-    loadCatgoriesPlaces()
-    loadFileSystemManager()
+    while not plc.done():
+        time.sleep(0.1)
+    logging.info("[Loading]: [INFO] Finished loading places")
+    while not filess.done():
+        time.sleep(0.1)
+    logging.info("[Loading]: [INFO] Finished loading file system")
+
     ftManager.npFeatures = npfeatures
     ftManager.imageFeatures = imageFeatures
     testingThreadCapacity()

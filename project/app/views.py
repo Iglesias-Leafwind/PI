@@ -14,7 +14,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
-from app.processing import frr
+#from app.processing import frr
 
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
 from scripts.esScript import es
@@ -22,6 +22,9 @@ from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
+
+from scripts.pathsPC import do
+
 
 def landingpage(request):
     query = SearchForm()  # query form stays the same
@@ -346,7 +349,7 @@ def delete(request, path):
     form = SearchForm()
     image = SearchForImageForm()
     pathf = EditFoldersForm()
-    deleteFolder(path)
+    do(deleteFolder, path)
     folders = fs.getAllUris()
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
