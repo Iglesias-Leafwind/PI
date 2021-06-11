@@ -562,6 +562,7 @@ def deleteFolder(uri):
     imgfs = set(ftManager.imageFeatures)
     for di in deletedImages:
         imgfs.remove(di)
+        frr.removeImage(di.hash)
 
     ftManager.imageFeatures = list(imgfs)
     f = []

@@ -29,10 +29,10 @@ project/app/resources/breedclassifier-model/
 
 
 project/app/resources/breedclassifier-model/
-
+project/app/resources/neoServer/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 
-project/app/resources/breedclassifier-model/
+
 
 

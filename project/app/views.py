@@ -102,6 +102,9 @@ def index(request):
             query_text = request.GET.get("query")  # fetching the inputted query
             query_array = processQuery(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+
+            """
+
             result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
 
             results = {tag: []} # blank results dictionary
@@ -113,6 +116,10 @@ def index(request):
                 tags = img.tag.all()    # get all tags from the image
                 results[tag].append((img, tags))    # insert tags in the dictionary
                 img.features = None
+            """
+
+            results = get_image_results(query_array)
+            print(len(results[tag]))
 
             if len(query_array) > 0:
                 def sortByScore(elem):
@@ -128,12 +135,8 @@ def index(request):
 
                 results[tag].sort(key=sortByScore)
 
-            query_text = request.GET.get("query")   # fetching the inputted query
+            # query_text = request.GET.get("query")   # fetching the inputted query
 
-            # acho eu (?)
-            query_text = query_text.lower()
-
-            #results = get_image_results(query_text)
             return render(request, "index.html", {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
@@ -222,8 +225,7 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
-def get_image_results(query_text):
-    query_array = processQuery(query_text)  # processing query with nlp
+def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
     result_hashs = list(map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
@@ -242,107 +244,110 @@ def get_image_results(query_text):
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
-        # -- people --
+        #       ---- people ---
+
         people = img.person.all()
         # verifica se a query ta dentro do nome
         dentro = any([q in p.name.lower() for q in query_array for p in people])
-        if not searchFilterOptions['people'] and dentro:
-            #print('entrou.... (people)')
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)  # se estiver dentro vai adicionar False (não remove)
-                                    # se estiver fora vai adicionar True (remove..)
+        print([p.name.lower() for p in people])
+        print('query array', query_array)
+        if dentro:
+            if not searchFilterOptions['people']:
+                remove.add(True)
+            else:
+                people = img.person.all()
+                relationships = [img.person.all_relationships(t) for t in people if t.name.lower() in query_array]
+                relationships = [rel for r in relationships for rel in r]
+                print('len rels', len(relationships))
+                # if len(relationships) > 0:
+                minn = searchFilterOptions['people_range_min']
+                maxx = searchFilterOptions['people_range_max']
+                outside_limits = all([rel.confiance * 100 < minn or rel.confiance * 100 > maxx for rel in relationships])
+                #print([rel.confiance for rel in relationships])
+                remove.add(outside_limits)
+
 
         # -- manual TODO test --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['manual'] and dentro:
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
+        if dentro:
+                remove.add(not searchFilterOptions['manual'])
 
         # -- object --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['automatic'] and dentro: # objects
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
+        if dentro:
+            if not searchFilterOptions['automatic']:
+                remove.add(True)
+            else:
+                tags = [t for t in img.tag.match(originalTagSource='object')]
+                relationships = [ img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array ]
+                relationships = [ rel for r in relationships for rel in r]
+                # if len(relationships) > 0:
+                minn = searchFilterOptions['objects_range_min']
+                maxx = searchFilterOptions['objects_range_max']
+                outside_limits = all([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
+                print([rel.score for rel in relationships])
+                remove.add(outside_limits) # adiciona Falso se n houver nenhum
 
         # -- folder name --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
         dentro = any([q in t for q in query_array for t in tags])
+        """
         if not searchFilterOptions['folder_name'] and dentro:
             remove.add(dentro)
         else:
             remove.add(not dentro)
+        """
+        if dentro:
+            remove.add(not searchFilterOptions['folder_name'])
 
 
         # -- ocr --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['text'] and dentro:
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
+        if dentro:
+            remove.add(not searchFilterOptions['text'])
+
         # -- exif --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['exif'] and dentro:
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
+        if dentro:
+            remove.add(not searchFilterOptions['exif'])
 
         # -- places --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['places'] and dentro:
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
+        if dentro:
+            remove.add(not searchFilterOptions['places'])
+
 
         # -- breeds --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
         dentro = any([q in t for q in query_array for t in tags])
-        if not searchFilterOptions['breeds'] and dentro:
-            #print('entrou breeds!!', dentro)
-            #print(query_array)
-            #print(tags)
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
-
-        # --- RANGES ---
-        # -- object range --
-        if searchFilterOptions['automatic']:
-            tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
-            relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
-            minn = searchFilterOptions['objects_range_min']
-            maxx = searchFilterOptions['objects_range_max']
-            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
-            remove.add(outside_limits)
-
-        # -- face range --
-        if searchFilterOptions['people']:
-            people = img.person.all()
-            relationships = [ img.person.relationship(t) for t in people if t.name in query_array ]
-            minn = searchFilterOptions['people_range_min']
-            maxx = searchFilterOptions['people_range_max']
-            outside_limits = any([rel.confiance*100 < minn or rel.confiance*100 > maxx for rel in relationships])
-            remove.add(outside_limits)
-
-        # -- breeds range --
-        if searchFilterOptions['breeds']:
-            tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
-            relationships = [ img.tag.relationship(t) for t in tags if t in query_array ]
-            minn = searchFilterOptions['breeds_range_min']
-            maxx = searchFilterOptions['breeds_range_max']
-            outside_limits = any([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
-            remove.add(outside_limits)
+        if dentro:
+            print('dentro breeds')
+            if not searchFilterOptions['breeds']:
+                remove.add(True)
+            else:
+                tags = [t for t in img.tag.match(originalTagSource='breeds')] # TODO usar isto do disjoint nos outros lados!! e tirar os prints
+                # relationships = [img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array]
+                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+                relationships = [rel for r in relationships for rel in r]
+                #if len(relationships) > 0:
+                minn = searchFilterOptions['breeds_range_min']
+                maxx = searchFilterOptions['breeds_range_max']
+                outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
+                print('breeds', [rel.score for rel in relationships])
+                remove.add(outside_limits)
 
 
+        print('remove', remove)
         if not all(remove):
-            results[tag].append((img, tags))  # insert tags in the dictionary
+            print('adicionou..')
+            img.features = None
+            # tags = img.tag.all()
+            results[tag].append((img, img.tag.all()))  # insert tags in the dictionary
     return results
 
 def delete(request, path):
@@ -378,24 +383,13 @@ def managepeople(request):
         filters = PeopleFilterForm(request.POST)
         #print('entrou aqui...')
         #print(filters)
+        filters.is_valid()
         filters2 = filters.cleaned_data
         #print('cleanded fore valid', filters2)
 
         showDict['unverified'] = filters2['unverified']
         showDict['verified'] = filters2['verified']
-        """
-        if filters.is_valid() and filters.has_changed():
-            print('entrou aqui tmb')
-            filters = filters.cleaned_data
-            print(filters)
 
-            #showDict = filters
-            showDict['unverified'] = filters['unverified']
-            showDict['verified'] = filters['verified']
-            print(showDict)
-        else:
-            print('invalid...')
-        """
         return redirect('/people')
         # return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
 
