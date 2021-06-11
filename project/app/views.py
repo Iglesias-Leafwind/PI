@@ -1,4 +1,5 @@
 import csv
+import datetime
 import io
 import json
 import os
@@ -169,6 +170,18 @@ def change_filters(request):
     searchFilterOptions['breeds'] = form['breeds']
     searchFilterOptions['exif'] = form['exif']
 
+    searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
+
+    if searchFilterOptions['insertion_date_activate']: # update dates
+        print(searchFilterOptions.keys())
+        print(form.keys())
+        if 'insertion_date_from' in form:
+            print('insertion_date_from is in form!')
+            searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
+        if 'insertion_date_to' in form:
+            print('insertion_date_to is in form!')
+            searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
+
     # -- confiance object extraction --
     max_obj_extr = form['objects_range_max']
     min_obj_extr = form['objects_range_min']
@@ -255,13 +268,27 @@ def get_image_results(query_array):
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
+        """
+        # ---- dates -----
+        if searchFilterOptions['insertion_date_activate']:
+            fromm = searchFilterOptions['insertion_date_from']
+            fromm =  datetime.datetime.strptime(fromm, '%d-%m-%y')
+            too = searchFilterOptions['insertion_date_to']
+            print('type db: ', type(img.insertion_date))
+            print('type fromm: ', type(fromm))
+            print('fromm: ', fromm)
+        """
+
+
+
+
         #       ---- people ---
 
         people = img.person.all()
         # verifica se a query ta dentro do nome
         dentro = any([q in p.name.lower() for q in query_array for p in people])
-        print([p.name.lower() for p in people])
-        print('query array', query_array)
+        #print([p.name.lower() for p in people])
+        #print('query array', query_array)
         if dentro:
             if not searchFilterOptions['people']:
                 remove.add(True)
@@ -269,7 +296,7 @@ def get_image_results(query_array):
                 people = img.person.all()
                 relationships = [img.person.all_relationships(t) for t in people if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [rel for r in relationships for rel in r]
-                print('len rels', len(relationships))
+                #print('len rels', len(relationships))
                 # if len(relationships) > 0:
                 minn = searchFilterOptions['people_range_min']
                 maxx = searchFilterOptions['people_range_max']
@@ -298,18 +325,12 @@ def get_image_results(query_array):
                 minn = searchFilterOptions['objects_range_min']
                 maxx = searchFilterOptions['objects_range_max']
                 outside_limits = all([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
-                print([rel.score for rel in relationships])
+                #print([rel.score for rel in relationships])
                 remove.add(outside_limits) # adiciona Falso se n houver nenhum
 
         # -- folder name --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
         dentro = any([q in t for q in query_array for t in tags])
-        """
-        if not searchFilterOptions['folder_name'] and dentro:
-            remove.add(dentro)
-        else:
-            remove.add(not dentro)
-        """
         if dentro:
             remove.add(not searchFilterOptions['folder_name'])
 
@@ -347,7 +368,7 @@ def get_image_results(query_array):
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
-            print('dentro breeds')
+            #print('dentro breeds')
             if not searchFilterOptions['breeds']:
                 remove.add(True)
             else:
@@ -359,13 +380,13 @@ def get_image_results(query_array):
                 minn = searchFilterOptions['breeds_range_min']
                 maxx = searchFilterOptions['breeds_range_max']
                 outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
-                print('breeds', [rel.score for rel in relationships])
+                #print('breeds', [rel.score for rel in relationships])
                 remove.add(outside_limits)
 
 
-        print('remove', remove)
+        #print('remove', remove)
         if not all(remove):
-            print('adicionou..')
+            #print('adicionou..')
             img.features = None
             # tags = img.tag.all()
             results[tag].append((img, img.tag.all()))  # insert tags in the dictionary

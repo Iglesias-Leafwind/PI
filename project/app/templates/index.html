@@ -1,11 +1,12 @@
 {% extends 'topbar.html' %}
 {% load static %}
 
+
 {% block content %}
 <div class="results">
 
     <!-- filters -->
-        <form action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
+        <form autocomplete="off"  action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ filters_form }}
             <!-- também dá para meter ele a atualizar
@@ -13,6 +14,14 @@
             se isso será mais chato pro user -->
             <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
         </form>
+
+<!--
+<label for="from">From</label>
+<input type="text" id="from" name="from">
+<label for="to">to</label>
+<input type="text" id="to" name="to">
+
+-->
     <!-- end filters -->
 
         <div id="exportDiv" style="display: none">
@@ -257,6 +266,52 @@
         document.body.scrollTop = 0; // For Safari
         document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
     }
+
+
+    // date picker
+  $( function() {
+    var dateFormat = "dd-mm-yy",
+      from = $( "#insertion_date_from" )
+        .datepicker({
+          defaultDate: "+1w",
+          changeMonth: true,
+            changeYear: true,
+          // numberOfMonths: 3,
+            dateFormat: dateFormat
+        })
+        .on( "change", function() {
+          to.datepicker( "option", "minDate", getDate( this ) );
+          to.datepicker( "option", "value", getDate( this ) );
+          to.val(getDate(this));
+
+        }),
+      to = $( "#insertion_date_to" ).datepicker({
+        defaultDate: "+1w",
+        changeMonth: true,
+        // numberOfMonths: 3,
+          changeYear: true,
+          dateFormat: dateFormat
+      })
+      .on( "change", function() {
+        from.datepicker( "option", "maxDate", getDate( this ) );
+        from.datepicker( "option", "value", getDate( this ) );
+          to.val(getDate(this));
+
+
+      });
+
+    function getDate( element ) {
+      var date;
+      try {
+        date = $.datepicker.parseDate( dateFormat, element.value );
+      } catch( error ) {
+        date = null;
+      }
+
+      return date;
+    }
+  } );
+
 
 </script>
 {% endblock %}

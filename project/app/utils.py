@@ -48,6 +48,11 @@ searchFilterOptions = {
 
     'breeds_range_min': int(breedsThreshold * 100),
     'breeds_range_max': 100,
+
+    'insertion_date_activate' : False,
+
+    'insertion_date_from' : None,
+    'insertion_date_to' : None,
 }
 
 def getImagesPerUri(pathName):
