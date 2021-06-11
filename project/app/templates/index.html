@@ -3,6 +3,18 @@
 
 {% block content %}
 <div class="results">
+
+    <!-- filters -->
+        <form action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ filters_form }}
+            <!-- também dá para meter ele a atualizar
+            logo q se carrega numa checkbox, mas nao sei
+            se isso será mais chato pro user -->
+            <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
+        </form>
+    <!-- end filters -->
+
         <div id="exportDiv" style="display: none">
             <button style="margin: 0vh 1vw 0vh 3vw;" type="button" id="excel_btn" class="btn btn-primary">Export to excel</button>
             <button type="button" id="zip_btn" class="btn btn-primary">Export to zip</button>
