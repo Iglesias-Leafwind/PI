@@ -90,17 +90,22 @@ def reset_filters():
     searchFilterOptions['breeds_range_min'] = int(breedsThreshold * 100)
     searchFilterOptions['breeds_range_max'] = 100
 
-    searchFilterOptions['insertion_date_activate'] = False
-
-    searchFilterOptions['insertion_date_from'] = None
-    searchFilterOptions['insertion_date_to'] = None
 
     searchFilterOptions['size_large'] = True
     searchFilterOptions['size_medium'] = True
     searchFilterOptions['size_small'] = True
 
+    searchFilterOptions['insertion_date_activate'] = False
+    searchFilterOptions['insertion_date_from'] = None
+    searchFilterOptions['insertion_date_to'] = None
     timeHelper['insertion_date_from'] = None
     timeHelper['insertion_date_to'] = None
+
+    searchFilterOptions['taken_date_activate'] = False
+    searchFilterOptions['taken_date_from'] = None
+    searchFilterOptions['taken_date_to'] = None
+    timeHelper['taken_date_from'] = None
+    timeHelper['taken_date_to'] = None
 
 timeHelper = {}
 searchFilterOptions = {}

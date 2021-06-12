@@ -141,17 +141,13 @@
                     <!---- taken date ---->
                     <div class="col-sm-3">
                         <div class="card">
-                            <!--
                         <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}
-                                TODO</h5>
+                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">Select a range for the date that the images were
-                                taken for
-                                this search.</h6>
+                                taken for this search.</h6>
                             <p class="card-text">From {{ filters_form.taken_date_from }}</p>
                             <p class="card-text">To {{ filters_form.taken_date_to }}</p>
                         </div>
-                        -->
                         </div>
                     </div>
 
@@ -509,6 +505,46 @@
 
                     }),
                 to = $("#insertion_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
+                // date picker 2
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#taken_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#taken_date_to").datepicker({
                     defaultDate: "+1w",
                     changeMonth: true,
                     // numberOfMonths: 3,
