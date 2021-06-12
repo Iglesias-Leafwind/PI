@@ -443,9 +443,9 @@ def processing(dirFiles):
                         faceRecLock.acquire()
                         db.begin()
                         face_rec_part(read_image, img_path, tags, image)
+                        db.commit()
                     finally:
                         faceRecLock.release()
-                        db.commit()
                     #     p = Person.nodes.get_or_none(name=name)
 
                     logging.info("[Processing]: " + threading.current_thread().name + " [INFO] Places of " + img_path)
@@ -531,7 +531,7 @@ def processing(dirFiles):
         uploadLock.release()
 
 def getLocations(latitude,longitude):
-    results = rg.search((latitude,longitude))
+    results = rg.search((latitude,longitude), mode=1)
     return [results[0]['name'], results[0]['admin2'], results[0]['admin1']]
 
 
