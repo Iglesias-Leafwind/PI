@@ -126,27 +126,27 @@ class PersonsForm(forms.Form):
                 yield self[field_name]
 
 class FilterSearchForm(forms.Form):
-    automatic = forms.BooleanField(required=False, label='Objects detected')
-    manual = forms.BooleanField(required=False, label='Manual tags')
-    folder_name = forms.BooleanField(required=False, label='Folder name')
-    people = forms.BooleanField(required=False, label='People identified')
-    text = forms.BooleanField(required=False, label='Text detected')
-    exif = forms.BooleanField(required=False, label='Image metadata')
-    places = forms.BooleanField(required=False, label='Scenes detected')
-    breeds = forms.BooleanField(required=False, label='Pet breeds identified')
+    automatic = forms.BooleanField(required=False, label='Objects detected', label_suffix='')
+    manual = forms.BooleanField(required=False, label='Manual tags', label_suffix='')
+    folder_name = forms.BooleanField(required=False, label='Folder name', label_suffix='')
+    people = forms.BooleanField(required=False, label='People identified', label_suffix='')
+    text = forms.BooleanField(required=False, label='Text detected', label_suffix='')
+    exif = forms.BooleanField(required=False, label='Image metadata', label_suffix='')
+    places = forms.BooleanField(required=False, label='Scenes detected', label_suffix='')
+    breeds = forms.BooleanField(required=False, label='Pet breeds identified', label_suffix='')
     current_url = forms.CharField(required=True, widget=HiddenInput)
 
-    objects_range_min = forms.IntegerField(required=False, label='Min confiance object extraction')
-    objects_range_max = forms.IntegerField(required=False, label='Max confiance object extraction')
+    objects_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance object extraction')
+    objects_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance object extraction')
 
-    places_range_min = forms.IntegerField(required=False, label='Min confiance places extraction')
-    places_range_max = forms.IntegerField(required=False, label='Max confiance places extraction')
+    places_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance places extraction')
+    places_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance places extraction')
 
-    people_range_min = forms.IntegerField(required=False, label='Min confiance people identified')
-    people_range_max = forms.IntegerField(required=False, label='Max confiance people identified')
+    people_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance people identified')
+    people_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance people identified')
 
-    breeds_range_min = forms.IntegerField(required=False, label='Min confiance pet breeds identified')
-    breeds_range_max = forms.IntegerField(required=False, label='Max confiance pet breeds identified')
+    breeds_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance pet breeds identified')
+    breeds_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance pet breeds identified')
 
     insertion_date_activate = forms.BooleanField(required=False, label='Filter by insertion date')
     insertion_date_from = forms.CharField(required=False, widget=forms.TextInput
