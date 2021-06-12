@@ -115,6 +115,20 @@
                 </div>
 
 
+                <!---- insertion date ---->
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the images for
+                                this search.</h6>
+                            <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
+                            <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
         </div>
         {{ filters_form.current_url }}

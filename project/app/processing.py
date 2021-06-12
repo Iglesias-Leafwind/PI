@@ -442,7 +442,7 @@ def processing(dirFiles):
                     try:
                         faceRecLock.acquire()
                         db.begin()
-                        #face_rec_part(read_image, img_path, tags, image)
+                        face_rec_part(read_image, img_path, tags, image)
                     finally:
                         faceRecLock.release()
                         db.commit()
