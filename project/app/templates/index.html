@@ -120,10 +120,57 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the images for
-                                this search.</h6>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the
+                                images for this search.</h6>
                             <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
                             <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!---- taken date ---->
+                <div class="col-sm-3">
+                    <div class="card">
+                        <!--
+                        <div class="card-body">
+                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}
+                                TODO</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the date that the images were
+                                taken for
+                                this search.</h6>
+                            <p class="card-text">From {{ filters_form.taken_date_from }}</p>
+                            <p class="card-text">To {{ filters_form.taken_date_to }}</p>
+                        </div>
+                        -->
+                    </div>
+                </div>
+
+                <!---- size of the images ---->
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Select images size</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select the image sizes for
+                                this search.</h6>
+                            <p class="card-text">{{ filters_form.size_large }} {{ filters_form.size_large.label_tag }}</p>
+                            <p class="card-text">{{ filters_form.size_medium }} {{ filters_form.size_medium.label_tag }}</p>
+                            <p class="card-text">{{ filters_form.size_small }} {{ filters_form.size_small.label_tag }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!---- options and submit ---->
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <!--<h5 class="card-title">Apply</h5>-->
+                            <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
+                            <!--
+                            <button type="submit" class="btn btn-primary">Apply</button>-->
+                            <br>
+                            <button type="submit" name="reset_filters" class="btn btn-danger">Show all (reset filters)</button>
+
+
                         </div>
                     </div>
                 </div>
@@ -132,7 +179,6 @@
             </div>
         </div>
         {{ filters_form.current_url }}
-        <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
     </form>
 
 

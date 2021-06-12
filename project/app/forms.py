@@ -154,6 +154,10 @@ class FilterSearchForm(forms.Form):
     insertion_date_to = forms.CharField(required=False, widget=forms.TextInput
     (attrs={ 'id': 'insertion_date_to', 'name': 'insertion_date_to' }) )
 
+    size_large = forms.BooleanField(required=False, label='Large', label_suffix='')
+    size_medium = forms.BooleanField(required=False, label='Medium', label_suffix='')
+    size_small = forms.BooleanField(required=False, label='Small', label_suffix='')
+
 
 """
 <label for="from">From</label>

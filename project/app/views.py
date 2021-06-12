@@ -17,7 +17,8 @@ from app.models import ImageES, ImageNeo, Tag, Person, Location
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
 from app.processing import frr
 
-from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
+from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
+    is_small, is_medium, is_large, reset_filters
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict,faceRecLock
@@ -161,6 +162,11 @@ def change_filters(request):
     form.is_valid() # ele diz que o form é invalido se algum
                     # checkbox for False, idk why..
     form = form.cleaned_data
+
+    if 'reset_filters' in request.POST:
+        reset_filters()
+        return redirect(form['current_url'])
+
     searchFilterOptions['automatic'] = form['automatic']
     searchFilterOptions['manual'] = form['manual']
     searchFilterOptions['folder_name'] = form['folder_name']
@@ -169,6 +175,10 @@ def change_filters(request):
     searchFilterOptions['places'] = form['places']
     searchFilterOptions['breeds'] = form['breeds']
     searchFilterOptions['exif'] = form['exif']
+
+    searchFilterOptions['size_large'] = form['size_large']
+    searchFilterOptions['size_medium'] = form['size_medium']
+    searchFilterOptions['size_small'] = form['size_small']
 
     searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
 
@@ -272,6 +282,17 @@ def get_image_results(query_array):
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
+
+        if not searchFilterOptions['size_small'] and is_small(img.height, img.width):
+            continue
+
+        if not searchFilterOptions['size_medium'] and is_medium(img.height, img.width):
+            continue
+
+        if not searchFilterOptions['size_large'] and is_large(img.height, img.width):
+            continue
+
+
         # ---- dates -----
         if searchFilterOptions['insertion_date_activate']:
 
@@ -307,7 +328,7 @@ def get_image_results(query_array):
                 remove.add(outside_limits)
 
 
-        # -- manual TODO test --
+        # -- manual --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
