@@ -18,7 +18,7 @@ from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImag
 from app.processing import frr
 
 from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
-    is_small, is_medium, is_large, reset_filters
+    is_small, is_medium, is_large, reset_filters, timeHelper
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict,faceRecLock
@@ -184,14 +184,18 @@ def change_filters(request):
 
     if searchFilterOptions['insertion_date_activate']: # update dates
         try:
-            searchFilterOptions['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+            timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+            searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
         except ValueError: # invalid format
-            pass
+            searchFilterOptions['insertion_date_from'] = None
+            timeHelper['insertion_date_from'] = None
 
         try:
-            searchFilterOptions['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+            timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+            searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
         except ValueError:  # invalid format
-            pass
+            searchFilterOptions['insertion_date_to'] = None
+            timeHelper['insertion_date_to'] = None
 
     # -- confiance object extraction --
     max_obj_extr = form['objects_range_max']
@@ -296,11 +300,11 @@ def get_image_results(query_array):
         # ---- dates -----
         if searchFilterOptions['insertion_date_activate']:
 
-            fromm = searchFilterOptions['insertion_date_from']
+            fromm = timeHelper['insertion_date_from']
             if fromm is not None:
                 if isBeforeThan(img, fromm):
                     continue # is before the limit, not shown
-            too = searchFilterOptions['insertion_date_to']
+            too = timeHelper['insertion_date_to']
             if too is not None:
                 if isLaterThan(img, too):
                     continue

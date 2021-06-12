@@ -68,6 +68,7 @@ searchFilterOptions = {
 
 def reset_filters():
     global searchFilterOptions
+    global timeHelper
     searchFilterOptions['automatic'] = True,  # isto sao os objects
     searchFilterOptions['manual'] = True,
     searchFilterOptions['folder_name'] = True
@@ -98,6 +99,10 @@ def reset_filters():
     searchFilterOptions['size_medium'] = True
     searchFilterOptions['size_small'] = True
 
+    timeHelper['insertion_date_from'] = None
+    timeHelper['insertion_date_to'] = None
+
+timeHelper = {}
 searchFilterOptions = {}
 reset_filters()
 

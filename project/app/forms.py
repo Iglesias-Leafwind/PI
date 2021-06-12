@@ -149,9 +149,9 @@ class FilterSearchForm(forms.Form):
     breeds_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance pet breeds identified')
 
     insertion_date_activate = forms.BooleanField(required=False, label='Filter by insertion date', label_suffix='')
-    insertion_date_from = forms.CharField(required=False, widget=forms.TextInput
+    insertion_date_from = forms.CharField(max_length=10, required=False, widget=forms.TextInput
     (attrs={'id' : 'insertion_date_from', 'name' : 'insertion_date_from' }) )
-    insertion_date_to = forms.CharField(required=False, widget=forms.TextInput
+    insertion_date_to = forms.CharField(max_length=10, required=False, widget=forms.TextInput
     (attrs={ 'id': 'insertion_date_to', 'name': 'insertion_date_to' }) )
 
     size_large = forms.BooleanField(required=False, label='Large', label_suffix='')
