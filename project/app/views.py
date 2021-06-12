@@ -173,14 +173,15 @@ def change_filters(request):
     searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
 
     if searchFilterOptions['insertion_date_activate']: # update dates
-        print(searchFilterOptions.keys())
-        print(form.keys())
-        if 'insertion_date_from' in form:
-            print('insertion_date_from is in form!')
-            searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
-        if 'insertion_date_to' in form:
-            print('insertion_date_to is in form!')
-            searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
+        try:
+            searchFilterOptions['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+        except ValueError: # invalid format
+            pass
+
+        try:
+            searchFilterOptions['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+        except ValueError:  # invalid format
+            pass
 
     # -- confiance object extraction --
     max_obj_extr = form['objects_range_max']
@@ -257,6 +258,9 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
+isBeforeThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
+isLaterThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
+
 def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
@@ -268,19 +272,17 @@ def get_image_results(query_array):
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
-        """
         # ---- dates -----
         if searchFilterOptions['insertion_date_activate']:
+
             fromm = searchFilterOptions['insertion_date_from']
-            fromm =  datetime.datetime.strptime(fromm, '%d-%m-%y')
+            if fromm is not None:
+                if isBeforeThan(img, fromm):
+                    continue # is before the limit, not shown
             too = searchFilterOptions['insertion_date_to']
-            print('type db: ', type(img.insertion_date))
-            print('type fromm: ', type(fromm))
-            print('fromm: ', fromm)
-        """
-
-
-
+            if too is not None:
+                if isLaterThan(img, too):
+                    continue
 
         #       ---- people ---
 

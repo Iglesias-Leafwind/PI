@@ -281,8 +281,7 @@
         })
         .on( "change", function() {
           to.datepicker( "option", "minDate", getDate( this ) );
-          to.datepicker( "option", "value", getDate( this ) );
-          to.val(getDate(this));
+          // from.val(getDate(this));
 
         }),
       to = $( "#insertion_date_to" ).datepicker({
@@ -294,9 +293,6 @@
       })
       .on( "change", function() {
         from.datepicker( "option", "maxDate", getDate( this ) );
-        from.datepicker( "option", "value", getDate( this ) );
-          to.val(getDate(this));
-
 
       });
 
