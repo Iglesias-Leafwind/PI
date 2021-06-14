@@ -707,7 +707,6 @@ def objectsGallery(request):
 
     allObjectTags = dict(sorted(allObjectTags.items()))
 
-    print(allObjectTags)
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': allObjectTags})
 
@@ -716,27 +715,50 @@ def peopleGallery(request):
     image = SearchForImageForm()
     allNames = Person().getVerified()
 
+    # allNames = ["hello"]
+
     allNames = sorted(list(set(allNames)))
 
+    print(allNames)
+
+    allNamesDict = {}
+
+    for name in allNames:
+        firstLetter = name[0]
+        if firstLetter not in allNamesDict.keys():
+            allNamesDict[firstLetter] = [name]
+        else:
+            allNamesDict[firstLetter] += [name]
+    print(allNamesDict)
     return render(request, 'peopleGallery.html',
-                  {'form': form, 'image_form': image, 'people': allNames})
+                  {'form': form, 'image_form': image, 'people': allNamesDict})
 
 def scenesGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allPlaceTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "places" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "places":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allPlaceTags.keys():
+                    allPlaceTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allPlaceTags[firstLetter]:
+                        allPlaceTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allPlaceTags:
+        value = allPlaceTags[key]
+        value = value.sort()
+
+    allPlaceTags = dict(sorted(allPlaceTags.items()))
     return render(request, 'placesGallery.html',
-                  {'form': form, 'image_form': image, 'placesTags': allTags})
-  
+                  {'form': form, 'image_form': image, 'placesTags': allPlaceTags})
+
+''' 
 def locationsGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -752,23 +774,33 @@ def locationsGallery(request):
             #print(location)
     return render(request, 'locationsGallery.html',
                   {'form': form, 'image_form': image, 'locations': locations})
+'''
 
 def textGallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allTags = []
+    allTextTags = {}
     for tag in Tag.nodes.all():
         imgList = tag.image.all()
         for img in imgList:
             rel = img.tag.relationship(tag)
             originalTagSource = rel.originalTagSource
-            if originalTagSource == "ocr" and tag.name not in allTags:
-                allTags += [tag.name.lower()]
+            if originalTagSource == "ocr":
+                firstLetter = tag.name[0].upper()
+                if firstLetter not in allTextTags.keys():
+                    allTextTags[firstLetter] = [tag.name.lower()]
+                else:
+                    if tag.name not in allTextTags[firstLetter]:
+                        allTextTags[firstLetter] += [tag.name.lower()]
 
-    allTags = sorted(allTags)
+    for key in allTextTags:
+        value = allTextTags[key]
+        value = value.sort()
+
+    allTextTags = dict(sorted(allTextTags.items()))
 
     return render(request, 'textGallery.html',
-                  {'form': form, 'image_form': image, 'textTags': allTags})
+                  {'form': form, 'image_form': image, 'textTags': allTextTags})
 
 def exportToZip(request, ids):
     ids = ids[1:]

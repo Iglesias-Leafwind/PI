@@ -2,12 +2,18 @@
 {% load static %}
 
 {% block content %}
+    <style>
+    html, body {
+        overflow: hidden;
+    }
+</style>
+
     <!-- Main Sidebar Container -->
-  <aside style="position: absolute; top: 12vh;" class="main-sidebar">
+  <aside style="position: absolute; top: 12vh; padding-top: 5vw;" class="main-sidebar">
       <!-- Sidebar Menu -->
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          <li class="sadnav-item nav-item">
+          <li style="text-align: center" class="sadnav-item nav-item">
             <a href="{% url 'textGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-font"></i>
               <span>
@@ -15,7 +21,7 @@
               </span>
             </a>
           </li>
-          <li class="sadnav-item nav-item">
+          <li style="text-align: center" class="sadnav-item nav-item">
             <a href="{% url 'placesGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-search-location"></i>
               <span>
@@ -23,7 +29,7 @@
               </span>
             </a>
           </li>
-          <li class="sadnav-item nav-item">
+          <li style="text-align: center" class="sadnav-item nav-item">
             <a href="{% url 'peopleGallery' %}" class="nav-link">
               <i class="nav-icon fa fa-users"></i>
               <span>
@@ -31,7 +37,7 @@
               </span>
             </a>
           </li>
-          <li class="sadnav-item nav-item">
+          <li style="text-align: center" class="sadnav-item nav-item">
             <a href="{% url 'objectsGallery' %}" class="nav-link">
               <i class="nav-icon fas fa-cubes"></i>
               <span>
@@ -39,7 +45,7 @@
               </span>
             </a>
           </li>
-          <li class="sadnav-item nav-item">
+          <li style="text-align: center" class="sadnav-item nav-item">
             <a href="{% url 'gallery' %}" class="nav-link">
               <i class="nav-icon fas fa-calendar-alt"></i>
               <span>
