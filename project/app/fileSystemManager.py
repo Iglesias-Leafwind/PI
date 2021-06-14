@@ -250,19 +250,19 @@ class SimpleFileSystemManager:
             for l in image.location:
                 l.image.disconnect(image)
                 if len(l.image) == 0:
-                    l.delete()
                     for city in l.city:
                         city.location.disconnect(l)
                         if len(city.location) == 0:
-                            city.delete()
                             for region in city.region:
                                 region.city.disconnect(city)
                                 if len(region.city) == 0:
-                                    region.delete()
                                     for country in region.country:
                                         country.region.disconnect(region)
                                         if len(country.region) == 0:
                                             country.delete()
+                                    region.delete()
+                            city.delete()
+                    l.delete()
 
 
     def getAllUris(self):
