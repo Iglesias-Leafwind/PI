@@ -24,7 +24,7 @@ class Node:
     def __str__(self):
         return self.name
 
-    def deleteNode(self, node):
+    def delete_node(self, node):
         if node.name in self.children:
             self.children.pop(node.name)
 
@@ -51,7 +51,7 @@ class SimpleFileSystemManager:
 
         return node.terminated
 
-    def addFullPathUri(self, uri: str, ids: list):
+    def add_full_path_uri(self, uri: str, ids: list):
         folders = re.split("[\\\/]+", uri)
         if folders[len(folders) - 1].strip() == "":
             folders = folders[:-1]
@@ -81,7 +81,7 @@ class SimpleFileSystemManager:
 
     # add a new folder under the given uri
     # given uri must exist in fileSystemManager
-    def expandUri(self, uri, folder, id):
+    def expand_uri(self, uri, folder, id):
         folders, root = self.__splitUriAndGetRoot__(uri)
 
         if root in self.trees:
@@ -96,7 +96,7 @@ class SimpleFileSystemManager:
             newNode.terminated = True
             node.children[folder] = newNode
 
-    def getLastNode(self, uri):
+    def get_last_node(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
 
         if root in self.trees:
@@ -111,7 +111,7 @@ class SimpleFileSystemManager:
 
             return node
 
-    def createUriInNeo4j(self, uri):
+    def create_uri_in_neo4j(self, uri):
         folders, root = self.__splitUriAndGetRoot__(uri)
         print(" uri ", uri, "folders", folders)
         if root in self.trees:
@@ -156,19 +156,19 @@ class SimpleFileSystemManager:
             path = os.path.join(path, p)
         return path
 
-    def deleteFolderFromFs(self, uri):
+    def delete_folder_from_fs(self, uri):
         if self.exist(uri):
-            node = self.getLastNode(uri)
+            node = self.get_last_node(uri)
 
             if node and node.parent:
-                node.parent.deleteNode(node)
+                node.parent.delete_node(node)
 
-            folderstoBeDeleted = [Folder.nodes.get_or_none(id_=node.id)]
+            foldersto_be_deleted = [Folder.nodes.get_or_none(id_=node.id)]
 
             deletedImages = []
 
-            while folderstoBeDeleted != []:
-                f = folderstoBeDeleted.pop()
+            while foldersto_be_deleted != []:
+                f = foldersto_be_deleted.pop()
                 if not f:
                     continue
 
@@ -184,46 +184,45 @@ class SimpleFileSystemManager:
                                     if folder.id != f.id and not folder.isChildOf(f.id_):
                                         image.folder_uri = self.__fullPathForFolderNode__(folder)
                                         image.save()
-                                        esImage = ImageES.get(using=es, index='image', id=image.hash)
-                                        esImage.uri = image.folder_uri
-                                        esImage.save(using=es)
+                                        es_image = ImageES.get(using=es, index='image', id=image.hash)
+                                        es_image.uri = image.folder_uri
+                                        es_image.save(using=es)
                                         break
                         else:
-                            self.deleteConnectedTagsAndPersons(image)
-                            self.deleteLocations(image)
+                            self.delete_connected_tags_and_persons(image)
+                            self.delete_locations(image)
                             image.delete()
 
                             thumbnail = os.path.join("app", "static", "thumbnails", str(image.hash)) + ".jpg"
                             os.remove(thumbnail)
 
-                            esImage = ImageES.get(using=es, index='image', id=image.hash)
-                            esImage.delete(using=es)
+                            es_image = ImageES.get(using=es, index='image', id=image.hash)
+                            es_image.delete(using=es)
                             deletedImages.append(ImageFeature(hash=image.hash))
 
                 childrenFolders = f.getChildren()
                 if childrenFolders:
-                    folderstoBeDeleted.extend(list(childrenFolders))
+                    foldersto_be_deleted.extend(list(childrenFolders))
                 f.delete()
 
             # if parent folders have no children folders and no images, delete it
             while node.parent:
-                parentFolder = Folder.nodes.get_or_none(id_=node.parent.id)
-                if not parentFolder:
-                    node.parent.deleteNode(node)
+                parent_folder = Folder.nodes.get_or_none(id_=node.parent.id)
+                if not parent_folder:
+                    node.parent.delete_node(node)
                     node = node.parent
                     continue
-                currNode = node
+                curr_node = node
                 node = node.parent
-                children = parentFolder.getChildren()
-                if len(children) == 0 and not parentFolder.terminated:
-                    parentFolder.delete()
-                    if currNode.name in node.children:
-                        node.children.pop(currNode.name)
+                children = parent_folder.getChildren()
+                if len(children) == 0 and not parent_folder.terminated:
+                    parent_folder.delete()
+                    if curr_node.name in node.children:
+                        node.children.pop(curr_node.name)
                 else: break
 
-            if node.name in self.trees:
-                if len(node.children) == 0:
-                    self.trees.pop(node.name)
+            if node.name in self.trees and len(node.children) == 0:
+                self.trees.pop(node.name)
 
             return deletedImages
 
@@ -234,7 +233,7 @@ class SimpleFileSystemManager:
         paths.append(f.name)
         return self.__builFullPath__(paths)
 
-    def deleteConnectedTagsAndPersons(self, image):
+    def delete_connected_tags_and_persons(self, image):
         for t in image.tag:
             t.image.disconnect(image)
             if len(t.image) == 0:
@@ -245,7 +244,7 @@ class SimpleFileSystemManager:
             if len(p.image) == 0:
                 p.delete()
 
-    def deleteLocations(self, image):
+    def delete_locations(self, image):
         if len(image.location) != 0:
             for l in image.location:
                 l.image.disconnect(image)
@@ -265,7 +264,7 @@ class SimpleFileSystemManager:
                     l.delete()
 
 
-    def getAllUris(self):
+    def get_all_uris(self):
         uris = []
 
         def buildUri(current, uri):

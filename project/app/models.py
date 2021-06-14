@@ -78,7 +78,6 @@ class Tag(StructuredNode):
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    # icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
     def getDetails(self):
@@ -131,9 +130,9 @@ class Folder(StructuredNode):
         results, meta = db.cypher_query(query, {"id_": self.id_})
         return [self.inflate(row[0]) for row in results]
 
-    def isChildOf(self, folderId):
+    def isChildOf(self, folder_id):
         query = "MATCH (f:Folder{id_:$id_})-[*]->(p:Folder{id_:$folderId}) return p"
-        results, meta = db.cypher_query(query, {"id_": self.id_, "folderId": folderId})
+        results, meta = db.cypher_query(query, {"id_": self.id_, "folderId": folder_id})
         return len([path[0] for path in results]) != 0
 
     def getFullPath(self):

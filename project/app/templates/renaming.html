@@ -6,16 +6,6 @@
 
         <form action="" method="post">
             {% csrf_token %}
-            <!--
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="showUnverifiedCheck" value="showUnverifiedCheck">
-                    <label class="form-check-label" for="showUnverifiedCheck">Show Unverified</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="showVerifiedCheck" value="showVerifiedCheck">
-                    <label class="form-check-label" for="showVerifiedCheck">Show Verified</label>
-                </div>
-            -->
             {{ filters }}
         </form>
 
@@ -24,9 +14,6 @@
         <form action="{% url 'update_faces' %}" method="post" enctype="multipart/form-data">
         <div style="border-top: none; margin-top: -5%; margin-left: 10% " class="modal-footer">
             <button type="submit" name="reload" class="btn btn-primary">Save & reload changes</button>
-            <!--
-            <button type="submit" name="save" class="btn btn-primary">Save changes</button>
-            -->
         </div>
       <div class="importantcontainer">
             {% csrf_token %}
@@ -37,9 +24,6 @@
                   <div></div> <!-- so pq dá um espacinho -->
                 <br>
               {% endif %}
-              <!--
-          <input type="checkbox" unchecked data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger">
-          -->
 
             {% endfor %}
 

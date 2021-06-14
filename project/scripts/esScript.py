@@ -5,7 +5,7 @@ import time
 
 esPath = essPath
 
-def openES():
+def open_es():
     global elasticsearchClient
     global es
     elasticsearchClient = subprocess.Popen(esPath)
@@ -20,7 +20,7 @@ def openES():
             print("---- connection error ----")
             time.sleep(1)
 
-def closeES():
+def close_es():
     elasticsearchClient.terminate()
     print("---------------------------------------------terminate---------------------------------------------")
     time.sleep(1)

@@ -3,7 +3,7 @@ from neo4j import GraphDatabase
 import time
 import os
 
-def alterPassword(tx):
+def alter_password(tx):
     tx.run("`ALTER CURRENT USER SET PASSWORD FROM 'neo4j' TO '12345'`")
 
 
@@ -11,7 +11,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 head, _ = os.path.split(dir_path)
 dir_path = os.path.join(head, "app/resources/neoServer/bin/neo4j")
 
-def openNeo4j():
+def open_neo4j():
     print("--------------------------NEO--------------------")
     global neo4j
     global neo
@@ -28,7 +28,7 @@ def openNeo4j():
             print("---- connection error ----")
             time.sleep(1)
 
-def closeNeo4j():
+def close_neo4j():
     if neo4j is not None:
         neo4j.terminate()
         print("---------------------------------------------terminate---------------------------------------------")

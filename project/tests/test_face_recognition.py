@@ -13,7 +13,7 @@ class FaceRecogTestCase(TestCase):
 
     def test_get_box(self):
         faceRecog = FaceRecognition()
-        result = faceRecog.getFaceBoxes(dir_path + "/face.jpg")
+        result = faceRecog.get_face_boxes(dir_path + "/face.jpg")
         self.assertEqual(result[0] is None, False)
         self.assertEqual(result[1] is None, False)
 

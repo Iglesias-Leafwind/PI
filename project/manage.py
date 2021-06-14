@@ -3,8 +3,8 @@
 import os
 import subprocess
 import sys
-from scripts.esScript import closeES,openES
-from scripts.neoScript import closeNeo4j,openNeo4j
+from scripts.esScript import close_es,open_es
+from scripts.neoScript import close_neo4j,open_neo4j
 
 def main():
     """Run administrative tasks."""
@@ -18,11 +18,11 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    openES()
-    openNeo4j()
+    open_es()
+    open_neo4j()
     execute_from_command_line(sys.argv)
-    closeES()
-    closeNeo4j()
+    close_es()
+    close_neo4j()
 
 
 if __name__ == '__main__':

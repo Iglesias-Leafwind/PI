@@ -169,12 +169,9 @@
                     <div class="col-sm-3">
                         <div class="card">
                             <div class="card-body">
-                                <!--<h5 class="card-title">Apply</h5>-->
                                 <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">
                                     Apply
                                 </button>
-                                <!--
-                                <button type="submit" class="btn btn-primary">Apply</button>-->
                                 <br>
                                 <button type="submit" name="reset_filters" class="btn btn-danger">Show all (reset
                                     filters)
@@ -190,19 +187,12 @@
             </div>
             {{ filters_form.current_url }}
         </form>
-    </div> <!-- cobre o form todo_ -->
+    </div> <!-- cobre o form todo-->
 
 
     <div class="results">
 
 
-        <!--
-        <label for="from">From</label>
-        <input type="text" id="from" name="from">
-        <label for="to">to</label>
-        <input type="text" id="to" name="to">
-
-        -->
         <!-- end filters -->
 
         <div id="exportDiv" style="display: none">

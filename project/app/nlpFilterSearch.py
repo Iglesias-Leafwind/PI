@@ -21,14 +21,7 @@ def filterPunctuation(word_tokens):
 def filterStopWords(filtered_word_tokens):
     return set([w for w in filtered_word_tokens if w not in set(stopwords.words('english'))])
 
-'''
-def filteredDictWords(filtered_word_tokens_no_stop_words):
-    english_vocab = set(w.lower() for w in words.words())
-    real_word_tokens = [w for w in filtered_word_tokens_no_stop_words if w in english_vocab]
-    return set(real_word_tokens)
-'''
-
-def stemmingMethod(real_word_tokens): # DO NOT CHANGE THIS ONE IG, THE PROBLEM IS NOT HERE
+def stemming_method(real_word_tokens): # DO NOT CHANGE THIS ONE IG, THE PROBLEM IS NOT HERE
     ps = PorterStemmer()
     ls = LancasterStemmer()
 
@@ -48,7 +41,7 @@ def stemmingMethod(real_word_tokens): # DO NOT CHANGE THIS ONE IG, THE PROBLEM I
 def posTagging(stemmed_words):
     return set(pos_tag(stemmed_words))
 
-def lemmatizationMethod(words_with_tags):
+def lemmatization_method(words_with_tags):
     lemmatized_words = set()
     lemmatizer = WordNetLemmatizer()
     for token, tag in words_with_tags:
@@ -57,20 +50,20 @@ def lemmatizationMethod(words_with_tags):
 
     return lemmatized_words
 
-def getSynsets(lemmatized_words):
-    synsetLst = [wordnet.synsets(token) for token in lemmatized_words]
-    return lemmatized_words | set([elem.lemma_names()[:1][0].lower()  for lst in synsetLst for elem in lst[:5]])
+def get_synsets(lemmatized_words):
+    synset_lst = [wordnet.synsets(token) for token in lemmatized_words]
+    return lemmatized_words | set([elem.lemma_names()[:1][0].lower()  for lst in synset_lst for elem in lst[:5]])
 
 
-def processQuery(text):
+def process_query(text):
     text = text.lower()
     results = tokenizeText(text)
     results = filterPunctuation(results)
     words = filterStopWords(results)
-    results = stemmingMethod(words)
+    results = stemming_method(words)
     results = posTagging(results)
-    results = lemmatizationMethod(results)
-    results = getSynsets(results)
+    results = lemmatization_method(results)
+    results = get_synsets(results)
     return results | words
 
 

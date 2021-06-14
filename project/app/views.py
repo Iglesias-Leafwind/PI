@@ -14,13 +14,13 @@ from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
-from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
+from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder
 from app.processing import frr
 
-from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
+from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
 from scripts.esScript import es
-from app.nlpFilterSearch import processQuery
+from app.nlpFilterSearch import process_query
 from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
@@ -31,45 +31,42 @@ from scripts.pathsPC import do
 def landingpage(request):
     query = SearchForm()  # query form stays the same
     image = SearchForImageForm()  # fetching image form response
-    folders = len(fs.getAllUris())
+    folders = len(fs.get_all_uris())
     path_form = EditFoldersForm()
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
-def updateTags(request, hash):
-    newTagsString = request.POST.get("tags")
-    newTags = re.split('#', newTagsString)
-    newTags = [tag.strip() for tag in newTags if tag.strip() != ""]
-    #print(newTags)
+def update_tags(request, hash):
+    new_tags_string = request.POST.get("tags")
+    new_tags = re.split('#', new_tags_string)
+    new_tags = [tag.strip() for tag in new_tags if tag.strip() != ""]
     image = ImageNeo.nodes.get_or_none(hash=hash)
-    oldTags = [x.name for x in image.tag.all()]
-    #print(oldTags)
+    old_tags = [x.name for x in image.tag.all()]
 
-    for indx, tag in enumerate(newTags):
-        if tag not in oldTags:
-            addTag(hash, tag)
+    for indx, tag in enumerate(new_tags):
+        if tag not in old_tags:
+            add_tag(hash, tag)
 
-    for tag in oldTags:
-        if tag not in newTags:
-            deleteTag(hash, tag)
+    for tag in old_tags:
+        if tag not in new_tags:
+            delete_tag(hash, tag)
 
-    query = SearchForm()
-    image = SearchForImageForm()
     results = {}
     for tag in ImageNeo.nodes.get(hash=hash).tag.all():
         results["#" + tag.name] = tag.image.all()
         count = 0
-        for lstImage in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+        for lst_image in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
             count += 1
-    strForQuery = ""
-    for tag in newTags:
-        strForQuery += tag + " "
-    return redirect("/results?query=" + strForQuery)
+    str_for_query = ""
+    for tag in new_tags:
+        str_for_query += tag + " "
+    return redirect("/results?query=" + str_for_query)
 
 from app.utils import showDict
 
 def index(request):
     # para os filtros
+    index_string = "index.html"
     opts = searchFilterOptions
     opts['current_url'] = request.get_full_path()
     filters = FilterSearchForm(initial=opts)
@@ -86,23 +83,23 @@ def index(request):
                 getresult = ImageNeo.nodes.get_or_none(hash=i)  # fetching each corresponding node
                 if getresult:  # if it exists
                     results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
-            return render(request, "index.html",
+            return render(request, index_string,
                           {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
             results = {}  # blank results dictionary
             for tag in Tag.nodes.all():  # looping through all tag nodes
                 results["#" + tag.name] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
                 count = 0  # counter
-                for lstImage in results["#" + tag.name]:  # for each image of the value of this tag
-                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())  # replace it by a tuple w/ its tags
+                for lst_image in results["#" + tag.name]:  # for each image of the value of this tag
+                    results["#" + tag.name][count] = (lst_image, lst_image.tag.all())  # replace it by a tuple w/ its tags
                     count += 1  # increase counter
-            return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
+            return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
             query = SearchForm()  # cleaning this form
             image = SearchForImageForm()  # fetching the images form
             query_text = request.GET.get("query")  # fetching the inputted query
-            query_array = processQuery(query_text)  # processing query with nlp
+            query_array = process_query(query_text)  # processing query with nlp
             tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
             """
@@ -124,7 +121,7 @@ def index(request):
             print(len(results[tag]))
 
             if len(query_array) > 0:
-                def sortByScore(elem):
+                def sort_by_score(elem):
                     image = elem[0]
                     tags = elem[1]
                     score = 0
@@ -135,11 +132,9 @@ def index(request):
                                 break
                     return - (score / len(query_array))
 
-                results[tag].sort(key=sortByScore)
+                results[tag].sort(key=sort_by_score)
 
-            # query_text = request.GET.get("query")   # fetching the inputted query
-
-            return render(request, "index.html", {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
+            return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
             query = SearchForm()
@@ -148,10 +143,10 @@ def index(request):
             for tag in Tag.nodes.all():
                 results["#" + tag.name] = tag.image.all()
                 count = 0
-                for lstImage in results["#" + tag.name]:
-                    results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+                for lst_image in results["#" + tag.name]:
+                    results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
                     count += 1
-            return render(request, 'index.html', {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
+            return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
 def change_filters(request):
     if request.method != 'POST':
@@ -181,15 +176,17 @@ def change_filters(request):
     searchFilterOptions['size_small'] = form['size_small']
 
     searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
+
+    time_format_string = '%d-%m-%Y'
     if searchFilterOptions['insertion_date_activate']: # update dates
         try:
-            timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+            timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], time_format_string)
             searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
         except ValueError: # invalid format
             searchFilterOptions['insertion_date_from'] = None
             timeHelper['insertion_date_from'] = None
         try:
-            timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+            timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], time_format_string)
             searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
         except ValueError:  # invalid format
             searchFilterOptions['insertion_date_to'] = None
@@ -198,14 +195,14 @@ def change_filters(request):
     searchFilterOptions['taken_date_activate'] = form['taken_date_activate']
     if searchFilterOptions['taken_date_activate']: # update dates
         try:
-            timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], '%d-%m-%Y')
+            timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], time_format_string)
             searchFilterOptions['taken_date_from'] = form['taken_date_from']
         except ValueError: # invalid format
             searchFilterOptions['taken_date_from'] = None
             timeHelper['taken_date_from'] = None
 
         try:
-            timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], '%d-%m-%Y')
+            timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], time_format_string)
             searchFilterOptions['taken_date_to'] = form['taken_date_to']
         except ValueError:  # invalid format
             searchFilterOptions['taken_date_to'] = None
@@ -316,18 +313,12 @@ def get_image_results(query_array):
         if searchFilterOptions['insertion_date_activate']:
 
             fromm = timeHelper['insertion_date_from']
-            if fromm is not None:
-                if isBeforeThan(img, fromm):
+            if fromm is not None and isBeforeThan(img, fromm):
                     continue # is before the limit, not shown
             too = timeHelper['insertion_date_to']
-            if too is not None:
-                if isLaterThan(img, too):
+            if too is not None and isLaterThan(img, too):
                     continue
 
-        # ---- dates taken -----
-        if searchFilterOptions['taken_date_activate']:
-            print(img.creation_date)
-            pass
         """
             fromm = timeHelper['insertion_date_from']
             if fromm is not None:
@@ -344,8 +335,6 @@ def get_image_results(query_array):
         people = img.person.all()
         # verifica se a query ta dentro do nome
         dentro = any([q in p.name.lower() for q in query_array for p in people])
-        #print([p.name.lower() for p in people])
-        #print('query array', query_array)
         if dentro:
             if not searchFilterOptions['people']:
                 remove.add(True)
@@ -412,7 +401,6 @@ def get_image_results(query_array):
                 remove.add(True)
             else:
                 tags = [t for t in img.tag.match(originalTagSource='places')]
-                # relationships = [img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array]
                 relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [rel for r in relationships for rel in r]
                 #if len(relationships) > 0:
@@ -430,7 +418,6 @@ def get_image_results(query_array):
                 remove.add(True)
             else:
                 tags = [t for t in img.tag.match(originalTagSource='breeds')]
-                # relationships = [img.tag.all_relationships(t) for t in tags if t.name.lower() in query_array]
                 relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
                 relationships = [rel for r in relationships for rel in r]
                 #if len(relationships) > 0:
@@ -445,7 +432,6 @@ def get_image_results(query_array):
         if not all(remove):
             #print('adicionou..')
             img.features = None
-            # tags = img.tag.all()
             results[tag].append((img, img.tag.all()))  # insert tags in the dictionary
     return results
 
@@ -454,13 +440,13 @@ def delete(request, path):
     image = SearchForImageForm()
     pathf = EditFoldersForm()
     do(deleteFolder, path)
-    folders = fs.getAllUris()
+    folders = fs.get_all_uris()
     return render(request, 'managefolders.html',
                   {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
 def managefolders(request):
     if 'path' in request.GET:
-        uploadImages(request.GET.get('path'))
+        upload_images(request.GET.get('path'))
         '''
         form = SearchForm()
         image = SearchForImageForm()
@@ -473,24 +459,22 @@ def managefolders(request):
         form = SearchForm()
         image = SearchForImageForm()
         pathf = EditFoldersForm()
-        folders = fs.getAllUris()
+        folders = fs.get_all_uris()
         return render(request, 'managefolders.html',
                       {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
 
+people_url_string = '/people'
 def managepeople(request):
+
     if request.method == 'POST':
         filters = PeopleFilterForm(request.POST)
-        #print('entrou aqui...')
-        #print(filters)
         filters.is_valid()
         filters2 = filters.cleaned_data
-        #print('cleanded fore valid', filters2)
 
         showDict['unverified'] = filters2['unverified']
         showDict['verified'] = filters2['verified']
 
-        return redirect('/people')
-        # return render(request, 'renaming.html', {'form': form, 'image_form': image, 'names_form': names})
+        return redirect(people_url_string)
 
     form = SearchForm()
     image = SearchForImageForm()
@@ -513,7 +497,7 @@ def alreadyProcessed(img_path):
 
 def upload(request):
     data = json.loads(request.body)
-    uploadImages(data["path"])
+    upload_images(data["path"])
     return redirect('/folders')
 
 def searchtag(request):
@@ -521,26 +505,17 @@ def searchtag(request):
     q = Q('bool', should=[Q('term', tags=tag) for tag in get], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
     execute = s.execute()
-    #for i in execute:
-    #    print(i)
     return render(request, 'index.html')
 
-def updateFolders(request):
-    folders = fs.getAllUris()
+def update_folders(request):
+    folders = fs.get_all_uris()
     for folder in folders:
-        uploadImages(folder)
-    form = SearchForm()
-    image = SearchForImageForm()
-    pathf = EditFoldersForm()
+        upload_images(folder)
     return HttpResponseRedirect(reverse('managefolders'))
-    '''
-    return render(request, 'managefolders.html',
-                  {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
-    '''
 
 def update_faces(request):
     if request.method != 'POST':
-        redirect('/people')
+        redirect(people_url_string)
 
     form = PersonsForm(request.POST)
     if not form.is_valid():
@@ -550,7 +525,6 @@ def update_faces(request):
     data = form.cleaned_data
 
     imgs = int(len(form.cleaned_data) / 5)
-    listt = []
     for i in range(imgs):
         # if not data['person_verified_%s' % str(i)]:
         #    continue
@@ -570,9 +544,9 @@ def update_faces(request):
         image_hash = data['person_image_id_%s' % str(i)]
         try:
             faceRecLock.acquire()
-            frr.changeRelationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
+            frr.change_relationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
             if old_personname != new_personname:
-                frr.changeNameTagES(image_hash, new_personname, old_personname)
+                frr.change_name_tag_es(image_hash, new_personname, old_personname)
         finally:
             faceRecLock.release()
     try:
@@ -589,17 +563,17 @@ def update_faces(request):
         finally:
             faceRecLock.release()
 
-    return redirect('/people')
+    return redirect(people_url_string)
 
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
     person_number = 0
-    for p in Person.nodes.all():
+    for _ in Person.nodes.all():
         person_number += 1
 
     location_number = 0
-    for l in Location.nodes.all():
+    for _ in Location.nodes.all():
         location_number +=1
 
     results = {}
@@ -608,201 +582,181 @@ def dashboard(request):
 
         results["#" + tag.name] = tag.image.all()
         count = 0
-        for lstImage in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lstImage, lstImage.tag.all())
+        for lst_image in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
             count += 1
         counts[tag.name] = len(results["#" + tag.name])
 
-    countTags = dict(sorted(counts.items(), key=lambda item: item[1],
+    count_tags = dict(sorted(counts.items(), key=lambda item: item[1],
                             reverse=True))  # sort the dict by its value (count), from the greatest to the lowest
-    if len(countTags) < 10:
-        countTags = dict(itertools.islice(countTags.items(), len(countTags)))
+    if len(count_tags) < 10:
+        count_tags = dict(itertools.islice(count_tags.items(), len(count_tags)))
     else:
-        countTags = dict(itertools.islice(countTags.items(), 10))  # only want the first top 10 more common tags
-    countTags = json.dumps(countTags)
+        count_tags = dict(itertools.islice(count_tags.items(), 10))  # only want the first top 10 more common tags
+    count_tags = json.dumps(count_tags)
 
     ## original tag source statistics
-    countOriginalTagSource = {}
-    allTagLabels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
+    count_original_tag_source = {}
+    all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
                     "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
     for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
+        img_list = tag.image.all()
+        for img in img_list:
             rel = img.tag.relationship(tag)
-            originalTagSource = rel.originalTagSource
-            originalTagSource = allTagLabels[originalTagSource]
-            # print(tag.name, originalTagSource)
-            if originalTagSource not in countOriginalTagSource:
-                countOriginalTagSource[originalTagSource] = 1
+            original_tag_source = rel.originalTagSource
+            original_tag_source = all_tag_labels[original_tag_source]
+            # print(tag.name, original_tag_source)
+            if original_tag_source not in count_original_tag_source:
+                count_original_tag_source[original_tag_source] = 1
             else:
-                countOriginalTagSource[originalTagSource] += 1
+                count_original_tag_source[original_tag_source] += 1
 
-    # print(countOriginalTagSource)
-    for label in allTagLabels.values():
-        if label not in countOriginalTagSource.keys():
-            countOriginalTagSource[label] = 0
+    # print(count_original_tag_source)
+    for label in all_tag_labels.values():
+        if label not in count_original_tag_source.keys():
+            count_original_tag_source[label] = 0
 
-    countOriginalTagSource = dict(sorted(countOriginalTagSource.items(), key=lambda item: item[1]))
-    #print(countOriginalTagSource)
+    count_original_tag_source = dict(sorted(count_original_tag_source.items(), key=lambda item: item[1]))
+    #print(count_original_tag_source)
     return render(request, 'dashboard.html',
-                  {'form': form, 'image_form': image, 'results': results, 'counts': countTags,
-                   'countTagSource': countOriginalTagSource, 'numbers': {'person': person_number, 'location': location_number}})
+                  {'form': form, 'image_form': image, 'results': results, 'counts': count_tags,
+                   'countTagSource': count_original_tag_source, 'numbers': {'person': person_number, 'location': location_number}})
 
-def calendarGallery(request):
+def calendar_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    datesInsertion = {}
-    datesCreation = {}
-    previousImages = []
+    dates_insertion = {}
+    dates_creation = {}
+    previous_images = []
     for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
-            if img not in previousImages:
-                insertionDate = str(img.insertion_date)
-                creationDate = str(img.creation_date)
-                insertionDate = insertionDate.split(" ")[0]
-                creationDate = creationDate.split(" ")[0]
-                if insertionDate not in datesInsertion:
-                    datesInsertion[insertionDate] = 1
+        img_list = tag.image.all()
+        for img in img_list:
+            if img not in previous_images:
+                insertion_date = str(img.insertion_date)
+                creation_date = str(img.creation_date)
+                insertion_date = insertion_date.split(" ")[0]
+                creation_date = creation_date.split(" ")[0]
+                if insertion_date not in dates_insertion:
+                    dates_insertion[insertion_date] = 1
                 else:
-                    datesInsertion[insertionDate] += 1
-                if creationDate != "None":
-                    if creationDate not in datesCreation:
-                        datesCreation[creationDate] = 1
+                    dates_insertion[insertion_date] += 1
+                if creation_date != "None":
+                    if creation_date not in dates_creation:
+                        dates_creation[creation_date] = 1
                     else:
-                        datesCreation[creationDate] += 1
+                        dates_creation[creation_date] += 1
 
-                previousImages += [img]
+                previous_images += [img]
 
             else:
                 continue
 
-    datesInsertion = dict(sorted(datesInsertion.items(), key=lambda item: item[0]))
-    datesInsertion = json.dumps(datesInsertion)
-    datesCreation = dict(sorted(datesCreation.items(), key=lambda item: item[0]))
-    datesCreation = json.dumps(datesCreation)
+    dates_insertion = dict(sorted(dates_insertion.items(), key=lambda item: item[0]))
+    dates_insertion = json.dumps(dates_insertion)
+    dates_creation = dict(sorted(dates_creation.items(), key=lambda item: item[0]))
+    dates_creation = json.dumps(dates_creation)
     return render(request, 'gallery.html',
-                  {'form': form, 'image_form': image, 'datesInsertion': datesInsertion, 'datesCreation': datesCreation})
+                  {'form': form, 'image_form': image, 'dates_insertion': dates_insertion, 'dates_creation': dates_creation})
 
-def objectsGallery(request):
+def objects_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allObjectTags = {}
+    all_object_tags = {}
     for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
+        img_list = tag.image.all()
+        for img in img_list:
             rel = img.tag.relationship(tag)
-            originalTagSource = rel.originalTagSource
-            if originalTagSource == "object":
-                firstLetter = tag.name[0].upper()
-                if firstLetter not in allObjectTags.keys():
-                    allObjectTags[firstLetter] = [tag.name.lower()]
+            original_tag_source = rel.originalTagSource
+            if original_tag_source == "object":
+                first_letter = tag.name[0].upper()
+                if first_letter not in all_object_tags.keys():
+                    all_object_tags[first_letter] = [tag.name.lower()]
                 else:
-                    if tag.name not in allObjectTags[firstLetter]:
-                        allObjectTags[firstLetter] += [tag.name.lower()]
+                    if tag.name not in all_object_tags[first_letter]:
+                        all_object_tags[first_letter] += [tag.name.lower()]
 
-    for key in allObjectTags:
-        value = allObjectTags[key]
+    for key in all_object_tags:
+        value = all_object_tags[key]
         value = value.sort()
 
-    allObjectTags = dict(sorted(allObjectTags.items()))
+    all_object_tags = dict(sorted(all_object_tags.items()))
 
     return render(request, 'objectsGallery.html',
-                  {'form': form, 'image_form': image, 'objectTags': allObjectTags})
+                  {'form': form, 'image_form': image, 'objectTags': all_object_tags})
 
-def peopleGallery(request):
+def people_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allNames = Person().getVerified()
+    all_names = Person().getVerified()
 
-    # allNames = ["hello"]
+    all_names = sorted(list(set(all_names)))
 
-    allNames = sorted(list(set(allNames)))
+    print(all_names)
 
-    print(allNames)
+    all_names_dict = {}
 
-    allNamesDict = {}
-
-    for name in allNames:
-        firstLetter = name[0]
-        if firstLetter not in allNamesDict.keys():
-            allNamesDict[firstLetter] = [name]
+    for name in all_names:
+        first_letter = name[0]
+        if first_letter not in all_names_dict.keys():
+            all_names_dict[first_letter] = [name]
         else:
-            allNamesDict[firstLetter] += [name]
-    print(allNamesDict)
+            all_names_dict[first_letter] += [name]
+    print(all_names_dict)
     return render(request, 'peopleGallery.html',
-                  {'form': form, 'image_form': image, 'people': allNamesDict})
+                  {'form': form, 'image_form': image, 'people': all_names_dict})
 
-def scenesGallery(request):
+def scenes_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    allPlaceTags = {}
+    all_place_tags = {}
     for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
+        img_list = tag.image.all()
+        for img in img_list:
             rel = img.tag.relationship(tag)
-            originalTagSource = rel.originalTagSource
-            if originalTagSource == "places":
-                firstLetter = tag.name[0].upper()
-                if firstLetter not in allPlaceTags.keys():
-                    allPlaceTags[firstLetter] = [tag.name.lower()]
+            original_tag_source = rel.originalTagSource
+            if original_tag_source == "places":
+                first_letter = tag.name[0].upper()
+                if first_letter not in all_place_tags.keys():
+                    all_place_tags[first_letter] = [tag.name.lower()]
                 else:
-                    if tag.name not in allPlaceTags[firstLetter]:
-                        allPlaceTags[firstLetter] += [tag.name.lower()]
+                    if tag.name not in all_place_tags[first_letter]:
+                        all_place_tags[first_letter] += [tag.name.lower()]
 
-    for key in allPlaceTags:
-        value = allPlaceTags[key]
+    for key in all_place_tags:
+        value = all_place_tags[key]
         value = value.sort()
 
-    allPlaceTags = dict(sorted(allPlaceTags.items()))
+    all_place_tags = dict(sorted(all_place_tags.items()))
     return render(request, 'placesGallery.html',
-                  {'form': form, 'image_form': image, 'placesTags': allPlaceTags})
+                  {'form': form, 'image_form': image, 'placesTags': all_place_tags})
 
-''' 
-def locationsGallery(request):
+def text_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
-    locations = {}
+    all_text_tags = {}
     for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
-            location = img.location
-            if location not in locations:
-                locations[location] = 1
-            else:
-                locations[location] += 1
-            #print(location)
-    return render(request, 'locationsGallery.html',
-                  {'form': form, 'image_form': image, 'locations': locations})
-'''
-
-def textGallery(request):
-    form = SearchForm()
-    image = SearchForImageForm()
-    allTextTags = {}
-    for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
+        img_list = tag.image.all()
+        for img in img_list:
             rel = img.tag.relationship(tag)
-            originalTagSource = rel.originalTagSource
-            if originalTagSource == "ocr":
-                firstLetter = tag.name[0].upper()
-                if firstLetter not in allTextTags.keys():
-                    allTextTags[firstLetter] = [tag.name.lower()]
+            original_tag_source = rel.originalTagSource
+            if original_tag_source == "ocr":
+                first_letter = tag.name[0].upper()
+                if first_letter not in all_text_tags.keys():
+                    all_text_tags[first_letter] = [tag.name.lower()]
                 else:
-                    if tag.name not in allTextTags[firstLetter]:
-                        allTextTags[firstLetter] += [tag.name.lower()]
+                    if tag.name not in all_text_tags[first_letter]:
+                        all_text_tags[first_letter] += [tag.name.lower()]
 
-    for key in allTextTags:
-        value = allTextTags[key]
+    for key in all_text_tags:
+        value = all_text_tags[key]
         value = value.sort()
 
-    allTextTags = dict(sorted(allTextTags.items()))
+    all_text_tags = dict(sorted(all_text_tags.items()))
 
     return render(request, 'textGallery.html',
-                  {'form': form, 'image_form': image, 'textTags': allTextTags})
+                  {'form': form, 'image_form': image, 'textTags': all_text_tags})
 
-def exportToZip(request, ids):
+def export_to_zip(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
         return HttpResponse(content_type='text/json')
@@ -825,7 +779,7 @@ def exportToZip(request, ids):
     response['Content-Disposition'] = 'attachment; filename=images.zip'
     return response
 
-def exportToExcel(request, ids):
+def export_to_excel(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
         return HttpResponse(content_type='text/json')
@@ -845,7 +799,7 @@ def exportToExcel(request, ids):
         uri = os.path.join(img.folder_uri, img.name)
         creation_time = img.creation_date
         insertion_date = img.insertion_date
-        format = img.format
+        img_format = img.format
         width = img.width
         height = img.height
         tags = [t.name for t in img.tag]
@@ -860,7 +814,7 @@ def exportToExcel(request, ids):
                     for country in region.country:
                         locations.append(country.name)
 
-        csv_file.writerow([uri, creation_time, insertion_date, format, width,
+        csv_file.writerow([uri, creation_time, insertion_date, img_format, width,
                            height, tags, persons, locations])
 
     return response

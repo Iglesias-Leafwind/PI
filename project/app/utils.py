@@ -31,41 +31,6 @@ is_small = lambda w, h : w * h <= 800*1000
 is_medium = lambda w, h : 800*1000 < w * h < 3000*1000
 is_large = lambda w, h : 3000*1000 <= w * h
 
-"""
-searchFilterOptions = {
-        'automatic': True,  # isto sao os objects
-        'manual': True,
-        'folder_name': True,
-        'people': True,
-        'text': True,
-        'exif': True,
-        'places': True,
-        'breeds': True,
-
-        'objects_range_min': int(objectExtractionThreshold * 100),
-        'objects_range_max': 100,
-
-        'people_range_min': int(faceRecThreshold * 100),
-        'people_range_max': 100,
-
-        'places_range_min': int(placesThreshold * 100),
-        'places_range_max': 100,
-
-        'breeds_range_min': int(breedsThreshold * 100),
-        'breeds_range_max': 100,
-
-        'insertion_date_activate': False,
-
-        'insertion_date_from': None,
-        'insertion_date_to': None,
-
-        'size_large': True,
-        'size_medium': True,
-        'size_small': True,
-    }
-    """
-
-
 def reset_filters():
     global searchFilterOptions
     global timeHelper
@@ -137,46 +102,34 @@ def getImagesPerUri(pathName):
 def getRandomNumber():
     return random.randint(1, 1 << 63)
 
-
-def addTagWithOldTag(hashcode, tagName, oldTagName, oldTagSource):
-    t = Tag.nodes.get_or_none(name=tagName)
+def add_tag(hashcode, tag_name):
+    t = Tag.nodes.get_or_none(name=tag_name)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
     if i is None:
         return
     if t is None:
-        t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': oldTagName, 'originalTagSource': oldTagSource, 'manual': True})
-    addESTag(hashcode, tagName)
+        t = Tag(name=tag_name).save()
+    i.tag.connect(t, {'originalTagName': tag_name, 'originalTagSource': "manual", 'manual': True, 'score': 1})
+    add_es_tag(hashcode, tag_name)
 
 
-def addTag(hashcode, tagName):
-    t = Tag.nodes.get_or_none(name=tagName)
+def delete_tag(hashcode, tag_name):
+    t = Tag.nodes.get_or_none(name=tag_name)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
-    if i is None:
-        return
-    if t is None:
-        t = Tag(name=tagName).save()
-    i.tag.connect(t, {'originalTagName': tagName, 'originalTagSource': "manual", 'manual': True, 'score': 1})
-    addESTag(hashcode, tagName)
-
-
-def deleteTag(hashcode, tagName):
-    t = Tag.nodes.get_or_none(name=tagName)
-    i = ImageNeo.nodes.get_or_none(hash=hashcode)
-    tagSource = "err"
+    tag_source = "err"
     if i is None or t is None:
-        return [tagName, tagSource]
+        return [tag_name, tag_source]
     if (t in i.tag):
         rel = i.tag.relationship(t)
-        tagSource = rel.originalTagSource
+        tag_source = rel.originalTagSource
         i.tag.disconnect(t)
     if (len(t.image) == 0):
         t.delete()
-    deleteESTag(hashcode, tagName)
-    return [tagName, tagSource]
+    delete_es_tag(hashcode, tag_name)
+    return [tag_name, tag_source]
 
 
-def addESTag(hashcode, tag):
+def add_es_tag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
     a.tags.append(tag)
     a.tags = list(set(a.tags))
@@ -184,7 +137,7 @@ def addESTag(hashcode, tag):
     a.save(using=es)
 
 
-def deleteESTag(hashcode, tag):
+def delete_es_tag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
     a.tags.remove(tag)
     a.tags = list(set(a.tags))
