@@ -27,33 +27,89 @@ faceRecThreshold = 0.35
 placesThreshold = 0.1
 breedsThreshold = 0.7
 
+is_small = lambda w, h : w * h <= 800*1000
+is_medium = lambda w, h : 800*1000 < w * h < 3000*1000
+is_large = lambda w, h : 3000*1000 <= w * h
+
+"""
 searchFilterOptions = {
-    'automatic': True, # isto sao os objects
-    'manual': True,
-    'folder_name': True,
-    'people': True,
-    'text': True,
-    'exif': True,
-    'places': True,
-    'breeds': True,
+        'automatic': True,  # isto sao os objects
+        'manual': True,
+        'folder_name': True,
+        'people': True,
+        'text': True,
+        'exif': True,
+        'places': True,
+        'breeds': True,
 
-    'objects_range_min': int(objectExtractionThreshold * 100),
-    'objects_range_max': 100,
+        'objects_range_min': int(objectExtractionThreshold * 100),
+        'objects_range_max': 100,
 
-    'people_range_min': int(faceRecThreshold * 100),
-    'people_range_max': 100,
+        'people_range_min': int(faceRecThreshold * 100),
+        'people_range_max': 100,
 
-    'places_range_min': int(placesThreshold * 100),
-    'places_range_max': 100,
+        'places_range_min': int(placesThreshold * 100),
+        'places_range_max': 100,
 
-    'breeds_range_min': int(breedsThreshold * 100),
-    'breeds_range_max': 100,
+        'breeds_range_min': int(breedsThreshold * 100),
+        'breeds_range_max': 100,
 
-    'insertion_date_activate' : False,
+        'insertion_date_activate': False,
 
-    'insertion_date_from' : None,
-    'insertion_date_to' : None,
-}
+        'insertion_date_from': None,
+        'insertion_date_to': None,
+
+        'size_large': True,
+        'size_medium': True,
+        'size_small': True,
+    }
+    """
+
+
+def reset_filters():
+    global searchFilterOptions
+    global timeHelper
+    searchFilterOptions['automatic'] = True,  # isto sao os objects
+    searchFilterOptions['manual'] = True,
+    searchFilterOptions['folder_name'] = True
+    searchFilterOptions['people'] = True
+    searchFilterOptions['text'] = True
+    searchFilterOptions['exif'] = True
+    searchFilterOptions['places'] = True
+    searchFilterOptions['breeds'] = True
+
+    searchFilterOptions['objects_range_min'] = int(objectExtractionThreshold * 100)
+    searchFilterOptions['objects_range_max'] = 100
+
+    searchFilterOptions['people_range_min'] = int(faceRecThreshold * 100)
+    searchFilterOptions['people_range_max'] = 100
+
+    searchFilterOptions['places_range_min'] = int(placesThreshold * 100)
+    searchFilterOptions['places_range_max'] = 100
+
+    searchFilterOptions['breeds_range_min'] = int(breedsThreshold * 100)
+    searchFilterOptions['breeds_range_max'] = 100
+
+
+    searchFilterOptions['size_large'] = True
+    searchFilterOptions['size_medium'] = True
+    searchFilterOptions['size_small'] = True
+
+    searchFilterOptions['insertion_date_activate'] = False
+    searchFilterOptions['insertion_date_from'] = None
+    searchFilterOptions['insertion_date_to'] = None
+    timeHelper['insertion_date_from'] = None
+    timeHelper['insertion_date_to'] = None
+
+    searchFilterOptions['taken_date_activate'] = False
+    searchFilterOptions['taken_date_from'] = None
+    searchFilterOptions['taken_date_to'] = None
+    timeHelper['taken_date_from'] = None
+    timeHelper['taken_date_to'] = None
+
+timeHelper = {}
+searchFilterOptions = {}
+reset_filters()
 
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)

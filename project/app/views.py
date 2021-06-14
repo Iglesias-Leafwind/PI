@@ -17,7 +17,8 @@ from app.models import ImageES, ImageNeo, Tag, Person, Location
 from app.processing import getOCR, getExif, dhash, findSimilarImages, uploadImages, fs, deleteFolder
 from app.processing import frr
 
-from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold
+from app.utils import addTag, deleteTag, addTagWithOldTag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
+    is_small, is_medium, is_large, reset_filters, timeHelper
 from scripts.esScript import es
 from app.nlpFilterSearch import processQuery
 from app.utils import searchFilterOptions, showDict,faceRecLock
@@ -161,6 +162,11 @@ def change_filters(request):
     form.is_valid() # ele diz que o form é invalido se algum
                     # checkbox for False, idk why..
     form = form.cleaned_data
+
+    if 'reset_filters' in request.POST:
+        reset_filters()
+        return redirect(form['current_url'])
+
     searchFilterOptions['automatic'] = form['automatic']
     searchFilterOptions['manual'] = form['manual']
     searchFilterOptions['folder_name'] = form['folder_name']
@@ -170,18 +176,40 @@ def change_filters(request):
     searchFilterOptions['breeds'] = form['breeds']
     searchFilterOptions['exif'] = form['exif']
 
-    searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
+    searchFilterOptions['size_large'] = form['size_large']
+    searchFilterOptions['size_medium'] = form['size_medium']
+    searchFilterOptions['size_small'] = form['size_small']
 
+    searchFilterOptions['insertion_date_activate'] = form['insertion_date_activate']
     if searchFilterOptions['insertion_date_activate']: # update dates
         try:
-            searchFilterOptions['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+            timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], '%d-%m-%Y')
+            searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
         except ValueError: # invalid format
-            pass
+            searchFilterOptions['insertion_date_from'] = None
+            timeHelper['insertion_date_from'] = None
+        try:
+            timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+            searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
+        except ValueError:  # invalid format
+            searchFilterOptions['insertion_date_to'] = None
+            timeHelper['insertion_date_to'] = None
+
+    searchFilterOptions['taken_date_activate'] = form['taken_date_activate']
+    if searchFilterOptions['taken_date_activate']: # update dates
+        try:
+            timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], '%d-%m-%Y')
+            searchFilterOptions['taken_date_from'] = form['taken_date_from']
+        except ValueError: # invalid format
+            searchFilterOptions['taken_date_from'] = None
+            timeHelper['taken_date_from'] = None
 
         try:
-            searchFilterOptions['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], '%d-%m-%Y')
+            timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], '%d-%m-%Y')
+            searchFilterOptions['taken_date_to'] = form['taken_date_to']
         except ValueError:  # invalid format
-            pass
+            searchFilterOptions['taken_date_to'] = None
+            timeHelper['taken_date_to'] = None
 
     # -- confiance object extraction --
     max_obj_extr = form['objects_range_max']
@@ -265,6 +293,7 @@ def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
     result_hashs = list(map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
+    print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
         remove = set()
@@ -272,17 +301,43 @@ def get_image_results(query_array):
         if img is None:  # if there is no image with this hash in DB
             continue  # ignore, advance
 
+
+        if not searchFilterOptions['size_small'] and is_small(img.height, img.width):
+            continue
+
+        if not searchFilterOptions['size_medium'] and is_medium(img.height, img.width):
+            continue
+
+        if not searchFilterOptions['size_large'] and is_large(img.height, img.width):
+            continue
+
+
         # ---- dates -----
         if searchFilterOptions['insertion_date_activate']:
 
-            fromm = searchFilterOptions['insertion_date_from']
+            fromm = timeHelper['insertion_date_from']
             if fromm is not None:
                 if isBeforeThan(img, fromm):
                     continue # is before the limit, not shown
-            too = searchFilterOptions['insertion_date_to']
+            too = timeHelper['insertion_date_to']
             if too is not None:
                 if isLaterThan(img, too):
                     continue
+
+        # ---- dates taken -----
+        if searchFilterOptions['taken_date_activate']:
+            print(img.creation_date)
+            pass
+        """
+            fromm = timeHelper['insertion_date_from']
+            if fromm is not None:
+                if isBeforeThan(img, fromm):
+                    continue # is before the limit, not shown
+            too = timeHelper['insertion_date_to']
+            if too is not None:
+                if isLaterThan(img, too):
+                    continue
+                    """
 
         #       ---- people ---
 
@@ -307,7 +362,7 @@ def get_image_results(query_array):
                 remove.add(outside_limits)
 
 
-        # -- manual TODO test --
+        # -- manual --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:

@@ -4,136 +4,193 @@
 
 {% block content %}
 
-
-    <!-- filters -->
-    <form autocomplete="off" action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="container">
-            <div class="row">
-                <!-- objects -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.automatic }} {{ filters_form.automatic.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the results of the object extraction for
-                                this
-                                search.</h6>
-                            <p class="card-text">Minimum confiance {{ filters_form.objects_range_min }} %</p>
-                            <p class="card-text">Maximum confiance {{ filters_form.objects_range_max }} %</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- places -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.places }} {{ filters_form.places.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the results of the places/scenes
-                                identifier
-                                for this
-                                search.</h6>
-                            <p class="card-text">Minimum confiance {{ filters_form.places_range_min }} %</p>
-                            <p class="card-text">Maximum confiance {{ filters_form.places_range_max }} %</p>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- people -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.people }} {{ filters_form.people.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the results of the face recognition
-                                algorithm
-                                search.</h6>
-                            <p class="card-text">Minimum confiance {{ filters_form.people_range_min }} %</p>
-                            <p class="card-text">Maximum confiance {{ filters_form.people_range_max }} %</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- breeds -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.breeds }} {{ filters_form.breeds.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the results of the breeds classifier for
-                                this search.</h6>
-                            <p class="card-text">Minimum confiance {{ filters_form.breeds_range_min }} %</p>
-                            <p class="card-text">Maximum confiance {{ filters_form.breeds_range_max }} %</p>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- ocr -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.text }} {{ filters_form.text.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the results of the text recognition for
-                                this search.</h6>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- exif -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.exif }} {{ filters_form.exif.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the images' metadata for
-                                this search.</h6>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- manual -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.manual }} {{ filters_form.manual.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the images' manual tags for
-                                this search.</h6>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- folder name -->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.folder_name }} {{ filters_form.folder_name.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Consider the images' folder name for
-                                this search.</h6>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!---- insertion date ---->
-                <div class="col-sm-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the images for
-                                this search.</h6>
-                            <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
-                            <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
+    <div class="container">
+        <div class="col text-center m-3 ">
+            <button class="btn btn-outline-primary col-12" onclick="toggleFilters(this);" class="btn btn-danger">Show
+                filters
+            </button>
         </div>
-        {{ filters_form.current_url }}
-        <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
-    </form>
+    </div>
+    <!-- filters -->
+    <div id="filtersForm" style="display: none">
+        <form autocomplete="off" action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="container">
+                <div class="row">
+                    <!-- objects -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.automatic }} {{ filters_form.automatic.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the object extraction
+                                    for
+                                    this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.objects_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.objects_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- places -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.places }} {{ filters_form.places.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the places/scenes
+                                    identifier
+                                    for this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.places_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.places_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- people -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.people }} {{ filters_form.people.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the face recognition
+                                    algorithm
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.people_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.people_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- breeds -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.breeds }} {{ filters_form.breeds.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the breeds classifier
+                                    for
+                                    this search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.breeds_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.breeds_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ocr -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.text }} {{ filters_form.text.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the text recognition
+                                    for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- exif -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.exif }} {{ filters_form.exif.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' metadata for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- manual -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.manual }} {{ filters_form.manual.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' manual tags for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- folder name -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.folder_name }} {{ filters_form.folder_name.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' folder name for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!---- insertion date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the
+                                    images for this search.</h6>
+                                <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
+                                <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- taken date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the date that the images were
+                                taken for this search.</h6>
+                            <p class="card-text">From {{ filters_form.taken_date_from }}</p>
+                            <p class="card-text">To {{ filters_form.taken_date_to }}</p>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!---- size of the images ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Select images size</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select the image sizes for
+                                    this search.</h6>
+                                <p class="card-text">{{ filters_form.size_large }} {{ filters_form.size_large.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_medium }} {{ filters_form.size_medium.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_small }} {{ filters_form.size_small.label_tag }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- options and submit ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <!--<h5 class="card-title">Apply</h5>-->
+                                <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">
+                                    Apply
+                                </button>
+                                <!--
+                                <button type="submit" class="btn btn-primary">Apply</button>-->
+                                <br>
+                                <button type="submit" name="reset_filters" class="btn btn-danger">Show all (reset
+                                    filters)
+                                </button>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+            {{ filters_form.current_url }}
+        </form>
+    </div> <!-- cobre o form todo_ -->
 
 
     <div class="results">
@@ -250,6 +307,19 @@
         {% endwith %}
     </div>
     <script>
+
+        function toggleFilters(el) {
+            var formm = document.getElementById('filtersForm')
+            if (formm.style.display === "none") {
+                formm.style.display = "block";
+                el.innerHTML = "Hide filters"
+            } else {
+                formm.style.display = "none";
+                el.innerHTML = "Show filters"
+
+            }
+        }
+
 
         var imgs = document.getElementsByTagName('img')
         var allIds = ''
@@ -435,6 +505,46 @@
 
                     }),
                 to = $("#insertion_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
+                // date picker 2
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#taken_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#taken_date_to").datepicker({
                     defaultDate: "+1w",
                     changeMonth: true,
                     // numberOfMonths: 3,
