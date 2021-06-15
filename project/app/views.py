@@ -652,7 +652,7 @@ def calendar_gallery(request):
     dates_creation = dict(sorted(dates_creation.items(), key=lambda item: item[0]))
     dates_creation = json.dumps(dates_creation)
     return render(request, 'gallery.html',
-                  {'form': form, 'image_form': image, 'dates_insertion': dates_insertion, 'dates_creation': dates_creation})
+                  {'form': form, 'image_form': image, 'datesInsertion': dates_insertion, 'datesCreation': dates_creation})
 
 def objects_gallery(request):
     form = SearchForm()

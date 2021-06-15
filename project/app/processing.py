@@ -231,6 +231,7 @@ def face_rec_part(read_image, img_path, tags, image):
         frr.save_face_identification(name=name, encoding = enc, conf=conf, imghash=image.hash)
 
         face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
+        app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
         p = Person.nodes.get_or_none(name=name)
         if p is None:
             p = Person(name=name).save()
@@ -362,9 +363,9 @@ def processing(dir_files):
 
                     if "latitude" in propertiesdict and "longitude" in propertiesdict:
                         # crc = [city,region,country] names array
-                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Location of " + img_path)
                         try:
                             locationLock.acquire()
+                            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Location of " + img_path)
                             crc = get_locations(propertiesdict["latitude"], propertiesdict["longitude"])
                             crc[0] = crc[0].lower()
                             crc[1] = crc[1].lower()
@@ -411,9 +412,10 @@ def processing(dir_files):
                     image.folder.connect(folderNeoNode)
 
 
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Objects of " + img_path)
+
                     try:
                         objectLock.acquire()
+                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Objects of " + img_path)
                         res = obj_extr.get_objects(img_path)
                     finally:
                         objectLock.release()
@@ -431,24 +433,27 @@ def processing(dir_files):
                             processingLock.release()
 
                         if object in ['cat', 'dog']:
-                            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
                             try:
                                 breedLock.acquire()
+                                logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
+
                                 classify_breed_part(read_image, tags, image)
                             finally:
                                 breedLock.release()
-
                     try:
                         faceRecLock.acquire()
+                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Face Recognition of " + img_path)
+
                         db.begin()
                         face_rec_part(read_image, img_path, tags, image)
                         db.commit()
                     finally:
                         faceRecLock.release()
 
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Places of " + img_path)
                     try:
                         placesLock.acquire()
+                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Places of " + img_path)
+
                         places_list = getPlaces(img_path)
                     finally:
                         placesLock.release()
@@ -468,10 +473,11 @@ def processing(dir_files):
                                 image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
                             finally:
                                 processingLock.release()
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] OCR of " + img_path)
 
                     try:
                         ocrLock.acquire()
+                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] OCR of " + img_path)
+
                         wordList = getOCR(read_image)
                     finally:
                         ocrLock.release()
@@ -527,7 +533,8 @@ def processing(dir_files):
                 threadTasks.pop(dir)
     finally:
         uploadLock.release()
-
+    print(threadTasks)
+    
 def get_locations(latitude, longitude):
     results = rg.search((latitude,longitude), mode=1)
     return [results[0]['name'], results[0]['admin2'], results[0]['admin1']]
