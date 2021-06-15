@@ -485,7 +485,7 @@ def managepeople(request):
 
 def search(tags):
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
-    s = Search(using=es, index='image').query(q)
+    s = Search(using=es, index='image').query(q).extra(from_=0, size=999)
     return s.execute()
 
 def alreadyProcessed(img_path):

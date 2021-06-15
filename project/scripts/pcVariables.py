@@ -3,7 +3,7 @@ dbsPath = 'bolt://neo4j:12345@localhost:7687'
 ocrPath = 'app/resources/tesseract-OCR/tesseract'
 essPath = 'app/resources/elasticSearch/bin/elasticsearch.bat'
 
-var = 1
+var = 2
 
 ## Windows Iglesias:
 if var == 1:
