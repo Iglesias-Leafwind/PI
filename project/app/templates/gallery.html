@@ -2,9 +2,9 @@
 {% load static %}
 
 {% block content %}
-    <div class="container centerGalleryDiv">
-        <div id="insertion_calendar" style="width: 60vw; height: 45vh; margin-top: 2vh"></div>
-        <div id="creation_calendar" style="width: 60vw; height: 45vh; margin-top: 4vh"></div>
+    <div class="flex-container centerGalleryDiv">
+        <div id="insertion_calendar" style="width: 60vw; flex: 1; min-height: 45%; margin-top: 2vh"></div>
+        <div id="creation_calendar" style="width: 60vw; flex: 1; min-height: 45%; margin-top: 4vh"></div>
     </div>
 
 
@@ -21,17 +21,21 @@
             animationEnabled: true,
             exportEnabled: true,
             title:{
-                text: "New Images Calendar",
+                text: "Images' Insertion Date Calendar",
                 fontFamily: "arial",
                 fontStyle: "bold",
             },
             axisX:{
                 valueFormatString: "YYYY DD MMM",
                 labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
             },
             axisY: {
-                interval: 1,
                 labelFontSize: 15,
+                labelAutoFit: true,
                 scaleBreaks: {
                     autoCalculate: true
                 }
@@ -39,8 +43,8 @@
             data: [{
                 type: "line",
                 xValueFormatString: "YYYY DD MMM",
-                toolTipContent: "<b>{label}</b>: {y} images uploaded",
-                color: "#ff0000",
+                toolTipContent: "<b>{label}</b>: {y} image(s) uploaded this day",
+                color: "#0000ff",
                 dataPoints: dataPoints
             }]
         });
@@ -65,10 +69,14 @@
             axisX:{
                 valueFormatString: "YYYY DD MMM",
                 labelFontSize: 15,
+                labelAutoFit: true,
+                scaleBreaks: {
+                    autoCalculate: true
+                }
             },
             axisY: {
-                interval: 1,
                 labelFontSize: 15,
+                labelAutoFit: true,
                 scaleBreaks: {
                     autoCalculate: true
                 }

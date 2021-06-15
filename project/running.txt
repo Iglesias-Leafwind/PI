@@ -1,0 +1,3 @@
+manage.py runserver --noreload
+
+Stops from reloading manage.py and running esScript and neoScript again

@@ -1,129 +1,562 @@
 {% extends 'topbar.html' %}
 {% load static %}
 
-{% block content %}
-<div class="results">
 
-    <!-- filters -->
-        <form action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ filters_form }}
-            <!-- também dá para meter ele a atualizar
-            logo q se carrega numa checkbox, mas nao sei
-            se isso será mais chato pro user -->
-            <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">Apply</button>
-        </form>
-    <!-- end filters -->
-    {% for tag_cluster in results.items %}
-    <div class="album py-5 bg-mine">
+{% block content %}
 
     <div class="container">
-    <p>{{ tag_cluster.0 }}</p>
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
-          {% for image in tag_cluster.1 %}
-              {% if image.0 is not None %}
-        <div class="col">
-          <div class="card shadow-sm">
-            {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-              <img class="imageThumbnailInMenu" src="{% static image_static %}">
-            {% endwith %}
-            <div class="card-body">
-              <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}">View</button>
-                </div> <!--btn group-->
-              </div> <!--d-flex justify-content-between align-items-center-->
-            </div> <!--card-body-->
+        <div class="col text-center m-3 ">
+            <button class="btn btn-outline-primary col-12" onclick="toggleFilters(this);" class="btn btn-danger">Show
+                filters
+            </button>
+        </div>
+    </div>
+    <!-- filters -->
+    <div id="filtersForm" style="display: none">
+        <form autocomplete="off" action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="container">
+                <div class="row">
+                    <!-- objects -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.automatic }} {{ filters_form.automatic.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the object extraction
+                                    for
+                                    this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.objects_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.objects_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
 
-          </div> <!--card shadow-sm-->
-        </div> <!--col-->
-<div class="modal fade detailsModal" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
-        <button onclick="closeModal({{ forloop.parentloop.counter }}, {{forloop.counter}})" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-    <form id="imageDetailsForm" name="imageDetailsForm" action="{% url 'updateTags' hash=image.0.hash %}" method="post" enctype="multipart/form-data">
-      <div class="modal-body">
-          {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
-              <img class="imageThumbnail" src="{% static imgPath%}">
-          {% endwith %}
-              <div id="tagsDiv{{ forloop.parentloop.counter }}{{forloop.counter}}">{% for elem in image.1 %}
-              #{{ elem.name }}
-              {% endfor %} <i id="editTagsIcon" onclick="divClicked({{ forloop.parentloop.counter }}, {{forloop.counter}})" class="fas fa-pencil-alt"></i> </div>
-              <input style="display: none" class="inner-textarea" type="textarea" name="tagsTextarea" id="tagsTextarea{{ forloop.parentloop.counter }}{{forloop.counter}}" size="60%" value="{% for elem in image.1 %} #{{ elem.name }}{% endfor %}">
-                <p class="imagePath">Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
-              <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
-              {% if not image.0.creation_date is None %}
-                    <p class="card-text">Creation Date: {{ image.0.creation_date }}</p>
-                {% endif %}
-      </div>
-        <div class="modal-footer">
-        <button onclick="closeModal({{ forloop.parentloop.counter }}, {{forloop.counter}})" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-      </div>
-    </form>
+                    <!-- places -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.places }} {{ filters_form.places.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the places/scenes
+                                    identifier
+                                    for this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.places_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.places_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- people -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.people }} {{ filters_form.people.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the face recognition
+                                    algorithm
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.people_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.people_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- breeds -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.breeds }} {{ filters_form.breeds.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the breeds classifier
+                                    for
+                                    this search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.breeds_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.breeds_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ocr -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.text }} {{ filters_form.text.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the text recognition
+                                    for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- exif -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.exif }} {{ filters_form.exif.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' metadata for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- manual -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.manual }} {{ filters_form.manual.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' manual tags for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- folder name -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.folder_name }} {{ filters_form.folder_name.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' folder name for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!---- insertion date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the
+                                    images for this search.</h6>
+                                <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
+                                <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- taken date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the date that the images were
+                                taken for this search.</h6>
+                            <p class="card-text">From {{ filters_form.taken_date_from }}</p>
+                            <p class="card-text">To {{ filters_form.taken_date_to }}</p>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!---- size of the images ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Select images size</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select the image sizes for
+                                    this search.</h6>
+                                <p class="card-text">{{ filters_form.size_large }} {{ filters_form.size_large.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_medium }} {{ filters_form.size_medium.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_small }} {{ filters_form.size_small.label_tag }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- options and submit ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">
+                                    Apply
+                                </button>
+                                <br>
+                                <button type="submit" name="reset_filters" class="btn btn-danger">Show all (reset
+                                    filters)
+                                </button>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+            {{ filters_form.current_url }}
+        </form>
+    </div> <!-- cobre o form todo-->
+
+
+    <div class="results">
+
+
+        <!-- end filters -->
+
+        <div id="exportDiv" style="display: none">
+            <button style="margin: 0vh 1vw 0vh 3vw;" type="button" id="excel_btn" class="btn btn-primary">Export to
+                excel
+            </button>
+            <button type="button" id="zip_btn" class="btn btn-primary">Export to zip</button>
+        </div>
+        {% for tag_cluster in results.items %}
+            <div class="album py-5 bg-mine">
+                <div class="container">
+                    <p>{{ tag_cluster.0 }}</p>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
+                        {% for image in tag_cluster.1 %}
+                            {% if image.0 is not None %}
+                                <div class="col">
+                                    <div class="card shadow-sm img_box">
+                                        {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}"
+                                                 src="{% static image_static %}">
+                                        {% endwith %}
+
+                                        <div class="card-body">
+                                            <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="btn-group">
+                                                    <button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                            data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
+                                                    </button>
+                                                </div> <!--btn group-->
+                                                <img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                            </div> <!--d-flex justify-content-between align-items-center-->
+                                        </div> <!--card-body-->
+                                    </div> <!--card shadow-sm-->
+                                </div> <!--col-->
+                                <div class="modal fade detailsModal"
+                                     id="resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}"
+                                     tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
+                                                <button onclick="closeModal({{ forloop.parentloop.counter }}, {{ forloop.counter }})"
+                                                        type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <form name="imageDetailsForm"
+                                                  action="{% url 'updateTags' hash=image.0.hash %}" method="post"
+                                                  enctype="multipart/form-data">
+                                                <div class="modal-body">
+                                                    {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
+                                                        <img class="imageThumbnail" src="{% static imgPath %}">
+                                                    {% endwith %}
+
+                                                    <i class="tagsIcon editTagsIcon fas fa-pencil-alt"
+                                                       title="edit tags"></i>
+                                                    <i class="tagsIcon addTagsIcon fas fa-plus-square"
+                                                       title="add new tag"></i>
+                                                    <div class="addTagDiv" hidden>
+                                                        <input type="text" class="form-control"/>
+                                                        <button type="button" class="addTag btn btn-primary"
+                                                                title="add">Add
+                                                        </button>
+                                                    </div>
+                                                    <div class="tagsDiv" id="{{ image.0.hash }}">
+                                                        {% for elem in image.1 %}
+                                                            <span class="tag"> #{{ elem.name }} <i hidden
+                                                                                                   class="deleteIcon fas fa-times"
+                                                                                                   title="delete this tag"></i></span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <input hidden class="postInput" type="text" name="tags">
+                                                    <p class="imagePath">
+                                                        Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
+                                                    <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
+                                                    {% if not image.0.creation_date is None %}
+                                                        <p class="card-text">Creation
+                                                            Date: {{ image.0.creation_date }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Close
+                                                    </button>
+                                                    <button type="submit" class="submitBtn btn btn-primary">Save
+                                                        Changes
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div> <!--row-->
+                </div>
+            </div>
+        {% endfor %}
+        {% with 'img/arrow-up.svg' as myarrow %}
+            <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
+        {% endwith %}
     </div>
-  </div>
-</div>
-              {% endif %}
-              {% endfor %}
-      </div> <!--row-->
-    </div>
-  </div>
-    {% endfor %}
-{% with 'img/arrow-up.svg' as myarrow %}
-    <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
-{% endwith %}
-</div>
     <script>
-    function divClicked(tagCounter, resultCounter) {
-        // concatenate numbers
-        var str = tagCounter.toString() + resultCounter.toString();
 
-        // get elements
-        var tagsDiv = document.getElementById("tagsDiv" + str);
-        var textArea = document.getElementById("tagsTextarea" + str);
+        function toggleFilters(el) {
+            var formm = document.getElementById('filtersForm')
+            if (formm.style.display === "none") {
+                formm.style.display = "block";
+                el.innerHTML = "Hide filters"
+            } else {
+                formm.style.display = "none";
+                el.innerHTML = "Show filters"
 
-        // change display style
-        tagsDiv.style.display = "none";
-        textArea.style.display = "block";
-    }
+            }
+        }
 
-    function closeModal(tagCounter, resultCounter) {
-        // concatenate numbers
-        var str = tagCounter.toString() + resultCounter.toString();
 
-        // get elements
-        var tagsDiv = document.getElementById("tagsDiv" + str);
-        var textArea = document.getElementById("tagsTextarea" + str);
+        var imgs = document.getElementsByTagName('img')
+        var allIds = ''
+        var images = false;
 
-        // change display style
-        tagsDiv.style.display = "block";
-        textArea.style.display = "none";
-    }
+        for (let i = 0; i < imgs.length; i++) {
+            if (imgs[i].id === '')
+                continue
+            allIds += imgs[i].id + '&';
+            images = true;
+        }
+
+        var selectedIds = new Set()
+        var idsList = []
+
+        if (images) {
+            $('#exportDiv').css('display', 'block')
+        }
+
+        $('#excel_btn').click(function () {
+            var param = ''
+            if (selectedIds.size > 0) {
+                param = idSetToString(selectedIds)
+                param = param.substr(0, param.length - 1)
+            } else {
+                param = allIds.substr(0, allIds.length - 1)
+            }
+
+            createExportFrom("excel", param)
+        })
+
+        $('#zip_btn').click(function () {
+            var param = ''
+            if (selectedIds.size > 0) {
+                param = idSetToString(selectedIds)
+                param = param.substr(0, param.length - 1)
+            } else {
+                param = allIds.substr(0, allIds.length - 1)
+            }
+
+            createExportFrom("zip", param)
+        })
+
+        function createExportFrom(type, param) {
+            var form_ = document.createElement("form");
+            form_.id = "exportForm";
+            form_.name = "exportForm";
+            form_.method = "get";
+            form_.action = "export/" + type + "/$" + param;
+            document.body.appendChild(form_);
+            form_.submit();
+            document.body.removeChild(form_);
+        }
+
+        $(".img_box").click(function () {
+            if ($(this).hasClass('selected_img')) {
+                $(this).removeClass('selected_img')
+                $(this).find(".checked_img").css('display', 'none')
+                selectedIds.delete($(this).children('img')[0].id)
+                idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
+            } else {
+                selectedIds.add($(this).children('img')[0].id)
+                idsList.push($(this).children('img')[0].id)
+                $(this).addClass('selected_img')
+                $(this).find(".checked_img").css('display', 'block')
+            }
+
+            if (selectedIds.size === 0) {
+                $("#excel_btn").html('Export all to excel')
+                $("#zip_btn").html('Export all to zip')
+            } else {
+                $("#excel_btn").html('Export to excel')
+                $("#zip_btn").html('Export to zip')
+            }
+        })
+
+        var edit = true;
+        var add = true;
+
+        $('.editTagsIcon').click(function () {
+            if (edit) {
+                $('.deleteIcon').removeAttr('hidden')
+            } else {
+                $('.deleteIcon').attr('hidden', 'hidden')
+            }
+            edit = !edit
+        })
+
+        $('.addTagsIcon').click(function () {
+            if (add) {
+                $('.addTagDiv').removeAttr('hidden')
+            } else {
+                $('.addTagDiv').attr('hidden', 'hidden')
+            }
+
+            add = !add
+        })
+
+        $('.deleteIcon').click(function () {
+            $(this).parent() //  <span class="tag">
+                .remove()
+        })
+
+        function idSetToString(set) {
+            var ids = ''
+            set.forEach(id => {
+                ids += id + '&';
+            })
+            return ids;
+        }
+
+        //Get the button:
+        mybutton = document.getElementById("scrollBtn");
+
+        $('.addTag').click(function () {
+            var input = $(this).parent().children('input');
+            var val = input.val();
+
+            if (val === null || val.trim().length === 0)
+                return false;
+
+            const newTag = "<span class='tag'>\#" + val + "<i hidden class='deleteIcon fas fa-times' title='delete this tag'></i></span>";
+            $(this).parent().parent().children('.tagsDiv').append(newTag);
+            input.val("")
+        })
+
+        $('.view').click(function () {
+            $('.addTagDiv').attr('hidden', 'hidden')
+            $('.deleteIcon').attr('hidden', 'hidden');
+            edit = add = true;
+        })
+
+        $('.submitBtn').click(function () {
+            var form = $(this).parent().parent();
+            var tags = form.find('.tagsDiv').children('.tag');
+            var postBody = ''
+
+            for (let i = 0; i < tags.length; i++) {
+                postBody += tags[i].innerText.trim().split("\n")[0]
+            }
+
+            form.find('.postInput').val(postBody)
+            return true;
+        })
 
         //Get the button:
         mybutton = document.getElementById("scrollBtn");
 
         // When the user scrolls down 20px from the top of the document, show the button
-        window.onscroll = function() {scrollFunction()};
+        window.onscroll = function () {
+            scrollFunction()
+        };
 
         function scrollFunction() {
-          if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-            mybutton.style.display = "block";
-          } else {
-            mybutton.style.display = "none";
-          }
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                mybutton.style.display = "block";
+            } else {
+                mybutton.style.display = "none";
+            }
         }
 
         // When the user clicks on the button, scroll to the top of the document
         function topFunction() {
-          document.body.scrollTop = 0; // For Safari
-          document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-    }
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        }
+
+
+        // date picker
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#insertion_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#insertion_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
+                // date picker 2
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#taken_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#taken_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
 
     </script>
 {% endblock %}

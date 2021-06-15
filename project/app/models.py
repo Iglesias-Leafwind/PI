@@ -5,20 +5,9 @@ from neomodel import StructuredNode, StringProperty, StructuredRel, IntegerPrope
     DateTimeProperty, FloatProperty, RelationshipTo, RelationshipFrom, OneOrMore, ZeroOrMore, BooleanProperty, \
     ArrayProperty
 from neomodel import db
-from manage import es
-import scripts.pcVariables as vars
-
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#Wei:
-#config.DATABASE_URL = 'bolt://neo4j:s3cr3t@192.168.56.101:7687'
-#Iglesias:
-#config.DATABASE_URL = 'bolt://neo4j:12345@localhost:7687'
-#Alexa:
-#config.DATABASE_URL = 'bolt://neo4j:a12345a@localhost:7687'
-#Anthony:
-#config.DATABASE_URL = 'bolt://neo4j:pass@localhost:7687'
-
-config.DATABASE_URL = vars.dbsPath
+from scripts.esScript import es
+from scripts.pcVariables import dbsPath
+config.DATABASE_URL = dbsPath
 
 # for elastic search ↓
 class ImageES(Document):
@@ -89,7 +78,6 @@ class Tag(StructuredNode):
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
-    # icon = StringProperty(required=True) # < !!!! nao tava na develop!!!
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
     def getDetails(self):
@@ -97,22 +85,30 @@ class Person(StructuredNode):
         results, meta = db.cypher_query(query, {"id": self.id})
         return [row[0] for row in results]
 
+    def getVerified(self):
+        query = "MATCH (p:Person)<-[r:`Display a` {approved: true}]-(i:ImageNeo)  RETURN p.name"
+        results, meta = db.cypher_query(query)
+        return [row[0] for row in results]
+
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
+    region = RelationshipFrom('Region', IsIn.rel, model=IsIn)
 
+class Region(StructuredNode):
+    name = StringProperty(unique_index=True, required=True)
+    country = RelationshipTo('Country', IsIn.rel, model=IsIn)
+    city = RelationshipFrom('City', IsIn.rel, model=IsIn)
 
 class City(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    country = RelationshipTo(Country, IsIn.rel, model=IsIn)
+    region = RelationshipTo('Region', IsIn.rel, model=IsIn)
     location = RelationshipFrom('Location', IsIn.rel, model=IsIn)
-
 
 class Location(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
-    image = RelationshipFrom(ImageNeo, WasTakenIn.rel, model=WasTakenIn)
-    city = RelationshipTo(City, IsIn.rel, model=IsIn)
+    image = RelationshipFrom('ImageNeo', WasTakenIn.rel, model=WasTakenIn)
+    city = RelationshipTo('City', IsIn.rel, model=IsIn)
 
 
 class Folder(StructuredNode):
@@ -133,6 +129,11 @@ class Folder(StructuredNode):
         query = "MATCH (c:Folder)-[:`Is in`]->(f:Folder {id_:$id_}) RETURN c"
         results, meta = db.cypher_query(query, {"id_": self.id_})
         return [self.inflate(row[0]) for row in results]
+
+    def isChildOf(self, folder_id):
+        query = "MATCH (f:Folder{id_:$id_})-[*]->(p:Folder{id_:$folderId}) return p"
+        results, meta = db.cypher_query(query, {"id_": self.id_, "folderId": folder_id})
+        return len([path[0] for path in results]) != 0
 
     def getFullPath(self):
         query = "MATCH (f:Folder {id_:$id_})-[*]-> (c:Folder) RETURN c.name"

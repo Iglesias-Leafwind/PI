@@ -5,9 +5,9 @@ from django.forms import CheckboxInput, HiddenInput
 from django.utils.safestring import mark_safe
 from neomodel import match
 from neomodel.match import Traversal
-# from neomodel import Traversal
+from neomodel import Traversal
 from app.utils import showDict
-import app.models
+from scripts.esScript import es
 from app.models import Person, DisplayA, ImageNeo
 
 from app.models import Person
@@ -55,38 +55,18 @@ class PersonsForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #people = Person.nodes.all()
         image = ImageNeo.nodes.all()
 
         people = [ (p, i) for i in image for p in i.person.all() ]
         people = self.removeRepeated(people, lambda x : x[0].name + '-' + x[1].name)
-            #print(p[0].name , '-', p[1].name)
 
-        print('people' , len(people))
-        print('showDict', showDict)
         all_rels = []
         if showDict['unverified']:
             all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if not pp.approved]
 
-            #all_rels += [ (pp, person, img) for person in people for img in person.image.all() for pp in person.image.all_relationships(img) if not pp.approved ]
-            # all_rels += [ (person.image.all_relationships(img), person, img) for person in people for img in person.image.all() if not person.image.relationship(img).approved]
         if showDict['verified']:
             all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if pp.approved]
 
-            # all_rels += [ (person.image.all_relationships(img), person, img) for person in people for img in person.image.all() if person.image.relationship(img).approved]
-            #all_rels += [ (pp, person, img) for person in people for img in person.image.all() for pp in person.image.all_relationships(img) if pp.approved ]
-        # all_rels = [ (p, a2, a3) for (a1, a2, a3) in all_rels for p in a1]
-        """
-        iconss = set()
-        neww = []
-        for r in all_rels:
-            if r[0].icon in iconss:
-                continue
-            iconss.add(r[0].icon)
-            neww.append(r)
-        all_rels = neww
-        """
-        print(len(all_rels))
         for index, rel in enumerate(all_rels):
             field_name = 'person_name_%s' % (index,)
             field_image = 'person_image_%s' % (index,)
@@ -107,34 +87,65 @@ class PersonsForm(forms.Form):
             ))
             self.fields[field_person_before] = forms.CharField(widget=HiddenInput)
             self.fields[field_image_id] = forms.CharField(widget=HiddenInput)
-            # data-toggle="toggle" data-on="Verified" data-off="Unverified" data-onstyle="success" data-offstyle="danger"
 
             self.initial[field_image] = rel[0].icon
-            self.initial[field_name] = rel[1].name # + ' -- ' + str(rel[0].confiance)
+            self.initial[field_name] = rel[1].name
             self.initial[field_person_before] = rel[1].name
             self.initial[field_image_id] = rel[2].hash
             self.initial[field_verified] = rel[0].approved
-            # self.initial[field_verified] = True if rel[0].confiance > 0.5 else False
 
 
 
     def get_interest_fields(self):
         for field_name in self.fields:
             if field_name.startswith('person_'):
-                #number = field_name.split['_'][-1]
-                # if self[field_name]
                 yield self[field_name]
 
 class FilterSearchForm(forms.Form):
-    automatic = forms.BooleanField(required=False, label='Objects detected')
-    manual = forms.BooleanField(required=False, label='Manual tags')
-    folder_name = forms.BooleanField(required=False, label='Folder name')
-    people = forms.BooleanField(required=False, label='People identified')
-    text = forms.BooleanField(required=False, label='Text detected')
-    exif = forms.BooleanField(required=False, label='Image metadata')
-    places = forms.BooleanField(required=False, label='Scenes detected')
-    breeds = forms.BooleanField(required=False, label='Pet breeds identified')
+    automatic = forms.BooleanField(required=False, label='Objects detected', label_suffix='')
+    manual = forms.BooleanField(required=False, label='Manual tags', label_suffix='')
+    folder_name = forms.BooleanField(required=False, label='Folder name', label_suffix='')
+    people = forms.BooleanField(required=False, label='People identified', label_suffix='')
+    text = forms.BooleanField(required=False, label='Text detected', label_suffix='')
+    exif = forms.BooleanField(required=False, label='Image metadata', label_suffix='')
+    places = forms.BooleanField(required=False, label='Scenes detected', label_suffix='')
+    breeds = forms.BooleanField(required=False, label='Pet breeds identified', label_suffix='')
     current_url = forms.CharField(required=True, widget=HiddenInput)
 
+    objects_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance object extraction')
+    objects_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance object extraction')
+
+    places_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance places extraction')
+    places_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance places extraction')
+
+    people_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance people identified')
+    people_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance people identified')
+
+    breeds_range_min = forms.IntegerField(min_value=0, max_value=100, required=False, label='Min confiance pet breeds identified')
+    breeds_range_max = forms.IntegerField(min_value=0, max_value=100, required=False, label='Max confiance pet breeds identified')
+
+    insertion_date_activate = forms.BooleanField(required=False, label='Insertion date', label_suffix='')
+    insertion_date_from = forms.CharField(max_length=10, required=False, widget=forms.TextInput
+    (attrs={'id' : 'insertion_date_from', 'name' : 'insertion_date_from' }) )
+    insertion_date_to = forms.CharField(max_length=10, required=False, widget=forms.TextInput
+    (attrs={ 'id': 'insertion_date_to', 'name': 'insertion_date_to' }) )
+
+    taken_date_activate = forms.BooleanField(required=False, label='Taken date', label_suffix='')
+    taken_date_from = forms.CharField(max_length=10, required=False, widget=forms.TextInput
+    (attrs={'id' : 'taken_date_from', 'name' : 'taken_date_from' }) )
+    taken_date_to = forms.CharField(max_length=10, required=False, widget=forms.TextInput
+    (attrs={ 'id': 'taken_date_to', 'name': 'taken_date_to' }) )
+
+    size_large = forms.BooleanField(required=False, label='Large', label_suffix='')
+    size_medium = forms.BooleanField(required=False, label='Medium', label_suffix='')
+    size_small = forms.BooleanField(required=False, label='Small', label_suffix='')
+
+
+"""
+<label for="from">From</label>
+<input type="text" id="from" name="from">
+<label for="to">to</label>
+<input type="text" id="to" name="to">
+"""
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)
