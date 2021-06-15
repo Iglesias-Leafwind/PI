@@ -436,13 +436,9 @@ def get_image_results(query_array):
     return results
 
 def delete(request, path):
-    form = SearchForm()
-    image = SearchForImageForm()
-    pathf = EditFoldersForm()
     do(deleteFolder, path)
-    folders = fs.get_all_uris()
-    return render(request, 'managefolders.html',
-                  {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+    response = redirect('/folders')
+    return response
 
 def managefolders(request):
     if 'path' in request.GET:

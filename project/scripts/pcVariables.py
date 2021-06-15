@@ -3,7 +3,7 @@ dbsPath = 'bolt://neo4j:12345@localhost:7687'
 ocrPath = 'app/resources/tesseract-OCR/tesseract'
 essPath = 'app/resources/elasticSearch/bin/elasticsearch.bat'
 
-var = 2
+var = 3
 
 ## Windows Iglesias:
 if var == 1:
@@ -15,8 +15,8 @@ elif var == 2:
     essPath = "D:\Java\JavaEE\elasticsearch\elasticsearch-7.11.1\\bin\elasticsearch.bat"
 ## Ubuntu Anthony:
 elif var == 3:
-    ocrPath = r''
-    essPath = ""
+    ocrPath = r'/usr/bin/tesseract'
+    essPath = "/home/anth0nypereira/elasticsearch-7.12.1/bin/elasticsearch"
 ## Ubuntu Alexa:
 elif var == 4:
     ocrPath = r'/usr/bin/tesseract'
