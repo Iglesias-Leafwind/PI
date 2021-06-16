@@ -529,43 +529,39 @@ def update_faces(request):
     data = form.cleaned_data
 
     imgs = int(len(form.cleaned_data) / 5)
-    for i in range(imgs):
-        # if not data['person_verified_%s' % str(i)]:
-        #    continue
-        thumbname = data['person_image_%s' % str(i)]
-        new_personname = data['person_name_%s' % str(i)]
 
-        # retirar isto abaixo dps!!!
-        #new_personname = new_personname.split(' ')[0]
-        old_personname = data['person_before_%s' % str(i)]
-        verified = True
-        if not data['person_verified_%s' % str(i)]:
-            # continue
-            new_personname = old_personname
-            verified = False
+    faceRecLock.acquire()
+    try:
+        for i in range(imgs):
+            # if not data['person_verified_%s' % str(i)]:
+            #    continue
+            thumbname = data['person_image_%s' % str(i)]
+            new_personname = data['person_name_%s' % str(i)]
 
-        # if old_personname != new_personname:
-        image_hash = data['person_image_id_%s' % str(i)]
-        try:
-            faceRecLock.acquire()
+            # retirar isto abaixo dps!!!
+            #new_personname = new_personname.split(' ')[0]
+            old_personname = data['person_before_%s' % str(i)]
+            verified = True
+            if not data['person_verified_%s' % str(i)]:
+                # continue
+                new_personname = old_personname
+                verified = False
+
+            # if old_personname != new_personname:
+            image_hash = data['person_image_id_%s' % str(i)]
+
             frr.change_relationship(image_hash, new_personname, old_personname, thumbnail=thumbname, approved=verified)
             if old_personname != new_personname:
                 frr.change_name_tag_es(image_hash, new_personname, old_personname)
-        finally:
-            faceRecLock.release()
-    try:
-        faceRecLock.acquire()
+
         frr.update_data()
+
+        if 'reload' in request.POST:
+            #print('reload was called')
+            frr.reload()
     finally:
         faceRecLock.release()
 
-    if 'reload' in request.POST:
-        #print('reload was called')
-        try:
-            faceRecLock.acquire()
-            frr.reload()
-        finally:
-            faceRecLock.release()
 
     return redirect(people_url_string)
 
