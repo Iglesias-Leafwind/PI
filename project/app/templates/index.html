@@ -211,9 +211,14 @@
                                 <div class="col">
                                     <div class="card shadow-sm img_box">
                                         {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}"
-                                                 src="{% static image_static %}">
-                                        {% endwith %}
+                                            {% if forloop.counter > 18 %}
+
+                                            <img class="imageThumbnailInMenu lazy" id="{{ image.0.hash }}"
+                                                 data-src="{% static image_static %}">
+                                            {% else %}
+                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            {% endif %}
+                                            {% endwith %}
 
                                         <div class="card-body">
                                             <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
@@ -557,6 +562,35 @@
             }
         });
 
+        document.addEventListener("DOMContentLoaded", function() {
+        var lazyloadImages = document.querySelectorAll("img.lazy");
+        var lazyloadThrottleTimeout;
+
+        function lazyload () {
+        if(lazyloadThrottleTimeout) {
+          clearTimeout(lazyloadThrottleTimeout);
+        }
+
+        lazyloadThrottleTimeout = setTimeout(function() {
+            var scrollTop = window.pageYOffset;
+            lazyloadImages.forEach(function(img) {
+                if(img.offsetTop < (window.innerHeight + scrollTop)) {
+                  img.src = img.dataset.src;
+                  img.classList.remove('lazy');
+                }
+            });
+            if(lazyloadImages.length == 0) {
+              document.removeEventListener("scroll", lazyload);
+              window.removeEventListener("resize", lazyload);
+              window.removeEventListener("orientationChange", lazyload);
+            }
+        }, 20);
+        }
+
+        document.addEventListener("scroll", lazyload);
+        window.addEventListener("resize", lazyload);
+        window.addEventListener("orientationChange", lazyload);
+        });
 
     </script>
 {% endblock %}
