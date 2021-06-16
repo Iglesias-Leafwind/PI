@@ -15,7 +15,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder
-from app.processing import frr
+#from app.processing import frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
@@ -289,7 +289,7 @@ isLaterThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - f
 def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
-    result_hashs = list(map(lambda x: x.hash, search(query_array)))  # searching and getting result's images hash
+    result_hashs = list(map(lambda x: x.meta.id, search(query_array)))  # searching and getting result's images hash
     print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
@@ -397,7 +397,7 @@ def get_image_results(query_array):
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
-            if not searchFilterOptions['breeds']:
+            if not searchFilterOptions['places']:
                 remove.add(True)
             else:
                 tags = [t for t in img.tag.match(originalTagSource='places')]
@@ -427,10 +427,18 @@ def get_image_results(query_array):
                 #print('breeds', [rel.score for rel in relationships])
                 remove.add(outside_limits)
 
+        # locations
+        locations = [t for t in img.location ]
+        regions = [r for l in locations for c in l.city for r in c.region]
+        countries = [country for r in regions for country in r.country]
+        tags = locations + regions + countries
+        tags = [t.name.lower() for t in tags]
 
-        #print('remove', remove)
+        dentro = any([q in t for q in query_array for t in tags])
+        if dentro:
+            remove.add(False)
+
         if not all(remove):
-            #print('adicionou..')
             img.features = None
             results[tag].append((img, img.tag.all()))  # insert tags in the dictionary
     return results
