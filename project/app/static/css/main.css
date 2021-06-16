@@ -488,6 +488,12 @@ button:focus{
 }
 .imagePath {
   margin: 2% 0%;
+  text-align:left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 99%;
+  display : block;
 }
 
 /* Rename Profiles Modal */
