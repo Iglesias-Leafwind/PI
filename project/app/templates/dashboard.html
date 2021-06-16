@@ -83,7 +83,7 @@
             <h1 class="stats-text">{{ countTagSource.objects }}</h1>
             <p class="stats-text" style="margin-top: -4vh">objects</p>
         </div>
-        <div class="piechart">
+         <div class="piechart">
             <div id="chart1"></div>
         </div>
         <div class="barchart">
@@ -92,6 +92,7 @@
 
     </div>
 <script type="text/javascript">
+
     drawChart();
     function drawChart() {
         countTagsDjango = {{ counts|safe }};
@@ -122,7 +123,8 @@
                 legendText: "{label}",
                 indexLabelFontSize: 18,
                 indexLabel: "{label} - {y}",
-                dataPoints: dataPoints
+                dataPoints: dataPoints,
+                width: 400
             }]
         });
         chart.render();
@@ -144,7 +146,6 @@
             exportEnabled: true,
             animationEnabled: true,
             height: 300,
-            width: 600,
             title: {
                 text: "Top Most Common Tag Sources",
                 fontSize: 20,
