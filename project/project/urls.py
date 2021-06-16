@@ -39,4 +39,5 @@ urlpatterns = [
     path('scenes', views.scenes_gallery, name='placesGallery'),
     path('text', views.text_gallery, name='textGallery'),
     path('gallery', views.calendar_gallery, name='gallery'),
+    path('folder/<str:name>', views.searchFolder, name='getAllImagesOfFolder'),
 ]

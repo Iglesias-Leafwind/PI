@@ -12,9 +12,10 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
-from app.models import ImageES, ImageNeo, Tag, Person, Location
+from app.models import ImageES, ImageNeo, Tag, Person, Location, Folder
 
-from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, \
+    getAllImagesOfFolder, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
@@ -63,9 +64,10 @@ def update_tags(request, hash):
 
 from app.utils import showDict
 
+index_string = "index.html"
+
 def index(request):
     # para os filtros
-    index_string = "index.html"
     opts = searchFilterOptions
     opts['current_url'] = request.get_full_path()
     filters = FilterSearchForm(initial=opts)
@@ -102,25 +104,9 @@ def index(request):
             query_original = process_text(query_text)
             tag = "#" + " #".join(query_original)  # arranging tags with '#' before
 
-            """
-
-            result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
-
-            results = {tag: []} # blank results dictionary
-
-            for hash in result_hashs:   # iterating through the result's hashes
-                img = ImageNeo.nodes.get_or_none(hash=hash) # fetching the reuslts nodes from DB
-                if img is None: # if there is no image with this hash in DB
-                    continue    # ignore, advance
-                tags = img.tag.all()    # get all tags from the image
-                results[tag].append((img, tags))    # insert tags in the dictionary
-                img.features = None
-            """
-
             results_ = get_image_results(query_array)
+            print('after search')
             key = list(results_.keys())[0]
-            print(len(results_[key]))
-
 
             if len(query_array) > 0:
                 def sort_by_score(elem):
@@ -135,6 +121,8 @@ def index(request):
                     return - (score / len(query_array))
 
                 results_[key].sort(key=sort_by_score)
+
+            print('after sort')
 
             results = {}
             results[tag] = results_[key]
@@ -294,7 +282,8 @@ isLaterThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - f
 def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
-    result_hashs = list(map(lambda x: x.meta.id, search(query_array)))  # searching and getting result's images hash
+    result_hashs = list([x.meta.id for x in search(query_array)])
+
     print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
@@ -379,24 +368,12 @@ def get_image_results(query_array):
                 #print([rel.score for rel in relationships])
                 remove.add(outside_limits) # adiciona Falso se n houver nenhum
 
-        # -- folder name --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            remove.add(not searchFilterOptions['folder_name'])
-
 
         # -- ocr --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
             remove.add(not searchFilterOptions['text'])
-
-        # -- exif --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            remove.add(not searchFilterOptions['exif'])
 
         # -- places --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
@@ -455,6 +432,12 @@ def get_image_results(query_array):
 
     return results
 
+def searchFolder(request, name):
+    results = getAllImagesOfFolder(name)
+    return render(request, index_string,
+                  {'filters_form': FilterSearchForm(), 'form': query, 'image_form': image, 'results': results, 'error': False})
+
+
 def delete(request, path):
     do(deleteFolder, path)
     response = redirect('/folders')
@@ -500,8 +483,9 @@ def managepeople(request):
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
 
 def search(tags):
+    imageInPage = 1500
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
-    s = Search(using=es, index='image').query(q).extra(from_=0, size=999)
+    s = Search(using=es, index='image').query(q).extra(from_=0, size=imageInPage)
     return s.execute()
 
 def alreadyProcessed(img_path):
@@ -580,53 +564,32 @@ def update_faces(request):
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
-    person_number = 0
-    for _ in Person.nodes.all():
-        person_number += 1
+    person_number = len(Person.nodes)
 
-    location_number = 0
-    for _ in Location.nodes.all():
-        location_number +=1
+    location_number = len(Location.nodes)
 
     results = {}
-    counts = {}
-    for tag in Tag.nodes.all():
 
-        results["#" + tag.name] = tag.image.all()
-        count = 0
-        for lst_image in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
-            count += 1
-        counts[tag.name] = len(results["#" + tag.name])
-
-    count_tags = dict(sorted(counts.items(), key=lambda item: item[1],
-                            reverse=True))  # sort the dict by its value (count), from the greatest to the lowest
-    if len(count_tags) < 10:
-        count_tags = dict(itertools.islice(count_tags.items(), len(count_tags)))
-    else:
-        count_tags = dict(itertools.islice(count_tags.items(), 10))  # only want the first top 10 more common tags
-    count_tags = json.dumps(count_tags)
+    count_tags = {}
+    for tagName, count in Tag().getTop10Tags():
+        count_tags[tagName] = count
 
     ## original tag source statistics
     count_original_tag_source = {}
     all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
-                    "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            rel = img.tag.relationship(tag)
-            original_tag_source = rel.originalTagSource
-            original_tag_source = all_tag_labels[original_tag_source]
-            # print(tag.name, original_tag_source)
-            if original_tag_source not in count_original_tag_source:
-                count_original_tag_source[original_tag_source] = 1
-            else:
-                count_original_tag_source[original_tag_source] += 1
+                    "location": "image locations", "folder": "folders", "breeds": "breed"}
 
-    # print(count_original_tag_source)
-    for label in all_tag_labels.values():
-        if label not in count_original_tag_source.keys():
-            count_original_tag_source[label] = 0
+    for sourceName, tagsCount in Tag().tagSourceStatistics():
+        count_original_tag_source[sourceName] = tagsCount
+
+    count_original_tag_source["person"] = Person().countPerson()[0]
+
+    count_original_tag_source["folder"] = Folder().countTerminatedFolders()[0]
+
+    count_original_tag_source["location"] = Location().countLocations()[0]
+
+    if 'ocr' in count_original_tag_source:
+        count_original_tag_source['text'] = count_original_tag_source['ocr']
 
     count_original_tag_source = dict(sorted(count_original_tag_source.items(), key=lambda item: item[1]))
     #print(count_original_tag_source)

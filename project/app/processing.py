@@ -567,7 +567,7 @@ def deleteFolder(uri):
     imgfs = set(ftManager.imageFeatures)
     for di in deleted_images:
         imgfs.remove(di)
-        frr.remove_image(di.hash)
+#        frr.remove_image(di.hash)
 
     ftManager.imageFeatures = list(imgfs)
     f = []
@@ -592,6 +592,14 @@ def findSimilarImages(uri):
         imlist.append(str(ftManager.imageFeatures[index].hash) )
 
     return imlist
+
+def getAllImagesOfFolder(folder):
+    folder = fs.get_last_node(folder)
+    node = Folder.nodes.get_or_none(id_=folder.id)
+    if node:
+        if len(node.images):
+            return node.images
+
 
 def getPlaces(img_path):
     # load the test image
@@ -707,7 +715,7 @@ def getOCR(image):
         ROI = orig[startY:endY, startX:endX]
         imageText = pytesseract.image_to_string(ROI, config=custom_config)
         result = imageText.replace("\x0c", " ").replace("\n", " ")
-        results += (re.sub('[^0-9a-zA-Z -]+', '', result)).split(" ")
+        results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
 
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # Load image, grayscale, Gaussian blur, adaptive threshold
@@ -730,7 +738,7 @@ def getOCR(image):
             ROI = orig[y:y + h, x:x + w]
             imageText = pytesseract.image_to_string(ROI, config=custom_config)
             result = imageText.replace("\x0c", " ").replace("\n", " ")
-            results += (re.sub('[^0-9a-zA-Z -]+', '', result)).split(" ")
+            results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
 
     # Transform set into a single string
     # filter words
