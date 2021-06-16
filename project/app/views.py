@@ -20,7 +20,7 @@ from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_ima
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
 from scripts.esScript import es
-from app.nlpFilterSearch import process_query
+from app.nlpFilterSearch import process_query, process_text
 from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
@@ -100,7 +100,8 @@ def index(request):
             image = SearchForImageForm()  # fetching the images form
             query_text = request.GET.get("query")  # fetching the inputted query
             query_array = process_query(query_text)  # processing query with nlp
-            tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+            query_original = process_text(query_text)
+            tag = "#" + " #".join(query_original)  # arranging tags with '#' before
 
             """
 
@@ -117,8 +118,10 @@ def index(request):
                 img.features = None
             """
 
-            results = get_image_results(query_array)
-            print(len(results[tag]))
+            results_ = get_image_results(query_array)
+            key = list(results_.keys())[0]
+            print(len(results_[key]))
+
 
             if len(query_array) > 0:
                 def sort_by_score(elem):
@@ -132,7 +135,10 @@ def index(request):
                                 break
                     return - (score / len(query_array))
 
-                results[tag].sort(key=sort_by_score)
+                results_[key].sort(key=sort_by_score)
+
+            results = {}
+            results[tag] = results_[key]
 
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 

@@ -54,17 +54,23 @@ def get_synsets(lemmatized_words):
     synset_lst = [wordnet.synsets(token) for token in lemmatized_words]
     return lemmatized_words | set([elem.lemma_names()[:1][0].lower()  for lst in synset_lst for elem in lst[:5]])
 
+def process_text(text):
+    text = text.lower()
+    results = tokenizeText(text)
+    results = filterPunctuation(results)
+    return results
 
 def process_query(text):
     text = text.lower()
-    results = tokenizeText(text)
-    words = filterPunctuation(results)
+    words = process_text(text)
     results = filterStopWords(words)
     results = stemming_method(results)
     results = posTagging(results)
     results = lemmatization_method(results)
     results = get_synsets(results)
     return results | words
+
+
 
 
 text = "loving someone is something beautiful, just like the nature. I love the world."
