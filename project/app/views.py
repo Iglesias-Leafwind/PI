@@ -14,8 +14,7 @@ from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location
 
-from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder
-#from app.processing import frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
@@ -446,7 +445,14 @@ def get_image_results(query_array):
 
         if not all(remove):
             img.features = None
-            results[tag].append((img, img.tag.all()))  # insert tags in the dictionary
+            all_img_tags = img.tag.all()
+            set_all_img_tags = []
+            for tag_object in all_img_tags:
+                if tag_object not in set_all_img_tags:
+                    set_all_img_tags += [tag_object]
+            results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
+
+
     return results
 
 def delete(request, path):
