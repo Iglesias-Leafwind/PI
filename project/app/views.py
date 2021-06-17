@@ -610,28 +610,27 @@ def calendar_gallery(request):
     dates_insertion = {}
     dates_creation = {}
     previous_images = []
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            if img not in previous_images:
-                insertion_date = str(img.insertion_date)
-                creation_date = str(img.creation_date)
-                insertion_date = insertion_date.split(" ")[0]
-                creation_date = creation_date.split(" ")[0]
-                if insertion_date not in dates_insertion:
-                    dates_insertion[insertion_date] = 1
-                else:
-                    dates_insertion[insertion_date] += 1
-                if creation_date != "None":
-                    if creation_date not in dates_creation:
-                        dates_creation[creation_date] = 1
-                    else:
-                        dates_creation[creation_date] += 1
-
-                previous_images += [img]
-
+    img_list = ImageNeo.nodes.all()
+    for img in img_list:
+        if img not in previous_images:
+            insertion_date = str(img.insertion_date)
+            creation_date = str(img.creation_date)
+            insertion_date = insertion_date.split(" ")[0]
+            creation_date = creation_date.split(" ")[0]
+            if insertion_date not in dates_insertion:
+                dates_insertion[insertion_date] = 1
             else:
-                continue
+                dates_insertion[insertion_date] += 1
+            if creation_date != "None":
+                if creation_date not in dates_creation:
+                    dates_creation[creation_date] = 1
+                else:
+                    dates_creation[creation_date] += 1
+
+            previous_images += [img]
+
+        else:
+            continue
 
     dates_insertion = dict(sorted(dates_insertion.items(), key=lambda item: item[0]))
     dates_insertion = json.dumps(dates_insertion)
@@ -644,24 +643,11 @@ def objects_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
     all_object_tags = {}
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            rel = img.tag.relationship(tag)
-            original_tag_source = rel.originalTagSource
-            if original_tag_source == "object":
-                first_letter = tag.name[0].upper()
-                if first_letter not in all_object_tags.keys():
-                    all_object_tags[first_letter] = [tag.name.lower()]
-                else:
-                    if tag.name not in all_object_tags[first_letter]:
-                        all_object_tags[first_letter] += [tag.name.lower()]
-
-    for key in all_object_tags:
-        value = all_object_tags[key]
-        value = value.sort()
-
-    all_object_tags = dict(sorted(all_object_tags.items()))
+    for letter,tag_name in Tag().getTags("object"):
+        if letter in all_object_tags:
+            all_object_tags[letter] += [tag_name]
+        else:
+            all_object_tags[letter] = [tag_name]
 
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': all_object_tags})
@@ -691,24 +677,12 @@ def scenes_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
     all_place_tags = {}
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            rel = img.tag.relationship(tag)
-            original_tag_source = rel.originalTagSource
-            if original_tag_source == "places":
-                first_letter = tag.name[0].upper()
-                if first_letter not in all_place_tags.keys():
-                    all_place_tags[first_letter] = [tag.name.lower()]
-                else:
-                    if tag.name not in all_place_tags[first_letter]:
-                        all_place_tags[first_letter] += [tag.name.lower()]
+    for letter,tag_name in Tag().getTags("places"):
+        if letter in all_place_tags:
+            all_place_tags[letter] += [tag_name]
+        else:
+            all_place_tags[letter] = [tag_name]  
 
-    for key in all_place_tags:
-        value = all_place_tags[key]
-        value = value.sort()
-
-    all_place_tags = dict(sorted(all_place_tags.items()))
     return render(request, 'placesGallery.html',
                   {'form': form, 'image_form': image, 'placesTags': all_place_tags})
 
@@ -716,25 +690,12 @@ def text_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
     all_text_tags = {}
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            rel = img.tag.relationship(tag)
-            original_tag_source = rel.originalTagSource
-            if original_tag_source == "ocr":
-                first_letter = tag.name[0].upper()
-                if first_letter not in all_text_tags.keys():
-                    all_text_tags[first_letter] = [tag.name.lower()]
-                else:
-                    if tag.name not in all_text_tags[first_letter]:
-                        all_text_tags[first_letter] += [tag.name.lower()]
-
-    for key in all_text_tags:
-        value = all_text_tags[key]
-        value = value.sort()
-
-    all_text_tags = dict(sorted(all_text_tags.items()))
-
+    for letter,tag_name in Tag().getTags("ocr"):
+        if letter in all_text_tags:
+            all_text_tags[letter] += [tag_name]
+        else:
+            all_text_tags[letter] = [tag_name]
+            
     return render(request, 'textGallery.html',
                   {'form': form, 'image_form': image, 'textTags': all_text_tags})
 
@@ -800,19 +761,3 @@ def export_to_excel(request, ids):
                            height, tags, persons, locations])
 
     return response
-  
-def locationsGallery(request):
-    form = SearchForm()
-    image = SearchForImageForm()
-    locations = {}
-    for tag in Tag.nodes.all():
-        imgList = tag.image.all()
-        for img in imgList:
-            location = img.location
-            if location not in locations:
-                locations[location] = 1
-            else:
-                locations[location] += 1
-            #print(location)
-    return render(request, 'locationsGallery.html',
-                  {'form': form, 'image_form': image, 'locations': locations})
