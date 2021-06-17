@@ -43,7 +43,6 @@ class FaceRecognition:
         # once again, ver o q retornar dependendo do que é necessário
         return image, boxes
 
-    # TODO maybe change this? n faz sentido td porder ser None
     def save_face_identification(self, image=None, box = None, name=None, conf=1, encoding=None, approved=False, imghash=None):
         face_encoding = encoding
         if face_encoding is None:
@@ -151,9 +150,9 @@ class FaceRecognition:
     # -- helper --
     def change_relationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True, enc=None, thumbnail=None):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
-        if img is None:
-            print('IMAGE IS NONE')
-            print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
+        #if img is None:
+            #print('IMAGE IS NONE')
+            #print(image_hash, new_personname, old_personname, confiance, approved, enc, thumbnail)
 
         new_person = Person.nodes.get_or_none(name=new_personname)
         if new_person is None:
@@ -161,8 +160,8 @@ class FaceRecognition:
             #print('new person was created')
 
         old_person = Person.nodes.get_or_none(name=old_personname)
-        if old_person is None:
-            print('OLD PERSON IS NONE')
+        #if old_person is None:
+            #print('OLD PERSON IS NONE')
 
         existent_rel = old_person.image.all_relationships(img)
 
@@ -213,6 +212,8 @@ class FaceRecognition:
         img.save(using=es)
 
     def remove_image(self, image_hash):
+        self.delete_thumbs(image_hash)
+
         # [(r[1].encodings, r[1].confiance, r[1].approved, r[0].hash) for r in rels]
         temp = self.name2encodings
         keys_to_remove = set()
@@ -228,3 +229,18 @@ class FaceRecognition:
             p = Person.nodes.get_or_none(name=k)
             if p is not None:
                 p.delete()
+
+    def delete_thumbs(self, image_hash):
+        img = ImageNeo.nodes.get_or_none(hash=image_hash)
+        if img is None:
+            return
+
+        people = img.person.all()
+        thumbs = [rel.icon for rels in [img.person.all_relationships(p) for p in people] for rel in rels ]
+        for t in thumbs:
+            tt = os.path.join('app', t)
+            if os.path.exists(tt):
+                os.remove(tt)
+            else:
+                print("n existe")
+                print(tt, t)

@@ -12,15 +12,15 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
-from app.models import ImageES, ImageNeo, Tag, Person, Location
+from app.models import ImageES, ImageNeo, Tag, Person, Location, Folder
 
-from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder
-#from app.processing import frr
+from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, \
+    getAllImagesOfFolder, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
 from scripts.esScript import es
-from app.nlpFilterSearch import process_query
+from app.nlpFilterSearch import process_query, process_text
 from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
@@ -64,9 +64,10 @@ def update_tags(request, hash):
 
 from app.utils import showDict
 
+index_string = "index.html"
+
 def index(request):
     # para os filtros
-    index_string = "index.html"
     opts = searchFilterOptions
     opts['current_url'] = request.get_full_path()
     filters = FilterSearchForm(initial=opts)
@@ -100,25 +101,12 @@ def index(request):
             image = SearchForImageForm()  # fetching the images form
             query_text = request.GET.get("query")  # fetching the inputted query
             query_array = process_query(query_text)  # processing query with nlp
-            tag = "#" + " #".join(query_array)  # arranging tags with '#' before
+            query_original = process_text(query_text)
+            tag = "#" + " #".join(query_original)  # arranging tags with '#' before
 
-            """
-
-            result_hashs = list(map(lambda x: x.hash, search(query_array))) # searching and getting result's images hash
-
-            results = {tag: []} # blank results dictionary
-
-            for hash in result_hashs:   # iterating through the result's hashes
-                img = ImageNeo.nodes.get_or_none(hash=hash) # fetching the reuslts nodes from DB
-                if img is None: # if there is no image with this hash in DB
-                    continue    # ignore, advance
-                tags = img.tag.all()    # get all tags from the image
-                results[tag].append((img, tags))    # insert tags in the dictionary
-                img.features = None
-            """
-
-            results = get_image_results(query_array)
-            print(len(results[tag]))
+            results_ = get_image_results(query_array)
+            print('after search')
+            key = list(results_.keys())[0]
 
             if len(query_array) > 0:
                 def sort_by_score(elem):
@@ -132,7 +120,12 @@ def index(request):
                                 break
                     return - (score / len(query_array))
 
-                results[tag].sort(key=sort_by_score)
+                results_[key].sort(key=sort_by_score)
+
+            print('after sort')
+
+            results = {}
+            results[tag] = results_[key]
 
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
@@ -283,14 +276,15 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
-isBeforeThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
-isLaterThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
+isBeforeThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
+isLaterThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
 
 def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
-    result_hashs = list(map(lambda x: x.meta.id, search(query_array)))  # searching and getting result's images hash
-    print('len result_hashs : ' , len(result_hashs))
+    result_hashs = list([x.meta.id for x in search(query_array)])
+
+    #print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
         remove = set()
@@ -313,22 +307,28 @@ def get_image_results(query_array):
         if searchFilterOptions['insertion_date_activate']:
 
             fromm = timeHelper['insertion_date_from']
-            if fromm is not None and isBeforeThan(img, fromm):
+            if fromm is not None and isBeforeThan(img.insertion_date, fromm):
                     continue # is before the limit, not shown
             too = timeHelper['insertion_date_to']
-            if too is not None and isLaterThan(img, too):
+            if too is not None and isLaterThan(img.insertion_date, too):
                     continue
 
-        """
-            fromm = timeHelper['insertion_date_from']
+        if searchFilterOptions['taken_date_activate']:
+            if img.creation_date is None:
+                continue
+            try:
+                d = datetime.datetime.strptime(img.creation_date, '%Y:%m:%d %H:%M:%S')
+            except ValueError:  # invalid format
+                continue
+
+            fromm = timeHelper['taken_date_from']
             if fromm is not None:
-                if isBeforeThan(img, fromm):
+                if isBeforeThan(d, fromm):
                     continue # is before the limit, not shown
-            too = timeHelper['insertion_date_to']
+            too = timeHelper['taken_date_to']
             if too is not None:
-                if isLaterThan(img, too):
+                if isLaterThan(d, too):
                     continue
-                    """
 
         #       ---- people ---
 
@@ -374,24 +374,12 @@ def get_image_results(query_array):
                 #print([rel.score for rel in relationships])
                 remove.add(outside_limits) # adiciona Falso se n houver nenhum
 
-        # -- folder name --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='folder')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            remove.add(not searchFilterOptions['folder_name'])
-
 
         # -- ocr --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
         dentro = any([q in t for q in query_array for t in tags])
         if dentro:
             remove.add(not searchFilterOptions['text'])
-
-        # -- exif --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='exif')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            remove.add(not searchFilterOptions['exif'])
 
         # -- places --
         tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
@@ -440,8 +428,21 @@ def get_image_results(query_array):
 
         if not all(remove):
             img.features = None
-            results[tag].append((img, img.tag.all()))  # insert tags in the dictionary
+            all_img_tags = img.tag.all()
+            set_all_img_tags = []
+            for tag_object in all_img_tags:
+                if tag_object not in set_all_img_tags:
+                    set_all_img_tags += [tag_object]
+            results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
+
+
     return results
+
+def searchFolder(request, name):
+    results = getAllImagesOfFolder(name)
+    return render(request, index_string,
+                  {'filters_form': FilterSearchForm(), 'form': query, 'image_form': image, 'results': results, 'error': False})
+
 
 def delete(request, path):
     do(deleteFolder, path)
@@ -488,8 +489,9 @@ def managepeople(request):
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
 
 def search(tags):
+    imageInPage = 1500
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
-    s = Search(using=es, index='image').query(q).extra(from_=0, size=999)
+    s = Search(using=es, index='image').query(q).extra(from_=0, size=imageInPage)
     return s.execute()
 
 def alreadyProcessed(img_path):
@@ -522,8 +524,8 @@ def update_faces(request):
         redirect(people_url_string)
 
     form = PersonsForm(request.POST)
-    if not form.is_valid():
-        print('invalid form!!!')
+    form.is_valid()
+        #print('invalid form!!!')
 
     #print(form.cleaned_data)
     data = form.cleaned_data
@@ -568,54 +570,34 @@ def update_faces(request):
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
-    person_number = 0
-    for _ in Person.nodes.all():
-        person_number += 1
+    person_number = len(Person.nodes)
 
-    location_number = 0
-    for _ in Location.nodes.all():
-        location_number +=1
+    location_number = len(Location.nodes)
 
     results = {}
-    counts = {}
-    for tag in Tag.nodes.all():
 
-        results["#" + tag.name] = tag.image.all()
-        count = 0
-        for lst_image in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
-            count += 1
-        counts[tag.name] = len(results["#" + tag.name])
-
-    count_tags = dict(sorted(counts.items(), key=lambda item: item[1],
-                            reverse=True))  # sort the dict by its value (count), from the greatest to the lowest
-    if len(count_tags) < 10:
-        count_tags = dict(itertools.islice(count_tags.items(), len(count_tags)))
-    else:
-        count_tags = dict(itertools.islice(count_tags.items(), 10))  # only want the first top 10 more common tags
-    count_tags = json.dumps(count_tags)
+    count_tags = {}
+    for tagName, count in Tag().getTop10Tags():
+        count_tags[tagName] = count
 
     ## original tag source statistics
     count_original_tag_source = {}
     all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
-                    "exif": "image properties", "folder": "folder's name", "breeds": "breed"}
-    for tag in Tag.nodes.all():
-        img_list = tag.image.all()
-        for img in img_list:
-            rel = img.tag.relationship(tag)
-            original_tag_source = rel.originalTagSource
-            original_tag_source = all_tag_labels[original_tag_source]
-            # print(tag.name, original_tag_source)
-            if original_tag_source not in count_original_tag_source:
-                count_original_tag_source[original_tag_source] = 1
-            else:
-                count_original_tag_source[original_tag_source] += 1
+                    "location": "locations", "folder": "folders", "breeds": "breeds", "person": "people"}
 
-    # print(count_original_tag_source)
-    for label in all_tag_labels.values():
-        if label not in count_original_tag_source.keys():
-            count_original_tag_source[label] = 0
+    for sourceName, tagsCount in Tag().tagSourceStatistics():
+        count_original_tag_source[sourceName] = tagsCount
 
+    count_original_tag_source["person"] = Person().countPerson()[0]
+
+    count_original_tag_source["folder"] = Folder().countTerminatedFolders()[0]
+
+    count_original_tag_source["location"] = Location().countLocations()[0]
+
+    for tag_key in all_tag_labels.keys():
+        if tag_key not in count_original_tag_source.keys():
+            count_original_tag_source[tag_key] = 0
+        
     count_original_tag_source = dict(sorted(count_original_tag_source.items(), key=lambda item: item[1]))
     #print(count_original_tag_source)
     return render(request, 'dashboard.html',
@@ -691,7 +673,7 @@ def people_gallery(request):
 
     all_names = sorted(list(set(all_names)))
 
-    print(all_names)
+    #print(all_names)
 
     all_names_dict = {}
 
@@ -701,7 +683,7 @@ def people_gallery(request):
             all_names_dict[first_letter] = [name]
         else:
             all_names_dict[first_letter] += [name]
-    print(all_names_dict)
+    #print(all_names_dict)
     return render(request, 'peopleGallery.html',
                   {'form': form, 'image_form': image, 'people': all_names_dict})
 

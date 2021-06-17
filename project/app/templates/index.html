@@ -209,12 +209,32 @@
                         {% for image in tag_cluster.1 %}
                             {% if image.0 is not None %}
                                 <div class="col">
-                                    <div class="card shadow-sm img_box">
+					{% if forloop.counter < 18 %}
+                                    	<div class="card shadow-sm img_box">
+                                        	{% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                           
+						<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            
+                                        	{% endwith %}
+                                        	<div class="card-body">
+                                            		<p class="card-text">{{ image.0.name|truncatechars:16}}</p>
+                                            		<div class="d-flex justify-content-between align-items-center">
+                                                		<div class="btn-group">
+                                                    			<button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                            			data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
+                                                    			</button>
+                                                		</div> <!--btn group-->
+                                                		<img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                            		</div> <!--d-flex justify-content-between align-items-center-->
+                                        	</div> <!--card-body-->
+                                    </div> <!--card shadow-sm-->
+				{% else %}
+                                    <div class="card shadow-sm img_box lazy" style="display: none;">
                                         {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}"
-                                                 src="{% static image_static %}">
+                                           
+					<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            
                                         {% endwith %}
-
                                         <div class="card-body">
                                             <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
                                             <div class="d-flex justify-content-between align-items-center">
@@ -227,6 +247,7 @@
                                             </div> <!--d-flex justify-content-between align-items-center-->
                                         </div> <!--card-body-->
                                     </div> <!--card shadow-sm-->
+				{% endif %}
                                 </div> <!--col-->
                                 <div class="modal fade detailsModal"
                                      id="resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}"
@@ -265,7 +286,7 @@
                                                         {% endfor %}
                                                     </div>
                                                     <input hidden class="postInput" type="text" name="tags">
-                                                    <p class="imagePath">
+                                                    <p title="{{ image.0.folder_uri }}/{{ image.0.name }}" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
                                                         Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
                                                     <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
                                                     {% if not image.0.creation_date is None %}
@@ -557,6 +578,35 @@
             }
         });
 
+        document.addEventListener("DOMContentLoaded", function() {
+        var lazyloadImages = document.querySelectorAll("div.lazy");
+        var lazyloadThrottleTimeout;
+
+        function lazyload () {
+            if(lazyloadThrottleTimeout) {
+              clearTimeout(lazyloadThrottleTimeout);
+            }
+
+            lazyloadThrottleTimeout = setTimeout(function() {
+                    var scrollTop = window.pageYOffset;
+                    lazyloadImages.forEach(function(div) {
+                        if(div.offsetTop < (window.innerHeight + scrollTop)) {
+                          div.style.removeProperty("display");
+                          div.classList.remove('lazy');
+                        }
+                    });
+                    if(lazyloadImages.length == 0) {
+                      document.removeEventListener("scroll", lazyload);
+                      window.removeEventListener("resize", lazyload);
+                      window.removeEventListener("orientationChange", lazyload);
+                    }
+            }, 20);
+        }
+
+            document.addEventListener("scroll", lazyload);
+            window.addEventListener("resize", lazyload);
+            window.addEventListener("orientationChange", lazyload);
+        });
 
     </script>
 {% endblock %}
