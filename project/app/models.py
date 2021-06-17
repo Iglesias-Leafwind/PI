@@ -84,10 +84,20 @@ class Tag(StructuredNode):
         query = "MATCH (t:Tag)<-[r]-(i) WITH DISTINCT t, r.originalTagSource AS ts WITH COUNT(t) AS tags,ts RETURN ts,tags ORDER BY tags DESC"
         results, meta = db.cypher_query(query)
         return [(row[0], row[1]) for row in results]
-
+    
+    def getTags(self,tag_source):
+        query = "MATCH (t:Tag)<-[r:`Has a`{originalTagSource: $tag_source}]-(i) WITH DISTINCT t.name as name RETURN left(name,1), name ORDER BY name ASC"
+        results, meta = db.cypher_query(query, {"tag_source":tag_source})
+        return [(row[0].upper(),row[1]) for row in results]
+        
 class Person(StructuredNode):
     name = StringProperty(required=True)
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
+
+    def countRelations(self):
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person) where id(p)=$id with count(r) as rels RETURN rels"
+        results, meta = db.cypher_query(query, {"id": self.id})
+        return [row[0] for row in results]
 
     def getDetails(self):
         query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person)  WHERE id(p)=$id RETURN r"

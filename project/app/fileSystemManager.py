@@ -158,7 +158,7 @@ class SimpleFileSystemManager:
             path = os.path.join(path, p)
         return path
 
-    def delete_folder_from_fs(self, uri, frr):
+    def delete_folder_from_fs(self, uri):
         try:
             if self.exist(uri):
                 node = self.get_last_node(uri)
@@ -181,7 +181,6 @@ class SimpleFileSystemManager:
 
                     if images is not None:
                         for image in images:
-                            frr.remove_image(image.hash)
                             if len(image.folder) > 1: # if image is in different folders
                                 currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                                 currentImageUri = self.__builFullPath__(currentImageUri)
@@ -207,7 +206,8 @@ class SimpleFileSystemManager:
                                     es_image.delete(using=es)
                                     deletedImages.append(ImageFeature(hash=image.hash))
                                 except Exception as e:
-                                    logging.info("[Deleting]: [ERROR] Image missing: " + e)
+                                    logging.info("[Deleting]: [ERROR] Image missing: ")
+                                    print(e)
 
 
                     childrenFolders = f.getChildren()
@@ -236,7 +236,8 @@ class SimpleFileSystemManager:
 
                 return deletedImages
         except Exception as e:
-            logging.info("[Deleting]: [ERROR] Delete error " + e)
+            logging.info("[Deleting]: [ERROR] Delete error ")
+            print(e)
 
 
 
