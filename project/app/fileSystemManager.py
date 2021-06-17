@@ -158,7 +158,7 @@ class SimpleFileSystemManager:
             path = os.path.join(path, p)
         return path
 
-    def delete_folder_from_fs(self, uri, frr):
+    def delete_folder_from_fs(self, uri):
         try:
             if self.exist(uri):
                 node = self.get_last_node(uri)
