@@ -524,7 +524,7 @@ def update_faces(request):
         redirect(people_url_string)
 
     form = PersonsForm(request.POST)
-    #if not form.is_valid():
+    form.is_valid()
         #print('invalid form!!!')
 
     #print(form.cleaned_data)
