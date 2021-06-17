@@ -45,6 +45,8 @@ cpuPerThread = 1
 ramPerThread = 1
 threadTasks = {}
 
+
+
 def testing_thread_capacity():
     global cpuPerThread
     global ramPerThread
@@ -68,7 +70,7 @@ def testing_thread_capacity():
     cpu_med = (cpu_sum / iterating)
     ram_med = (ram_sum / iterating)
 
-    deleteFolder(dir_path)
+    deleteFolder(dir_path, frr)
     cpuPerThread = cpu_med - cpu_normal
     cpuPerThread /= 2
 
@@ -516,7 +518,7 @@ def processing(dir_files):
         if not at_least_one:
             try:
                 processingLock.acquire()
-                fs.delete_folder_from_fs(dir)
+                fs.delete_folder_from_fs(dir, frr)
             finally:
                 processingLock.release()
 
@@ -547,13 +549,13 @@ def alreadyProcessed(img_path):
 
     return existed
 
-def deleteFolder(uri):
+def deleteFolder(uri, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
     if fs.exist(uri):
         try:
             processingLock.acquire()
-            deleted_images = fs.delete_folder_from_fs(uri)
+            deleted_images = fs.delete_folder_from_fs(uri, frr)
         finally:
             processingLock.release()
     else:
@@ -567,7 +569,7 @@ def deleteFolder(uri):
     imgfs = set(ftManager.imageFeatures)
     for di in deleted_images:
         imgfs.remove(di)
-        frr.remove_image(di.hash)
+#        frr.remove_image(di.hash)
 
     ftManager.imageFeatures = list(imgfs)
     f = []
@@ -592,6 +594,14 @@ def findSimilarImages(uri):
         imlist.append(str(ftManager.imageFeatures[index].hash) )
 
     return imlist
+
+def getAllImagesOfFolder(folder):
+    folder = fs.get_last_node(folder)
+    node = Folder.nodes.get_or_none(id_=folder.id)
+    if node:
+        if len(node.images):
+            return node.images
+
 
 def getPlaces(img_path):
     # load the test image
@@ -707,7 +717,7 @@ def getOCR(image):
         ROI = orig[startY:endY, startX:endX]
         imageText = pytesseract.image_to_string(ROI, config=custom_config)
         result = imageText.replace("\x0c", " ").replace("\n", " ")
-        results += (re.sub('[^0-9a-zA-Z -]+', '', result)).split(" ")
+        results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
 
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # Load image, grayscale, Gaussian blur, adaptive threshold
@@ -730,7 +740,7 @@ def getOCR(image):
             ROI = orig[y:y + h, x:x + w]
             imageText = pytesseract.image_to_string(ROI, config=custom_config)
             result = imageText.replace("\x0c", " ").replace("\n", " ")
-            results += (re.sub('[^0-9a-zA-Z -]+', '', result)).split(" ")
+            results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
 
     # Transform set into a single string
     # filter words

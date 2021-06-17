@@ -76,6 +76,7 @@ timeHelper = {}
 searchFilterOptions = {}
 reset_filters()
 
+
 def getImagesPerUri(pathName):
     dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
 

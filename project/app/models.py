@@ -75,6 +75,15 @@ class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
     image = RelationshipFrom(ImageNeo, HasA.rel, model=HasA)
 
+    def getTop10Tags(self):
+        query = "MATCH (t:Tag)<-[r]-(i) WITH t,COUNT(r) AS rels RETURN t, rels ORDER BY rels DESC LIMIT 10"
+        results, meta = db.cypher_query(query)
+        return [(Tag.inflate(row[0]).name, row[1]) for row in results]
+
+    def tagSourceStatistics(self):
+        query = "MATCH (t:Tag)<-[r]-(i) WITH DISTINCT t, r.originalTagSource AS ts WITH COUNT(t) AS tags,ts RETURN ts,tags ORDER BY tags DESC"
+        results, meta = db.cypher_query(query)
+        return [(row[0], row[1]) for row in results]
 
 class Person(StructuredNode):
     name = StringProperty(required=True)
@@ -90,6 +99,10 @@ class Person(StructuredNode):
         results, meta = db.cypher_query(query)
         return [row[0] for row in results]
 
+    def countPerson(self):
+        query = "MATCH (p:Person) WITH count(p) AS persons RETURN persons"
+        results, meta = db.cypher_query(query)
+        return [row[0] for row in results]
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
@@ -110,6 +123,11 @@ class Location(StructuredNode):
     image = RelationshipFrom('ImageNeo', WasTakenIn.rel, model=WasTakenIn)
     city = RelationshipTo('City', IsIn.rel, model=IsIn)
 
+    def countLocations(self):
+        query = "MATCH(c: City), (r:Region), (cnt:Country) WITH COUNT(c) AS cs, count(r) AS rs, count(cnt) AS cnts RETURN cs + rs + cnts"
+        results, meta = db.cypher_query(query)
+        return [row[0] for row in results]
+
 
 class Folder(StructuredNode):
     id_ = IntegerProperty(unique_index=True)
@@ -124,6 +142,11 @@ class Folder(StructuredNode):
         query = "MATCH (i:ImageNeo)-[:`Is in`]->(f:Folder {id_:$id_}) RETURN i"
         results, meta = db.cypher_query(query, {"id_": self.id_})
         return [ImageNeo.inflate(row[0]) for row in results]
+
+    def countTerminatedFolders(self):
+        query = "MATCH(f:Folder)<-[]-(i:ImageNeo) WITH DISTINCT f.name AS name RETURN COUNT(name)"
+        results, meta = db.cypher_query(query)
+        return [row[0] for row in results]
 
     def getChildren(self):
         query = "MATCH (c:Folder)-[:`Is in`]->(f:Folder {id_:$id_}) RETURN c"

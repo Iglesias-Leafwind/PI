@@ -6,11 +6,15 @@ Step 1:
 -https://www.python.org/downloads/release/python-380/
 ->Java Developer Kit 11
 -https://www.oracle.com/pt/java/technologies/javase-jdk11-downloads.html
+or
+-https://jdk.java.net/java-se-ri/11
 ->CMAKE
 -https://cmake.org/download/
-
 Step 2:
 -Start you app by running imageable.exe
+or
+-By opening a console and typing python Imageable.py or python3 Imageable.py
+
 
 Known issues:
 -Currently jdk works between 11 and 15
