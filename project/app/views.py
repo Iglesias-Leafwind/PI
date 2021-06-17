@@ -122,11 +122,19 @@ def index(request):
 
                 results_[key].sort(key=sort_by_score)
 
-            print('after sort')
 
             results = {}
-            results[tag] = results_[key]
+            images = [i[0] for i in results_[key]]
 
+            get_people = lambda img : [p.name for p in img.person.all()]
+            #results[tag] = results_[key]
+            results[tag] = [ (a, b, get_people(a)) for a, b in results_[key] ]
+
+
+
+            print(results[tag][0])
+            print(type(results[tag][0]))
+            print(len(results[tag][0]))
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
