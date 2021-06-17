@@ -262,6 +262,16 @@
                                                                                                    title="delete this tag"></i></span>
                                                         {% endfor %}
                                                     </div>
+                                                <br>
+                                                {% if image.2.length > 0 %}
+                                                    <span>People:</span>
+                                                {% endif %}
+                                                    <div class="tagsDiv" >
+
+                                                        {% for elem in image.2 %}
+                                                            <a style="text-decoration: none; color:black;" href="results?query={{ elem }}"><span class="tag" style="background-color: hotpink"> #{{ elem }} </span></a>
+                                                        {% endfor %}
+                                                    </div>
                                                     <input hidden class="postInput" type="text" name="tags">
                                                     <p title="{{ image.0.folder_uri }}/{{ image.0.name }}" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
                                                         Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
