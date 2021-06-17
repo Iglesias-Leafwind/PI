@@ -4,7 +4,6 @@ import io
 import json
 import os
 import zipfile
-from collections import defaultdict
 
 import cv2
 from django.http import HttpResponse, HttpResponseRedirect
@@ -50,13 +49,6 @@ def update_tags(request, hash):
         if tag not in new_tags:
             delete_tag(hash, tag)
 
-    results = {}
-    for tag in ImageNeo.nodes.get(hash=hash).tag.all():
-        results["#" + tag.name] = tag.image.all()
-        count = 0
-        for lst_image in results["#" + tag.name]:
-            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
-            count += 1
     str_for_query = ""
     for tag in new_tags:
         str_for_query += tag + " "
@@ -439,9 +431,17 @@ def get_image_results(query_array):
     return results
 
 def searchFolder(request, name):
-    results = getAllImagesOfFolder(name)
+    results = {}
+    results['results'] = getAllImagesOfFolder(name)
+
+    opts = searchFilterOptions
+    opts['current_url'] = request.get_full_path()
+    filters = FilterSearchForm(initial=opts)
+    query = SearchForm()  # query form stays the same
+    image = SearchForImageForm()  # fetching image form response
+
     return render(request, index_string,
-                  {'filters_form': FilterSearchForm(), 'form': query, 'image_form': image, 'results': results, 'error': False})
+                  {'filters_form': filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
 
 def delete(request, path):

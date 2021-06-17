@@ -1136,3 +1136,8 @@ fa.redo:hover{
     }
 
 }
+
+.folder-btn{
+  text-decoration: none;
+  color: black;
+}

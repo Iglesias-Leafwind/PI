@@ -4,13 +4,9 @@ import reverse_geocoder as rg
 import threading
 from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
-import time
-import sys
 from datetime import datetime
-from os.path import join
 import random
 import numpy as np
-import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
@@ -569,7 +565,7 @@ def deleteFolder(uri, frr=frr):
     imgfs = set(ftManager.imageFeatures)
     for di in deleted_images:
         imgfs.remove(di)
-#        frr.remove_image(di.hash)
+        frr.remove_image(di.hash)
 
     ftManager.imageFeatures = list(imgfs)
     f = []
@@ -600,7 +596,7 @@ def getAllImagesOfFolder(folder):
     node = Folder.nodes.get_or_none(id_=folder.id)
     if node:
         if len(node.images):
-            return node.images
+            return [(i, i.tag.all()) for i in node.images]
 
 
 def getPlaces(img_path):
