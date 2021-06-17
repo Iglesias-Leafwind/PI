@@ -172,7 +172,7 @@ def upload_images(uri):
 
     if(threads <= 0):
         threads = 1
-
+    threads = int(threads)
     logging.info("[Uploading]: Dividing")
     tasks = divide_tasks_to_many(dirFiles, threads)
     folders = []
@@ -513,7 +513,8 @@ def processing(dir_files):
                     logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Done " + str(completed) + " / " + str(len(img_list)))
                     at_least_one |= True
             except Exception as e:
-                logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": " + e)
+                logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": ")
+                print(e)
 
         if not at_least_one:
             try:
@@ -551,6 +552,7 @@ def alreadyProcessed(img_path):
 
 def deleteFolder(uri, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
+    logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
     if fs.exist(uri):
         try:
@@ -569,7 +571,7 @@ def deleteFolder(uri, frr=frr):
     imgfs = set(ftManager.imageFeatures)
     for di in deleted_images:
         imgfs.remove(di)
-#        frr.remove_image(di.hash)
+        frr.remove_image(di.hash)
 
     ftManager.imageFeatures = list(imgfs)
     f = []

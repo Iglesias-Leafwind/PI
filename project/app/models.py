@@ -94,6 +94,11 @@ class Person(StructuredNode):
     name = StringProperty(required=True)
     image = RelationshipFrom(ImageNeo, DisplayA.rel, model=DisplayA)
 
+    def countRelations(self):
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person) where id(p)=$id with count(r) as rels RETURN rels"
+        results, meta = db.cypher_query(query, {"id": self.id})
+        return [row[0] for row in results]
+
     def getDetails(self):
         query = "MATCH (i:ImageNeo)-[r:`Display a`]->(p:Person)  WHERE id(p)=$id RETURN r"
         results, meta = db.cypher_query(query, {"id": self.id})
