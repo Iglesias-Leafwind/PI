@@ -2,7 +2,7 @@ import os
 from concurrent.futures.thread import ThreadPoolExecutor
 import multiprocessing
 
-numThreads = multiprocessing.cpu_count()
+numThreads = multiprocessing.cpu_count()/2
 
 pool = ThreadPoolExecutor(max_workers=numThreads)
 

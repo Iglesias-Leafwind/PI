@@ -583,7 +583,7 @@ def dashboard(request):
     ## original tag source statistics
     count_original_tag_source = {}
     all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
-                    "location": "image locations", "folder": "folders", "breeds": "breed"}
+                    "location": "locations", "folder": "folders", "breeds": "breeds", "person": "people"}
 
     for sourceName, tagsCount in Tag().tagSourceStatistics():
         count_original_tag_source[sourceName] = tagsCount
@@ -594,9 +594,10 @@ def dashboard(request):
 
     count_original_tag_source["location"] = Location().countLocations()[0]
 
-    if 'ocr' in count_original_tag_source:
-        count_original_tag_source['text'] = count_original_tag_source['ocr']
-
+    for tag_key in all_tag_labels.keys():
+        if tag_key not in count_original_tag_source.keys():
+            count_original_tag_source[tag_key] = 0
+        
     count_original_tag_source = dict(sorted(count_original_tag_source.items(), key=lambda item: item[1]))
     #print(count_original_tag_source)
     return render(request, 'dashboard.html',
