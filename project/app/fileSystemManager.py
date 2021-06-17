@@ -7,7 +7,6 @@ from app.models import *
 from scripts.esScript import es
 from app.utils import getRandomNumber, ImageFeature, processingLock
 
-
 class Node:
     def __init__(self, name: str, id: int, terminated=False):
         self.name = name  # folder name
@@ -159,7 +158,7 @@ class SimpleFileSystemManager:
             path = os.path.join(path, p)
         return path
 
-    def delete_folder_from_fs(self, uri):
+    def delete_folder_from_fs(self, uri, frr):
         try:
             if self.exist(uri):
                 node = self.get_last_node(uri)
@@ -182,6 +181,7 @@ class SimpleFileSystemManager:
 
                     if images is not None:
                         for image in images:
+                            frr.remove_image(image.hash)
                             if len(image.folder) > 1: # if image is in different folders
                                 currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                                 currentImageUri = self.__builFullPath__(currentImageUri)

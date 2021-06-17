@@ -276,15 +276,15 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
-isBeforeThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
-isLaterThan = lambda img, filter_ : (img.insertion_date.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
+isBeforeThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
+isLaterThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
 
 def get_image_results(query_array):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
     result_hashs = list([x.meta.id for x in search(query_array)])
 
-    print('len result_hashs : ' , len(result_hashs))
+    #print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
     for hash in result_hashs:  # iterating through the result's hashes
         remove = set()
@@ -307,22 +307,28 @@ def get_image_results(query_array):
         if searchFilterOptions['insertion_date_activate']:
 
             fromm = timeHelper['insertion_date_from']
-            if fromm is not None and isBeforeThan(img, fromm):
+            if fromm is not None and isBeforeThan(img.insertion_date, fromm):
                     continue # is before the limit, not shown
             too = timeHelper['insertion_date_to']
-            if too is not None and isLaterThan(img, too):
+            if too is not None and isLaterThan(img.insertion_date, too):
                     continue
 
-        """
-            fromm = timeHelper['insertion_date_from']
+        if searchFilterOptions['taken_date_activate']:
+            if img.creation_date is None:
+                continue
+            try:
+                d = datetime.datetime.strptime(img.creation_date, '%Y:%m:%d %H:%M:%S')
+            except ValueError:  # invalid format
+                continue
+
+            fromm = timeHelper['taken_date_from']
             if fromm is not None:
-                if isBeforeThan(img, fromm):
+                if isBeforeThan(d, fromm):
                     continue # is before the limit, not shown
-            too = timeHelper['insertion_date_to']
+            too = timeHelper['taken_date_to']
             if too is not None:
-                if isLaterThan(img, too):
+                if isLaterThan(d, too):
                     continue
-                    """
 
         #       ---- people ---
 
@@ -518,8 +524,8 @@ def update_faces(request):
         redirect(people_url_string)
 
     form = PersonsForm(request.POST)
-    if not form.is_valid():
-        print('invalid form!!!')
+    form.is_valid()
+        #print('invalid form!!!')
 
     #print(form.cleaned_data)
     data = form.cleaned_data
@@ -577,7 +583,7 @@ def dashboard(request):
     ## original tag source statistics
     count_original_tag_source = {}
     all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
-                    "location": "image locations", "folder": "folders", "breeds": "breed"}
+                    "location": "locations", "folder": "folders", "breeds": "breeds", "person": "people"}
 
     for sourceName, tagsCount in Tag().tagSourceStatistics():
         count_original_tag_source[sourceName] = tagsCount
@@ -588,9 +594,10 @@ def dashboard(request):
 
     count_original_tag_source["location"] = Location().countLocations()[0]
 
-    if 'ocr' in count_original_tag_source:
-        count_original_tag_source['text'] = count_original_tag_source['ocr']
-
+    for tag_key in all_tag_labels.keys():
+        if tag_key not in count_original_tag_source.keys():
+            count_original_tag_source[tag_key] = 0
+        
     count_original_tag_source = dict(sorted(count_original_tag_source.items(), key=lambda item: item[1]))
     #print(count_original_tag_source)
     return render(request, 'dashboard.html',
@@ -666,7 +673,7 @@ def people_gallery(request):
 
     all_names = sorted(list(set(all_names)))
 
-    print(all_names)
+    #print(all_names)
 
     all_names_dict = {}
 
@@ -676,7 +683,7 @@ def people_gallery(request):
             all_names_dict[first_letter] = [name]
         else:
             all_names_dict[first_letter] += [name]
-    print(all_names_dict)
+    #print(all_names_dict)
     return render(request, 'peopleGallery.html',
                   {'form': form, 'image_form': image, 'people': all_names_dict})
 

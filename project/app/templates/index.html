@@ -209,17 +209,32 @@
                         {% for image in tag_cluster.1 %}
                             {% if image.0 is not None %}
                                 <div class="col">
-                                    <div class="card shadow-sm img_box">
+					{% if forloop.counter < 18 %}
+                                    	<div class="card shadow-sm img_box">
+                                        	{% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                           
+						<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            
+                                        	{% endwith %}
+                                        	<div class="card-body">
+                                            		<p class="card-text">{{ image.0.name|truncatechars:16}}</p>
+                                            		<div class="d-flex justify-content-between align-items-center">
+                                                		<div class="btn-group">
+                                                    			<button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                            			data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
+                                                    			</button>
+                                                		</div> <!--btn group-->
+                                                		<img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                            		</div> <!--d-flex justify-content-between align-items-center-->
+                                        	</div> <!--card-body-->
+                                    </div> <!--card shadow-sm-->
+				{% else %}
+                                    <div class="card shadow-sm img_box lazy" style="display: none;">
                                         {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                            {% if forloop.counter > 18 %}
-
-                                            <img class="imageThumbnailInMenu lazy" id="{{ image.0.hash }}"
-                                                 data-src="{% static image_static %}">
-                                            {% else %}
-                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
-                                            {% endif %}
-                                            {% endwith %}
-
+                                           
+					<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            
+                                        {% endwith %}
                                         <div class="card-body">
                                             <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
                                             <div class="d-flex justify-content-between align-items-center">
@@ -232,6 +247,7 @@
                                             </div> <!--d-flex justify-content-between align-items-center-->
                                         </div> <!--card-body-->
                                     </div> <!--card shadow-sm-->
+				{% endif %}
                                 </div> <!--col-->
                                 <div class="modal fade detailsModal"
                                      id="resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}"
@@ -563,7 +579,7 @@
         });
 
         document.addEventListener("DOMContentLoaded", function() {
-        var lazyloadImages = document.querySelectorAll("img.lazy");
+        var lazyloadImages = document.querySelectorAll("div.lazy");
         var lazyloadThrottleTimeout;
 
         function lazyload () {
@@ -573,10 +589,10 @@
 
             lazyloadThrottleTimeout = setTimeout(function() {
                     var scrollTop = window.pageYOffset;
-                    lazyloadImages.forEach(function(img) {
-                        if(img.offsetTop < (window.innerHeight + scrollTop)) {
-                          img.src = img.dataset.src;
-                          img.classList.remove('lazy');
+                    lazyloadImages.forEach(function(div) {
+                        if(div.offsetTop < (window.innerHeight + scrollTop)) {
+                          div.style.removeProperty("display");
+                          div.classList.remove('lazy');
                         }
                     });
                     if(lazyloadImages.length == 0) {
