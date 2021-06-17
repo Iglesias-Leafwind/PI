@@ -3,7 +3,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import multiprocessing
 
 numThreads = multiprocessing.cpu_count()/2
-
+print("Threds:",int(numThreads))
 pool = ThreadPoolExecutor(max_workers=numThreads)
 
 def do(fc, args=None):
