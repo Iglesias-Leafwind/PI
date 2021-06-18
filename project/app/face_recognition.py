@@ -160,9 +160,10 @@ class FaceRecognition:
             #print('new person was created')
 
         old_person = Person.nodes.get_or_none(name=old_personname)
-        #if old_person is None:
-            #print('OLD PERSON IS NONE')
-
+        if old_person is None:
+            print('OLD PERSON IS NONE')
+            return
+        
         existent_rel = old_person.image.all_relationships(img)
 
         #print('change relationship')
@@ -198,19 +199,21 @@ class FaceRecognition:
         if isinstance(neww['confiance'], tuple):
             neww['confiance'] = neww['confiance'][0]
         img.person.connect(new_person, neww)
-
+        
     def change_name_tag_es(self, image_hash, new_personname, old_personname):
-        img = ImageES.get(using=es, id=image_hash)
-        img_tags = img.tags
-        if old_personname in img_tags:
-            ind = img_tags.index(old_personname)
-            img_tags.pop(ind)
+        try:
+            img = ImageES.get(using=es, id=image_hash)
+            img_tags = img.tags
+            if old_personname in img_tags:
+                ind = img_tags.index(old_personname)
+                img_tags.pop(ind)
 
-        img_tags.append(new_personname)
-        img.tags = img_tags
-        img.update(using=es, tags=img.tags)
-        img.save(using=es)
-
+            img_tags.append(new_personname)
+            img.tags = img_tags
+            img.update(using=es, tags=img.tags)
+            img.save(using=es)
+        except Exception as e:
+            print("idk: " + str(e))
     def remove_image(self, image_hash):
         self.delete_thumbs(image_hash)
 
@@ -225,11 +228,11 @@ class FaceRecognition:
 
         for k in keys_to_remove:
             del self.name2encodings[k]
-
+            
             p = Person.nodes.get_or_none(name=k)
             if p is not None:
                 p.delete()
-
+                
     def delete_thumbs(self, image_hash):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:

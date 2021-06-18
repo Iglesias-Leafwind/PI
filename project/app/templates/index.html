@@ -187,7 +187,7 @@
             </div>
             {{ filters_form.current_url }}
         </form>
-    </div> <!-- cobre o form todo-->
+    </div>
 
 
     <div class="results">
@@ -204,36 +204,15 @@
         {% for tag_cluster in results.items %}
             <div class="album py-5 bg-mine">
                 <div class="container">
-                    <p>{{ tag_cluster.0 }}</p>
-                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
+                    <p id="TagName">{{ tag_cluster.0 }}</p>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6" id="lazy">
                         {% for image in tag_cluster.1 %}
                             {% if image.0 is not None %}
                                 <div class="col">
-					{% if forloop.counter < 18 %}
-                                    	<div class="card shadow-sm img_box">
-                                        	{% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                           
-						<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
-                                            
-                                        	{% endwith %}
-                                        	<div class="card-body">
-                                            		<p class="card-text">{{ image.0.name|truncatechars:16}}</p>
-                                            		<div class="d-flex justify-content-between align-items-center">
-                                                		<div class="btn-group">
-                                                    			<button type="button" class="view btn btn-sm btn-outline-secondary"
-                                                            			data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
-                                                    			</button>
-                                                		</div> <!--btn group-->
-                                                		<img class="checked_img" src="{% static '/img/check2.svg' %}">
-                                            		</div> <!--d-flex justify-content-between align-items-center-->
-                                        	</div> <!--card-body-->
-                                    </div> <!--card shadow-sm-->
-				{% else %}
-                                    <div class="card shadow-sm img_box lazy" style="display: none;">
-                                        {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                           
-					<img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
-                                            
+                                    <div class="card shadow-sm img_box">
+                                        {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+
                                         {% endwith %}
                                         <div class="card-body">
                                             <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
@@ -247,7 +226,6 @@
                                             </div> <!--d-flex justify-content-between align-items-center-->
                                         </div> <!--card-body-->
                                     </div> <!--card shadow-sm-->
-				{% endif %}
                                 </div> <!--col-->
                                 <div class="modal fade detailsModal"
                                      id="resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}"
@@ -283,6 +261,16 @@
                                                             <span class="tag"> #{{ elem.name }} <i hidden
                                                                                                    class="deleteIcon fas fa-times"
                                                                                                    title="delete this tag"></i></span>
+                                                        {% endfor %}
+                                                    </div>
+                                                <br>
+                                                {% if image.2.length > 0 %}
+                                                    <span>People:</span>
+                                                {% endif %}
+                                                    <div class="peopleDiv" >
+
+                                                        {% for elem in image.2 %}
+                                                            <a style="text-decoration: none; color:black;" href="results?query={{ elem }}"><span class="tag" style="padding: 3px; background-color: hotpink; border-radius: 5px;"> #{{ elem }} </span></a>
                                                         {% endfor %}
                                                     </div>
                                                     <input hidden class="postInput" type="text" name="tags">
@@ -329,8 +317,6 @@
 
             }
         }
-
-
         var imgs = document.getElementsByTagName('img')
         var allIds = ''
         var images = false;
@@ -578,34 +564,408 @@
             }
         });
 
-        document.addEventListener("DOMContentLoaded", function() {
-        var lazyloadImages = document.querySelectorAll("div.lazy");
-        var lazyloadThrottleTimeout;
-
-        function lazyload () {
-            if(lazyloadThrottleTimeout) {
-              clearTimeout(lazyloadThrottleTimeout);
+        //below taken from http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
+        function getScrollXY() {
+            var scrOfX = 0, scrOfY = 0;
+            if( typeof( window.pageYOffset ) == 'number' ) {
+                //Netscape compliant
+                scrOfY = window.pageYOffset;
+                scrOfX = window.pageXOffset;
+            } else if( document.body && ( document.body.scrollLeft || document.body.scrollTop ) ) {
+                //DOM compliant
+                scrOfY = document.body.scrollTop;
+                scrOfX = document.body.scrollLeft;
+            } else if( document.documentElement && ( document.documentElement.scrollLeft || document.documentElement.scrollTop ) ) {
+                //IE6 standards compliant mode
+                scrOfY = document.documentElement.scrollTop;
+                scrOfX = document.documentElement.scrollLeft;
             }
-
-            lazyloadThrottleTimeout = setTimeout(function() {
-                    var scrollTop = window.pageYOffset;
-                    lazyloadImages.forEach(function(div) {
-                        if(div.offsetTop < (window.innerHeight + scrollTop)) {
-                          div.style.removeProperty("display");
-                          div.classList.remove('lazy');
-                        }
-                    });
-                    if(lazyloadImages.length == 0) {
-                      document.removeEventListener("scroll", lazyload);
-                      window.removeEventListener("resize", lazyload);
-                      window.removeEventListener("orientationChange", lazyload);
-                    }
-            }, 20);
+            return [ scrOfX, scrOfY ];
         }
 
-            document.addEventListener("scroll", lazyload);
-            window.addEventListener("resize", lazyload);
-            window.addEventListener("orientationChange", lazyload);
+    //taken from http://james.padolsey.com/javascript/get-document-height-cross-browser/
+    function getDocHeight() {
+        var D = document;
+        return Math.max(
+            D.body.scrollHeight, D.documentElement.scrollHeight,
+            D.body.offsetHeight, D.documentElement.offsetHeight,
+            D.body.clientHeight, D.documentElement.clientHeight
+        );
+    }
+        document.addEventListener("DOMContentLoaded", function() {
+        var lazyDiv = document.getElementById("lazy")
+        var page_number = 1
+        var lock = false
+        var prevHeight = getDocHeight()
+        var TagName = document.getElementById("TagName")
+        TagName = TagName.innerText
+        function lazyload () {
+            if (!lock && getDocHeight() <= getScrollXY()[1] + window.innerHeight) {
+                lock = true
+                page_number = page_number + 1
+                var link = ""
+                if (TagName.includes("#")){
+                    TagName = TagName.split('#').join('');
+                    link = "images/" + TagName + "/"
+                }else{
+                    var urls = document.URL.split("/")
+                    link = "/folder/" + urls[urls.length - 2] + "/"
+                }
+                link = link + page_number
+                $.ajax({
+                   type: "GET",
+                   url: link,
+                   success: function(results) {
+                       var images = results;
+                       if(!(Object.keys(results).length === 0)){
+                           for (const [hash, image] of Object.entries(images)) {
+                              var tags_span = ""
+                               var person_tag_html = ""
+                                if(image.persons.length > 0){
+                                    person_tag_html = person_tag_html + `<br><span>People:</span>`
+                                }
+                                for(var i = 0; i< image.persons.length; i++){
+                                    person_tag_html = person_tag_html + `
+                                                    <div class="peopleDiv" >
+                                                            <a style="text-decoration: none; color:black;" href="results?query=` + image.persons[i] + `"><span class="tag" style="padding: 3px; background-color: hotpink; border-radius: 5px;"> #` + image.persons[i] + ` </span></a>
+                                                    </div>`
+                                }
+                              for (var i = 0; i < image.tags.length; i++) {
+                                  tags_span = tags_span + `<span class="tag"> #` + image.tags[i] + ` <i hidden
+                                                        class="deleteIcon fas fa-times"
+                                                        title="delete this tag"></i></span>
+                                                        `
+                              }
+                              lazyDiv.innerHTML = lazyDiv.innerHTML + `
+                              <div class="col">
+                                <div class="card shadow-sm img_box">
+                                    <img class="imageThumbnailInMenu" id="` + hash + `" src="` + "/static/thumbnails/" + hash + `.jpg">
+                                    <div class="card-body">
+                                        <p class="card-text">` + image.name + `</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="btn-group">
+                                                <button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                    data-bs-toggle="modal" data-bs-target="#resultDetails` + hash + `">View
+                                                </button>
+                                            </div> <!--btn group-->
+                                            <img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                        </div> <!--d-flex justify-content-between align-items-center-->
+                                    </div> <!--card-body-->
+                                </div> <!--card shadow-sm-->
+                              </div> <!--col-->
+                              <div class="modal fade detailsModal"
+                                id="resultDetails` + hash + `"
+                                tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
+                                                <button onclick="closeModal(` + hash + `)"
+                                                    type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <form name="imageDetailsForm"
+                                            action="http://localhost:8000/updateTags/` + hash + `" method="post"
+                                                enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <img class="imageThumbnail" src="` + "/static/thumbnails/" + hash +  `.jpg">
+                                                <i class="tagsIcon editTagsIcon fas fa-pencil-alt"
+                                                    title="edit tags"></i>
+                                                <i class="tagsIcon addTagsIcon fas fa-plus-square"
+                                                    title="add new tag"></i>
+                                                <div class="addTagDiv" hidden>
+                                                    <input type="text" class="form-control"/>
+                                                    <button type="button" class="addTag btn btn-primary"
+                                                        title="add">Add
+                                                    </button>
+                                                </div>
+                                                <div class="tagsDiv" id="` + hash + `">` + tags_span + `
+                                                </div>` + person_tag_html + `
+                                                <input hidden class="postInput" type="text" name="tags">
+                                                <p title="` + image.folder_uri + "/" + image.name + `" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
+                                                    Path: ` + image.folder_uri + "/" + image.name + `</p>
+                                                <p>Dimensions: ` + image.width + "x" + image.height + `</p>
+                                                <p class="card-text">Creation
+                                                    Date: ` + image.creation_date + `</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Close
+                                                </button>
+                                                <button type="submit" class="submitBtn btn btn-primary">Save
+                                                    Changes
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                              </div>
+                              `
+                           }
+                           function toggleFilters(el) {
+                            var formm = document.getElementById('filtersForm')
+                            if (formm.style.display === "none") {
+                                formm.style.display = "block";
+                                el.innerHTML = "Hide filters"
+                            } else {
+                                formm.style.display = "none";
+                                el.innerHTML = "Show filters"
+                            }
+                        }
+                        imgs = document.getElementsByTagName('img')
+                        allIds = ''
+                        images = false;
+
+                        for (let i = 0; i < imgs.length; i++) {
+                            if (imgs[i].id === '')
+                                continue
+                            allIds += imgs[i].id + '&';
+                            images = true;
+                        }
+
+                        selectedIds = new Set()
+                        idsList = []
+
+                        if (images) {
+                            $('#exportDiv').css('display', 'block')
+                        }
+
+                        $('#excel_btn').click(function () {
+                            var param = ''
+                            if (selectedIds.size > 0) {
+                                param = idSetToString(selectedIds)
+                                param = param.substr(0, param.length - 1)
+                            } else {
+                                param = allIds.substr(0, allIds.length - 1)
+                            }
+
+                            createExportFrom("excel", param)
+                        })
+
+                        $('#zip_btn').click(function () {
+                            var param = ''
+                            if (selectedIds.size > 0) {
+                                param = idSetToString(selectedIds)
+                                param = param.substr(0, param.length - 1)
+                            } else {
+                                param = allIds.substr(0, allIds.length - 1)
+                            }
+
+                            createExportFrom("zip", param)
+                        })
+
+                        function createExportFrom(type, param) {
+                            var form_ = document.createElement("form");
+                            form_.id = "exportForm";
+                            form_.name = "exportForm";
+                            form_.method = "get";
+                            form_.action = "export/" + type + "/$" + param;
+                            document.body.appendChild(form_);
+                            form_.submit();
+                            document.body.removeChild(form_);
+                        }
+
+                        $(".img_box").click(function () {
+                            if ($(this).hasClass('selected_img')) {
+                                $(this).removeClass('selected_img')
+                                $(this).find(".checked_img").css('display', 'none')
+                                selectedIds.delete($(this).children('img')[0].id)
+                                idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
+                            } else {
+                                selectedIds.add($(this).children('img')[0].id)
+                                idsList.push($(this).children('img')[0].id)
+                                $(this).addClass('selected_img')
+                                $(this).find(".checked_img").css('display', 'block')
+                            }
+
+                            if (selectedIds.size === 0) {
+                                $("#excel_btn").html('Export all to excel')
+                                $("#zip_btn").html('Export all to zip')
+                            } else {
+                                $("#excel_btn").html('Export to excel')
+                                $("#zip_btn").html('Export to zip')
+                            }
+                        })
+
+                        edit = true;
+                        add = true;
+
+                        $('.editTagsIcon').click(function () {
+                            if (edit) {
+                                $('.deleteIcon').removeAttr('hidden')
+                            } else {
+                                $('.deleteIcon').attr('hidden', 'hidden')
+                            }
+                            edit = !edit
+                        })
+
+                        $('.addTagsIcon').click(function () {
+                            if (add) {
+                                $('.addTagDiv').removeAttr('hidden')
+                            } else {
+                                $('.addTagDiv').attr('hidden', 'hidden')
+                            }
+
+                            add = !add
+                        })
+
+                        $('.deleteIcon').click(function () {
+                            $(this).parent() //  <span class="tag">
+                                .remove()
+                        })
+
+                        function idSetToString(set) {
+                            var ids = ''
+                            set.forEach(id => {
+                                ids += id + '&';
+                            })
+                            return ids;
+                        }
+
+                        //Get the button:
+                        mybutton = document.getElementById("scrollBtn");
+
+                        $('.addTag').click(function () {
+                            var input = $(this).parent().children('input');
+                            var val = input.val();
+
+                            if (val === null || val.trim().length === 0)
+                                return false;
+
+                            const newTag = "<span class='tag'>\#" + val + "<i hidden class='deleteIcon fas fa-times' title='delete this tag'></i></span>";
+                            $(this).parent().parent().children('.tagsDiv').append(newTag);
+                            input.val("")
+                        })
+				
+                        $('.view').click(function () {
+                            $('.addTagDiv').attr('hidden', 'hidden')
+                            $('.deleteIcon').attr('hidden', 'hidden');
+                            edit = add = true;
+                        })
+
+                        $('.submitBtn').click(function () {
+                            var form = $(this).parent().parent();
+                            var tags = form.find('.tagsDiv').children('.tag');
+                            var postBody = ''
+
+                            for (let i = 0; i < tags.length; i++) {
+                                postBody += tags[i].innerText.trim().split("\n")[0]
+                            }
+
+                            form.find('.postInput').val(postBody)
+                            return true;
+                        })
+
+                        //Get the button:
+                        mybutton = document.getElementById("scrollBtn");
+
+                        // When the user scrolls down 20px from the top of the document, show the button
+                        window.onscroll = function () {
+                            scrollFunction()
+                        };
+
+                        function scrollFunction() {
+                            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                                mybutton.style.display = "block";
+                            } else {
+                                mybutton.style.display = "none";
+                            }
+                        }
+
+                        // When the user clicks on the button, scroll to the top of the document
+                        function topFunction() {
+                            document.body.scrollTop = 0; // For Safari
+                            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+                        }
+
+
+                        // date picker
+                        $(function () {
+                            var dateFormat = "dd-mm-yy",
+                                from = $("#insertion_date_from")
+                                    .datepicker({
+                                        defaultDate: "+1w",
+                                        changeMonth: true,
+                                        changeYear: true,
+                                        // numberOfMonths: 3,
+                                        dateFormat: dateFormat
+                                    })
+                                    .on("change", function () {
+                                        to.datepicker("option", "minDate", getDate(this));
+                                        // from.val(getDate(this));
+
+                                    }),
+                                to = $("#insertion_date_to").datepicker({
+                                    defaultDate: "+1w",
+                                    changeMonth: true,
+                                    // numberOfMonths: 3,
+                                    changeYear: true,
+                                    dateFormat: dateFormat
+                                })
+                                    .on("change", function () {
+                                        from.datepicker("option", "maxDate", getDate(this));
+
+                                    });
+
+                            function getDate(element) {
+                                var date;
+                                try {
+                                    date = $.datepicker.parseDate(dateFormat, element.value);
+                                } catch (error) {
+                                    date = null;
+                                }
+
+                                return date;
+                            }
+                        });
+
+                                // date picker 2
+                        $(function () {
+                            var dateFormat = "dd-mm-yy",
+                                from = $("#taken_date_from")
+                                    .datepicker({
+                                        defaultDate: "+1w",
+                                        changeMonth: true,
+                                        changeYear: true,
+                                        // numberOfMonths: 3,
+                                        dateFormat: dateFormat
+                                    })
+                                    .on("change", function () {
+                                        to.datepicker("option", "minDate", getDate(this));
+                                        // from.val(getDate(this));
+
+                                    }),
+                                to = $("#taken_date_to").datepicker({
+                                    defaultDate: "+1w",
+                                    changeMonth: true,
+                                    // numberOfMonths: 3,
+                                    changeYear: true,
+                                    dateFormat: dateFormat
+                                })
+                                    .on("change", function () {
+                                        from.datepicker("option", "maxDate", getDate(this));
+
+                                    });
+
+                            function getDate(element) {
+                                var date;
+                                try {
+                                    date = $.datepicker.parseDate(dateFormat, element.value);
+                                } catch (error) {
+                                    date = null;
+                                }
+
+                                return date;
+                            }
+                        });
+
+                           lock = false
+                       }
+                     }
+                   });
+            }
+        };
+        document.addEventListener("scroll", lazyload);
         });
 
     </script>

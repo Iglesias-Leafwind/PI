@@ -917,6 +917,16 @@ fa.redo:hover{
   min-height: 100vh;
 }
 
+.people {
+  border-radius: 5px;
+}
+
+.peopleDiv a {
+   padding: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 3px;
+}
 .tagsDiv span{
   padding: 3px;
   background-color: #2D95DF;
@@ -1135,4 +1145,9 @@ fa.redo:hover{
         border-radius: 50%;
     }
 
+}
+
+.folder-btn{
+  text-decoration: none;
+  color: black;
 }

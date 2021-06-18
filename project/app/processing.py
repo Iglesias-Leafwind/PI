@@ -4,19 +4,16 @@ import reverse_geocoder as rg
 import threading
 from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
-import time
-import sys
 from datetime import datetime
-from os.path import join
+from urllib.parse import unquote
 import random
 import numpy as np
-import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock, breedLock,locationLock,faceRecLock,placesLock
+from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock, breedLock,locationLock,faceRecLock,placesLock, lock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -172,7 +169,7 @@ def upload_images(uri):
 
     if(threads <= 0):
         threads = 1
-
+    threads = int(threads)
     logging.info("[Uploading]: Dividing")
     tasks = divide_tasks_to_many(dirFiles, threads)
     folders = []
@@ -353,6 +350,7 @@ def processing(dir_files):
                                 # if the current image's folder is different
                                 existed.folder.connect(folderNeoNode)
                             at_least_one |= True
+                            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Image " + img_path + " already exists!")
                             continue
                         try:
                             image.save()
@@ -513,7 +511,8 @@ def processing(dir_files):
                     logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Done " + str(completed) + " / " + str(len(img_list)))
                     at_least_one |= True
             except Exception as e:
-                logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": " + e)
+                logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": ")
+                print(e)
 
         if not at_least_one:
             try:
@@ -549,14 +548,29 @@ def alreadyProcessed(img_path):
 
     return existed
 
+to_be_deleted = set()
+deleting = False
 def deleteFolder(uri, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
+    global deleting, to_be_deleted
+
+    lock.acquire()
+    try:
+        if deleting:
+            to_be_deleted.add(uri)
+            logging.info("[Deleting]: [INFO] Uri " + uri +  " added to to_be_deleted, waiting..." )
+            return
+    finally:
+        lock.release()
+
     if fs.exist(uri):
         try:
             processingLock.acquire()
+            deleting = True
             deleted_images = fs.delete_folder_from_fs(uri, frr)
         finally:
+            deleting = False
             processingLock.release()
     else:
         return
@@ -565,24 +579,31 @@ def deleteFolder(uri, frr=frr):
     if deleted_images is None or len(deleted_images) == 0:
         return
 
-    logging.info("[Deleting]: [INFO] Starting to delete images from database")
-    imgfs = set(ftManager.imageFeatures)
-    for di in deleted_images:
-        imgfs.remove(di)
-#        frr.remove_image(di.hash)
+    resultsLock.acquire()
+    try:
+        imgfs = set(ftManager.imageFeatures)
+        for di in deleted_images:
+            imgfs.remove(di)
+        ftManager.imageFeatures = list(imgfs)
+        f = []
+        for i in ftManager.imageFeatures:
+            f.append(i.features)
 
-    ftManager.imageFeatures = list(imgfs)
-    f = []
-    for i in ftManager.imageFeatures:
-        f.append(i.features)
+        ftManager.npFeatures = f
+    finally:
+        resultsLock.release()
+    logging.info("[Deleting]: [INFO] Finished deleting images from cache")
 
-    ftManager.npFeatures = f
-    logging.info("[Deleting]: [INFO] Finished deleting images from database")
+    try:
+        if len(to_be_deleted) != 0:
+            deleteFolder(to_be_deleted.pop(),frr)
+    except Exception as e:
+        logging.info("[Deleting]: [ERROR] " + str(e))
 
 def findSimilarImages(uri):
     if len(ftManager.npFeatures) == 0:
         return []
-    norm_feat = model.vgg_extract_feat(uri)  # extrair infos
+    norm_feat = model.vgg_extract_feat(uri)
     feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
@@ -595,13 +616,15 @@ def findSimilarImages(uri):
 
     return imlist
 
-def getAllImagesOfFolder(folder):
+def getAllImagesOfFolder(folder, page):
+    folder = unquote(folder)
     folder = fs.get_last_node(folder)
     node = Folder.nodes.get_or_none(id_=folder.id)
     if node:
-        if len(node.images):
-            return node.images
-
+        results = node.getImagesByPage(page)
+        if len(results):
+            return [(i, i.tag.all(), i.getPersonsName()) for i in results]
+    return []
 
 def getPlaces(img_path):
     # load the test image

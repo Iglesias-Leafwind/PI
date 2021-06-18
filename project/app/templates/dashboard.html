@@ -83,11 +83,9 @@
             <h1 class="stats-text">{{ countTagSource.object }}</h1>
             <p class="stats-text" style="margin-top: -4vh">objects</p>
         </div>
-         <div class="piechart">
-            <div id="chart1"></div>
+         <div class="piechart" id="chart1">
         </div>
-        <div class="barchart">
-            <div id="chart2"></div>
+        <div class="barchart" id="chart2">
         </div>
 
     </div>
@@ -104,11 +102,14 @@
         for (var key in countTagsDjango) {
             dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': ((countTagsDjango[key]/countTotal)*100).toFixed(2)});
         }
+	var element = document.getElementById("chart1")
+	var positionInfo = element.getBoundingClientRect()
+	var height = 8*positionInfo.height/10;
+	var width = 8*positionInfo.width/10;
         var chart = new CanvasJS.Chart("chart1", {
             theme: "light2", // "light1", "light2", "dark1", "dark2"
             exportEnabled: true,
             animationEnabled: true,
-            height: 300,
             title: {
                 text: "Top Most Common Tags",
                 fontSize: 20,
@@ -117,15 +118,16 @@
             data: [{
                 type: "doughnut",
                 startAngle: 25,
-                innerRadius: 60,
+                innerRadius: 35,
                 toolTipContent: "<b>{label}</b>: {percentage}%",
                 showInLegend: "true",
                 legendText: "{label}",
                 indexLabelFontSize: 18,
                 indexLabel: "{label} - {y}",
                 dataPoints: dataPoints,
-                width: 400
-            }]
+            }],
+		width: width,
+		height: height
         });
         chart.render();
 
@@ -142,10 +144,13 @@
         for (var key in countTagSourceDjango) {
             dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key, 'percentage': ((countTagSourceDjango[key]/countTotal)*100).toFixed(2)});
         }
+	var element = document.getElementById("chart2")
+	var positionInfo = element.getBoundingClientRect()
+	var height = 8*positionInfo.height/10;
+	var width = 8*positionInfo.width/10;
         var chart = new CanvasJS.Chart("chart2", {
             exportEnabled: true,
             animationEnabled: true,
-            height: 300,
             title: {
                 text: "Top Most Common Tag Sources",
                 fontSize: 20,
@@ -167,10 +172,31 @@
                 toolTipContent: "<b>{label}</b>: {y} ({percentage}%)",
                 dataPoints: dataPoints,
                 indexLabelFontSize: 15
-            }]
+            }],
+		width: width,
+		height: height
         });
         chart.render();
 
     }
+	document.addEventListener("DOMContentLoaded", function() {
+        var lazyloadThrottleTimeout;
+
+        function lazyload () {
+            if(lazyloadThrottleTimeout) {
+              clearTimeout(lazyloadThrottleTimeout);
+            }
+
+            lazyloadThrottleTimeout = setTimeout(function() {
+                    var scrollTop = window.pageYOffset;
+		    drawChart()
+                    drawBarChart()
+            }, 20);
+        }
+
+            document.addEventListener("scroll", lazyload);
+            window.addEventListener("resize", lazyload);
+            window.addEventListener("orientationChange", lazyload);
+        });
 </script>
 {% endblock %}

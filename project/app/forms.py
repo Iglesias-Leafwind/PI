@@ -41,31 +41,15 @@ class PeopleFilterForm(forms.Form):
     ))
 
 class PersonsForm(forms.Form):
-    def removeRepeated(self, listt, cond):
-        sett = set()
-        neww = []
-
-        for l in listt:
-            if cond(l) in sett:
-                continue
-            neww.append(l)
-            sett.add(cond(l))
-
-        return neww
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        image = ImageNeo.nodes.all()
-
-        people = [ (p, i) for i in image for p in i.person.all() ]
-        people = self.removeRepeated(people, lambda x : x[0].name + '-' + x[1].name)
 
         all_rels = []
         if showDict['unverified']:
-            all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if not pp.approved]
+            all_rels += Person().getRIP(False)
 
         if showDict['verified']:
-            all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if pp.approved]
+            all_rels += Person().getRIP(True)
 
         for index, rel in enumerate(all_rels):
             field_name = 'person_name_%s' % (index,)
@@ -89,9 +73,9 @@ class PersonsForm(forms.Form):
             self.fields[field_image_id] = forms.CharField(widget=HiddenInput)
 
             self.initial[field_image] = rel[0].icon
-            self.initial[field_name] = rel[1].name
-            self.initial[field_person_before] = rel[1].name
-            self.initial[field_image_id] = rel[2].hash
+            self.initial[field_name] = rel[2].name
+            self.initial[field_person_before] = rel[2].name
+            self.initial[field_image_id] = rel[1].hash
             self.initial[field_verified] = rel[0].approved
 
 

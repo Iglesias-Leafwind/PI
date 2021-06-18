@@ -12,28 +12,27 @@
 
 
         <form action="{% url 'update_faces' %}" method="post" enctype="multipart/form-data">
-        <div style="border-top: none; margin-top: -5%; margin-left: 10% " class="modal-footer">
-            <button type="submit" name="reload" class="btn btn-primary">Save & reload changes</button>
-        </div>
-      <div class="importantcontainer">
-            {% csrf_token %}
-          {% for nfield in names_form.get_interest_fields %}
+            <div style="border-top: none; margin-top: -5%; margin-left: 10% " class="modal-footer">
+                <button type="submit" name="reload" class="btn btn-primary">Save & reload changes</button>
+            </div>
+            <div class="importantcontainer" id="faces">
+                {% csrf_token %}
+              {% for nfield in names_form.get_interest_fields %}
 
-                {{ nfield }}
-              {% if 'verified' in nfield.label %}
-                  <div></div> <!-- so pq dá um espacinho -->
-                <br>
-              {% endif %}
+                    {{ nfield }}
+                  {% if 'verified' in nfield.label %}
+                      <div></div> <!-- so pq dá um espacinho -->
+                    <br>
+                  {% endif %}
 
-            {% endfor %}
+                {% endfor %}
 
-      </div>
-        <div>
-            {% for field in form %}
-			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-            {% endfor %}
-        </div>
-
-     </form>
-
+            </div>
+            <div>
+                {% for field in form %}
+                    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
+                {% endfor %}
+            </div>
+        </form>
+    </div>
 {% endblock %}

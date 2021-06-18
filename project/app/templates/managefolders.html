@@ -18,14 +18,14 @@
     <div>
         <table>
             <tbody>
-                {% for folder in folders %}
+                {% for folder,uri in folders %}
                 <tr>
                     <td class="f1">
                         <i class="fa fa-folder-open"></i>
                         <i class="fas fa-folder"></i>
                     </td>
                     <td class="f2">
-                        <p>{{folder}}</p>
+                       <a class="folder-btn" href="{% url 'getAllImagesOfFolder' name=uri page=1 %}">{{folder}}</a>
                     </td>
                     <td class="f3">
                         <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem{{ forloop.counter }}" class="delete-btn"><i class="fas fa-trash c40"></i></button>

@@ -181,7 +181,10 @@ class SimpleFileSystemManager:
 
                     if images is not None:
                         for image in images:
-                            frr.remove_image(image.hash)
+                            try:
+                                frr.remove_image(image.hash)
+                            except Exception as e:
+                                print("Couldn't remove person thumbnail and/or person entity because: " + str(e))
                             if len(image.folder) > 1: # if image is in different folders
                                 currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                                 currentImageUri = self.__builFullPath__(currentImageUri)
@@ -207,8 +210,7 @@ class SimpleFileSystemManager:
                                     es_image.delete(using=es)
                                     deletedImages.append(ImageFeature(hash=image.hash))
                                 except Exception as e:
-                                    logging.info("[Deleting]: [ERROR] Image missing: " + e)
-
+                                    logging.info("[Deleting]: [ERROR] Image missing: " + str(e))
 
                     childrenFolders = f.getChildren()
                     if childrenFolders:
@@ -236,7 +238,7 @@ class SimpleFileSystemManager:
 
                 return deletedImages
         except Exception as e:
-            logging.info("[Deleting]: [ERROR] Delete error " + e)
+            logging.info("[Deleting]: [ERROR] Delete error " + str(e))
 
 
 
