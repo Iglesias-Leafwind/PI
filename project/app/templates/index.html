@@ -1,210 +1,972 @@
+{% extends 'topbar.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Imageable</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="author" content="imageable">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
-
-    <link href="{% static '/css/main.css' %}" rel="stylesheet" />
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
-    <style>
-        @font-face {
-            src: url("../static/font/Biko_Regular.ttf");
-            font-family: Biko;
-        }
-
-        *{
-            box-sizing: border-box;
-            font-family: Biko;
-        }
-    </style>
-</head>
-<body>
-<div class="topbar">
-        <h4 class="our-title">Imageable</h4>
-</div>
-<div class="s004">
-    <div class="buttonDiv child">
-        <button id="firstButton" class="buttonMargin pointer" type="button" data-bs-toggle="modal" data-bs-target="#renameFaces"><i class="fa fa-user"></i><p class="buttonText">Rename profiles</p></button>
-        <button id="secondButton" class="buttonAlign buttonMargin pointer" type="button" data-bs-toggle="modal" data-bs-target="#selectFolders"><i class="fa fa-folder-open"></i><p class="buttonText">Select source folders</p></button>
-        <button id="thirdButton" class="buttonAlign buttonMargin pointer"  type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectNewImage"><i class="fa fa-file-image-o"></i><p class="buttonText">Search for image</p></button>
-    </div>
-    <form>
-    <div class="inner-form">
-        {{ form.query }}
-        <span class="hovering">
-            <button type="submit" class="search-btn pointer no-focus" ><i class="fa fa-search"></i></button>
-        </span>
-    </div>
-    {% for field in form %}
-        {% if field.errors %}<li class="white">{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-    {% endfor %}
-    </form>
-</div>
-
-<!-- Modal select new image -->
-<div class="modal fade" id="selectNewImage" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Search by image</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-    <form action="." method="post" enctype="multipart/form-data">
-      <div class="modal-body">
-            {% csrf_token %}
-            {{ image_form.image }}
-      </div>
-        <div>
-            {% for field in form %}
-			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-            {% endfor %}
-        </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-      </div>
-     </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal select new source folders -->
-<div class="modal fade" id="selectFolders" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Source folders</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-    <form action="." method="post" enctype="multipart/form-data">
-      <div class="modal-body">
-            {% csrf_token %}
-
-          <div class="folder-list">
-          <div id="list-example" class="list-group">
-              {% for f in folders %}
-              <span><a class="list-group-item list-group-item-action" href="#list-item-1" style="float:left;">{{ f}}</a><a><i class="fa fa-cancel" style="float:right;"></i></a></span>
-              {% endfor %}
-          </div>
-          </div>
-
-          <div class="insert-btn">
-            {{ path_form.path.label_tag }}
-            {{ path_form.path }}
-          </div>
-
-      </div>
-        <div>
-            {% for field in form %}
-			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-            {% endfor %}
-        </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
-     </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal rename faces -->
-<div class="modal fade" id="renameFaces" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Rename Profiles</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-    <form action="." method="post" enctype="multipart/form-data">
-      <div class="modal-body modal-body1">
-            {% csrf_token %}
-            {% for nfield in names_form.get_interest_fields %}
-                {{ nfield }}
-            {% endfor %}
-      </div>
-        <div>
-            {% for field in form %}
-			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
-            {% endfor %}
-        </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
-     </form>
-    </div>
-  </div>
-</div>
 
 
-<div class="results">
-{% for tag_cluster in results.items %}
-<div class="album py-5 bg-light">
+{% block content %}
 
     <div class="container">
-    <p>{{ tag_cluster.0 }}</p>
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6">
-          {% for image in tag_cluster.1 %}
-              {% if image.0 is not None %}
-        <div class="col">
-          <div class="card shadow-sm">
-            {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
-              <img height="115px" src="{% static image_static %}">
-            {% endwith %}
-            <div class="card-body">
-              <p class="card-text">{{ image.0.name }}</p>
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}">View</button>
-                </div> <!--btn group-->
-              </div> <!--d-flex justify-content-between align-items-center-->
-            </div> <!--card-body-->
+        <div class="col text-center m-3 ">
+            <button class="btn btn-outline-primary col-12" onclick="toggleFilters(this);" class="btn btn-danger">Show
+                filters
+            </button>
+        </div>
+    </div>
+    <!-- filters -->
+    <div id="filtersForm" style="display: none">
+        <form autocomplete="off" action="{% url 'change_filters' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="container">
+                <div class="row">
+                    <!-- objects -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.automatic }} {{ filters_form.automatic.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the object extraction
+                                    for
+                                    this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.objects_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.objects_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
 
-          </div> <!--card shadow-sm-->
-        </div> <!--col-->
-<div class="modal fade" id="resultDetails{{forloop.parentloop.counter}}{{ forloop.counter }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-          {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
-              <img src="{% static imgPath%}">
-          {% endwith %}
-              {% for elem in image.1 %}
-              <p>#{{ elem.name }}</p>
-              {% endfor %}
-              Path: <span>{{ image.0.folder_uri }}/{{ image.0.name }}</span>
-              <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
-              {% if not image.0.creation_date is None %}
-                    <p class="card-text">Creation Date: {{ image.0.creation_date }}</p>
-                {% endif %}
-      </div>
-        <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-      </div>
+                    <!-- places -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.places }} {{ filters_form.places.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the places/scenes
+                                    identifier
+                                    for this
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.places_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.places_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- people -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.people }} {{ filters_form.people.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the face recognition
+                                    algorithm
+                                    search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.people_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.people_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- breeds -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.breeds }} {{ filters_form.breeds.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the breeds classifier
+                                    for
+                                    this search.</h6>
+                                <p class="card-text">Minimum confiance {{ filters_form.breeds_range_min }} %</p>
+                                <p class="card-text">Maximum confiance {{ filters_form.breeds_range_max }} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ocr -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.text }} {{ filters_form.text.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the results of the text recognition
+                                    for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- exif -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.exif }} {{ filters_form.exif.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' metadata for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- manual -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.manual }} {{ filters_form.manual.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' manual tags for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- folder name -->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.folder_name }} {{ filters_form.folder_name.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Consider the images' folder name for
+                                    this search.</h6>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!---- insertion date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ filters_form.insertion_date_activate }} {{ filters_form.insertion_date_activate.label_tag }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select a range for the insertion date of the
+                                    images for this search.</h6>
+                                <p class="card-text">From {{ filters_form.insertion_date_from }}</p>
+                                <p class="card-text">To {{ filters_form.insertion_date_to }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- taken date ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ filters_form.taken_date_activate }} {{ filters_form.taken_date_activate.label_tag }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Select a range for the date that the images were
+                                taken for this search.</h6>
+                            <p class="card-text">From {{ filters_form.taken_date_from }}</p>
+                            <p class="card-text">To {{ filters_form.taken_date_to }}</p>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!---- size of the images ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Select images size</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Select the image sizes for
+                                    this search.</h6>
+                                <p class="card-text">{{ filters_form.size_large }} {{ filters_form.size_large.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_medium }} {{ filters_form.size_medium.label_tag }}</p>
+                                <p class="card-text">{{ filters_form.size_small }} {{ filters_form.size_small.label_tag }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!---- options and submit ---->
+                    <div class="col-sm-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <button type="submit" value="{{ request.get_full_path }}" class="btn btn-primary">
+                                    Apply
+                                </button>
+                                <br>
+                                <button type="submit" name="reset_filters" class="btn btn-danger">Show all (reset
+                                    filters)
+                                </button>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+            {{ filters_form.current_url }}
+        </form>
     </div>
-  </div>
-</div>
-              {% endif %}
-              {% endfor %}
-      </div> <!--row-->
+
+
+    <div class="results">
+
+
+        <!-- end filters -->
+
+        <div id="exportDiv" style="display: none">
+            <button style="margin: 0vh 1vw 0vh 3vw;" type="button" id="excel_btn" class="btn btn-primary">Export to
+                excel
+            </button>
+            <button type="button" id="zip_btn" class="btn btn-primary">Export to zip</button>
+        </div>
+        {% for tag_cluster in results.items %}
+            <div class="album py-5 bg-mine">
+                <div class="container">
+                    <p id="TagName">{{ tag_cluster.0 }}</p>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-6" id="lazy">
+                        {% for image in tag_cluster.1 %}
+                            {% if image.0 is not None %}
+                                <div class="col">
+                                    <div class="card shadow-sm img_box">
+                                        {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+
+                                        {% endwith %}
+                                        <div class="card-body">
+                                            <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="btn-group">
+                                                    <button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                            data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
+                                                    </button>
+                                                </div> <!--btn group-->
+                                                <img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                            </div> <!--d-flex justify-content-between align-items-center-->
+                                        </div> <!--card-body-->
+                                    </div> <!--card shadow-sm-->
+                                </div> <!--col-->
+                                <div class="modal fade detailsModal"
+                                     id="resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}"
+                                     tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
+                                                <button onclick="closeModal({{ forloop.parentloop.counter }}, {{ forloop.counter }})"
+                                                        type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <form name="imageDetailsForm"
+                                                  action="{% url 'updateTags' hash=image.0.hash %}" method="post"
+                                                  enctype="multipart/form-data">
+                                                <div class="modal-body">
+                                                    {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
+                                                        <img class="imageThumbnail" src="{% static imgPath %}">
+                                                    {% endwith %}
+
+                                                    <i class="tagsIcon editTagsIcon fas fa-pencil-alt"
+                                                       title="edit tags"></i>
+                                                    <i class="tagsIcon addTagsIcon fas fa-plus-square"
+                                                       title="add new tag"></i>
+                                                    <div class="addTagDiv" hidden>
+                                                        <input type="text" class="form-control"/>
+                                                        <button type="button" class="addTag btn btn-primary"
+                                                                title="add">Add
+                                                        </button>
+                                                    </div>
+                                                    <div class="tagsDiv" id="{{ image.0.hash }}">
+                                                        {% for elem in image.1 %}
+                                                            <span class="tag"> #{{ elem.name }} <i hidden
+                                                                                                   class="deleteIcon fas fa-times"
+                                                                                                   title="delete this tag"></i></span>
+                                                        {% endfor %}
+                                                    </div>
+                                                <br>
+                                                {% if image.2.length > 0 %}
+                                                    <span>People:</span>
+                                                {% endif %}
+                                                    <div class="peopleDiv" >
+
+                                                        {% for elem in image.2 %}
+                                                            <a style="text-decoration: none; color:black;" href="results?query={{ elem }}"><span class="tag" style="padding: 3px; background-color: hotpink; border-radius: 5px;"> #{{ elem }} </span></a>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <input hidden class="postInput" type="text" name="tags">
+                                                    <p title="{{ image.0.folder_uri }}/{{ image.0.name }}" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
+                                                        Path: {{ image.0.folder_uri }}/{{ image.0.name }}</p>
+                                                    <p>Dimensions: {{ image.0.width }}x{{ image.0.height }}</p>
+                                                    {% if not image.0.creation_date is None %}
+                                                        <p class="card-text">Creation
+                                                            Date: {{ image.0.creation_date }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Close
+                                                    </button>
+                                                    <button type="submit" class="submitBtn btn btn-primary">Save
+                                                        Changes
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div> <!--row-->
+                </div>
+            </div>
+        {% endfor %}
+        {% with 'img/arrow-up.svg' as myarrow %}
+            <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
+        {% endwith %}
     </div>
-  </div>
-    {% endfor %}
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
-</body>
-</html>
+    <script>
+
+        function toggleFilters(el) {
+            var formm = document.getElementById('filtersForm')
+            if (formm.style.display === "none") {
+                formm.style.display = "block";
+                el.innerHTML = "Hide filters"
+            } else {
+                formm.style.display = "none";
+                el.innerHTML = "Show filters"
+
+            }
+        }
+        var imgs = document.getElementsByTagName('img')
+        var allIds = ''
+        var images = false;
+
+        for (let i = 0; i < imgs.length; i++) {
+            if (imgs[i].id === '')
+                continue
+            allIds += imgs[i].id + '&';
+            images = true;
+        }
+
+        var selectedIds = new Set()
+        var idsList = []
+
+        if (images) {
+            $('#exportDiv').css('display', 'block')
+        }
+
+        $('#excel_btn').click(function () {
+            var param = ''
+            if (selectedIds.size > 0) {
+                param = idSetToString(selectedIds)
+                param = param.substr(0, param.length - 1)
+            } else {
+                param = allIds.substr(0, allIds.length - 1)
+            }
+
+            createExportFrom("excel", param)
+        })
+
+        $('#zip_btn').click(function () {
+            var param = ''
+            if (selectedIds.size > 0) {
+                param = idSetToString(selectedIds)
+                param = param.substr(0, param.length - 1)
+            } else {
+                param = allIds.substr(0, allIds.length - 1)
+            }
+
+            createExportFrom("zip", param)
+        })
+
+        function createExportFrom(type, param) {
+            var form_ = document.createElement("form");
+            form_.id = "exportForm";
+            form_.name = "exportForm";
+            form_.method = "get";
+            form_.action = "export/" + type + "/$" + param;
+            document.body.appendChild(form_);
+            form_.submit();
+            document.body.removeChild(form_);
+        }
+
+        $(".img_box").click(function () {
+            if ($(this).hasClass('selected_img')) {
+                $(this).removeClass('selected_img')
+                $(this).find(".checked_img").css('display', 'none')
+                selectedIds.delete($(this).children('img')[0].id)
+                idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
+            } else {
+                selectedIds.add($(this).children('img')[0].id)
+                idsList.push($(this).children('img')[0].id)
+                $(this).addClass('selected_img')
+                $(this).find(".checked_img").css('display', 'block')
+            }
+
+            if (selectedIds.size === 0) {
+                $("#excel_btn").html('Export all to excel')
+                $("#zip_btn").html('Export all to zip')
+            } else {
+                $("#excel_btn").html('Export to excel')
+                $("#zip_btn").html('Export to zip')
+            }
+        })
+
+        var edit = true;
+        var add = true;
+
+        $('.editTagsIcon').click(function () {
+            if (edit) {
+                $('.deleteIcon').removeAttr('hidden')
+            } else {
+                $('.deleteIcon').attr('hidden', 'hidden')
+            }
+            edit = !edit
+        })
+
+        $('.addTagsIcon').click(function () {
+            if (add) {
+                $('.addTagDiv').removeAttr('hidden')
+            } else {
+                $('.addTagDiv').attr('hidden', 'hidden')
+            }
+
+            add = !add
+        })
+
+        $('.deleteIcon').click(function () {
+            $(this).parent() //  <span class="tag">
+                .remove()
+        })
+
+        function idSetToString(set) {
+            var ids = ''
+            set.forEach(id => {
+                ids += id + '&';
+            })
+            return ids;
+        }
+
+        //Get the button:
+        mybutton = document.getElementById("scrollBtn");
+
+        $('.addTag').click(function () {
+            var input = $(this).parent().children('input');
+            var val = input.val();
+
+            if (val === null || val.trim().length === 0)
+                return false;
+
+            const newTag = "<span class='tag'>\#" + val + "<i hidden class='deleteIcon fas fa-times' title='delete this tag'></i></span>";
+            $(this).parent().parent().children('.tagsDiv').append(newTag);
+            input.val("")
+        })
+
+        $('.view').click(function () {
+            $('.addTagDiv').attr('hidden', 'hidden')
+            $('.deleteIcon').attr('hidden', 'hidden');
+            edit = add = true;
+        })
+
+        $('.submitBtn').click(function () {
+            var form = $(this).parent().parent();
+            var tags = form.find('.tagsDiv').children('.tag');
+            var postBody = ''
+
+            for (let i = 0; i < tags.length; i++) {
+                postBody += tags[i].innerText.trim().split("\n")[0]
+            }
+
+            form.find('.postInput').val(postBody)
+            return true;
+        })
+
+        //Get the button:
+        mybutton = document.getElementById("scrollBtn");
+
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function () {
+            scrollFunction()
+        };
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                mybutton.style.display = "block";
+            } else {
+                mybutton.style.display = "none";
+            }
+        }
+
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        }
+
+
+        // date picker
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#insertion_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#insertion_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
+                // date picker 2
+        $(function () {
+            var dateFormat = "dd-mm-yy",
+                from = $("#taken_date_from")
+                    .datepicker({
+                        defaultDate: "+1w",
+                        changeMonth: true,
+                        changeYear: true,
+                        // numberOfMonths: 3,
+                        dateFormat: dateFormat
+                    })
+                    .on("change", function () {
+                        to.datepicker("option", "minDate", getDate(this));
+                        // from.val(getDate(this));
+
+                    }),
+                to = $("#taken_date_to").datepicker({
+                    defaultDate: "+1w",
+                    changeMonth: true,
+                    // numberOfMonths: 3,
+                    changeYear: true,
+                    dateFormat: dateFormat
+                })
+                    .on("change", function () {
+                        from.datepicker("option", "maxDate", getDate(this));
+
+                    });
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+
+                return date;
+            }
+        });
+
+        //below taken from http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
+        function getScrollXY() {
+            var scrOfX = 0, scrOfY = 0;
+            if( typeof( window.pageYOffset ) == 'number' ) {
+                //Netscape compliant
+                scrOfY = window.pageYOffset;
+                scrOfX = window.pageXOffset;
+            } else if( document.body && ( document.body.scrollLeft || document.body.scrollTop ) ) {
+                //DOM compliant
+                scrOfY = document.body.scrollTop;
+                scrOfX = document.body.scrollLeft;
+            } else if( document.documentElement && ( document.documentElement.scrollLeft || document.documentElement.scrollTop ) ) {
+                //IE6 standards compliant mode
+                scrOfY = document.documentElement.scrollTop;
+                scrOfX = document.documentElement.scrollLeft;
+            }
+            return [ scrOfX, scrOfY ];
+        }
+
+    //taken from http://james.padolsey.com/javascript/get-document-height-cross-browser/
+    function getDocHeight() {
+        var D = document;
+        return Math.max(
+            D.body.scrollHeight, D.documentElement.scrollHeight,
+            D.body.offsetHeight, D.documentElement.offsetHeight,
+            D.body.clientHeight, D.documentElement.clientHeight
+        );
+    }
+        document.addEventListener("DOMContentLoaded", function() {
+        var lazyDiv = document.getElementById("lazy")
+        var page_number = 1
+        var lock = false
+        var prevHeight = getDocHeight()
+        var TagName = document.getElementById("TagName")
+        TagName = TagName.innerText
+        function lazyload () {
+            if (!lock && getDocHeight() <= getScrollXY()[1] + window.innerHeight) {
+                lock = true
+                page_number = page_number + 1
+                var link = ""
+                if (TagName.includes("#")){
+                    TagName = TagName.split('#').join('');
+                    link = "images/" + TagName + "/"
+                }else{
+                    var urls = document.URL.split("/")
+                    link = "/folder/" + urls[urls.length - 2] + "/"
+                }
+                link = link + page_number
+                $.ajax({
+                   type: "GET",
+                   url: link,
+                   success: function(results) {
+                       var images = results;
+                       if(!(Object.keys(results).length === 0)){
+                           for (const [hash, image] of Object.entries(images)) {
+                              var tags_span = ""
+                               var person_tag_html = ""
+                                if(image.persons.length > 0){
+                                    person_tag_html = person_tag_html + `<br><span>People:</span>`
+                                }
+                                for(var i = 0; i< image.persons.length; i++){
+                                    person_tag_html = person_tag_html + `
+                                                    <div class="peopleDiv" >
+                                                            <a style="text-decoration: none; color:black;" href="results?query=` + image.persons[i] + `"><span class="tag" style="padding: 3px; background-color: hotpink; border-radius: 5px;"> #` + image.persons[i] + ` </span></a>
+                                                    </div>`
+                                }
+                              for (var i = 0; i < image.tags.length; i++) {
+                                  tags_span = tags_span + `<span class="tag"> #` + image.tags[i] + ` <i hidden
+                                                        class="deleteIcon fas fa-times"
+                                                        title="delete this tag"></i></span>
+                                                        `
+                              }
+                              lazyDiv.innerHTML = lazyDiv.innerHTML + `
+                              <div class="col">
+                                <div class="card shadow-sm img_box">
+                                    <img class="imageThumbnailInMenu" id="` + hash + `" src="` + "/static/thumbnails/" + hash + `.jpg">
+                                    <div class="card-body">
+                                        <p class="card-text">` + image.name + `</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="btn-group">
+                                                <button type="button" class="view btn btn-sm btn-outline-secondary"
+                                                    data-bs-toggle="modal" data-bs-target="#resultDetails` + hash + `">View
+                                                </button>
+                                            </div> <!--btn group-->
+                                            <img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                        </div> <!--d-flex justify-content-between align-items-center-->
+                                    </div> <!--card-body-->
+                                </div> <!--card shadow-sm-->
+                              </div> <!--col-->
+                              <div class="modal fade detailsModal"
+                                id="resultDetails` + hash + `"
+                                tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Image Details</h5>
+                                                <button onclick="closeModal(` + hash + `)"
+                                                    type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <form name="imageDetailsForm"
+                                            action="http://localhost:8000/updateTags/` + hash + `" method="post"
+                                                enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <img class="imageThumbnail" src="` + "/static/thumbnails/" + hash +  `.jpg">
+                                                <i class="tagsIcon editTagsIcon fas fa-pencil-alt"
+                                                    title="edit tags"></i>
+                                                <i class="tagsIcon addTagsIcon fas fa-plus-square"
+                                                    title="add new tag"></i>
+                                                <div class="addTagDiv" hidden>
+                                                    <input type="text" class="form-control"/>
+                                                    <button type="button" class="addTag btn btn-primary"
+                                                        title="add">Add
+                                                    </button>
+                                                </div>
+                                                <div class="tagsDiv" id="` + hash + `">` + tags_span + `
+                                                </div>` + person_tag_html + `
+                                                <input hidden class="postInput" type="text" name="tags">
+                                                <p title="` + image.folder_uri + "/" + image.name + `" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
+                                                    Path: ` + image.folder_uri + "/" + image.name + `</p>
+                                                <p>Dimensions: ` + image.width + "x" + image.height + `</p>
+                                                <p class="card-text">Creation
+                                                    Date: ` + image.creation_date + `</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Close
+                                                </button>
+                                                <button type="submit" class="submitBtn btn btn-primary">Save
+                                                    Changes
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                              </div>
+                              `
+                           }
+                           function toggleFilters(el) {
+                            var formm = document.getElementById('filtersForm')
+                            if (formm.style.display === "none") {
+                                formm.style.display = "block";
+                                el.innerHTML = "Hide filters"
+                            } else {
+                                formm.style.display = "none";
+                                el.innerHTML = "Show filters"
+                            }
+                        }
+                        imgs = document.getElementsByTagName('img')
+                        allIds = ''
+                        images = false;
+
+                        for (let i = 0; i < imgs.length; i++) {
+                            if (imgs[i].id === '')
+                                continue
+                            allIds += imgs[i].id + '&';
+                            images = true;
+                        }
+
+                        selectedIds = new Set()
+                        idsList = []
+
+                        if (images) {
+                            $('#exportDiv').css('display', 'block')
+                        }
+
+                        $('#excel_btn').click(function () {
+                            var param = ''
+                            if (selectedIds.size > 0) {
+                                param = idSetToString(selectedIds)
+                                param = param.substr(0, param.length - 1)
+                            } else {
+                                param = allIds.substr(0, allIds.length - 1)
+                            }
+
+                            createExportFrom("excel", param)
+                        })
+
+                        $('#zip_btn').click(function () {
+                            var param = ''
+                            if (selectedIds.size > 0) {
+                                param = idSetToString(selectedIds)
+                                param = param.substr(0, param.length - 1)
+                            } else {
+                                param = allIds.substr(0, allIds.length - 1)
+                            }
+
+                            createExportFrom("zip", param)
+                        })
+
+                        function createExportFrom(type, param) {
+                            var form_ = document.createElement("form");
+                            form_.id = "exportForm";
+                            form_.name = "exportForm";
+                            form_.method = "get";
+                            form_.action = "export/" + type + "/$" + param;
+                            document.body.appendChild(form_);
+                            form_.submit();
+                            document.body.removeChild(form_);
+                        }
+
+                        $(".img_box").click(function () {
+                            if ($(this).hasClass('selected_img')) {
+                                $(this).removeClass('selected_img')
+                                $(this).find(".checked_img").css('display', 'none')
+                                selectedIds.delete($(this).children('img')[0].id)
+                                idsList.splice(idsList.indexOf($(this).children('img')[0].id), 1)
+                            } else {
+                                selectedIds.add($(this).children('img')[0].id)
+                                idsList.push($(this).children('img')[0].id)
+                                $(this).addClass('selected_img')
+                                $(this).find(".checked_img").css('display', 'block')
+                            }
+
+                            if (selectedIds.size === 0) {
+                                $("#excel_btn").html('Export all to excel')
+                                $("#zip_btn").html('Export all to zip')
+                            } else {
+                                $("#excel_btn").html('Export to excel')
+                                $("#zip_btn").html('Export to zip')
+                            }
+                        })
+
+                        edit = true;
+                        add = true;
+
+                        $('.editTagsIcon').click(function () {
+                            if (edit) {
+                                $('.deleteIcon').removeAttr('hidden')
+                            } else {
+                                $('.deleteIcon').attr('hidden', 'hidden')
+                            }
+                            edit = !edit
+                        })
+
+                        $('.addTagsIcon').click(function () {
+                            if (add) {
+                                $('.addTagDiv').removeAttr('hidden')
+                            } else {
+                                $('.addTagDiv').attr('hidden', 'hidden')
+                            }
+
+                            add = !add
+                        })
+
+                        $('.deleteIcon').click(function () {
+                            $(this).parent() //  <span class="tag">
+                                .remove()
+                        })
+
+                        function idSetToString(set) {
+                            var ids = ''
+                            set.forEach(id => {
+                                ids += id + '&';
+                            })
+                            return ids;
+                        }
+
+                        //Get the button:
+                        mybutton = document.getElementById("scrollBtn");
+
+                        $('.addTag').click(function () {
+                            var input = $(this).parent().children('input');
+                            var val = input.val();
+
+                            if (val === null || val.trim().length === 0)
+                                return false;
+
+                            const newTag = "<span class='tag'>\#" + val + "<i hidden class='deleteIcon fas fa-times' title='delete this tag'></i></span>";
+                            $(this).parent().parent().children('.tagsDiv').append(newTag);
+                            input.val("")
+                        })
+				
+                        $('.view').click(function () {
+                            $('.addTagDiv').attr('hidden', 'hidden')
+                            $('.deleteIcon').attr('hidden', 'hidden');
+                            edit = add = true;
+                        })
+
+                        $('.submitBtn').click(function () {
+                            var form = $(this).parent().parent();
+                            var tags = form.find('.tagsDiv').children('.tag');
+                            var postBody = ''
+
+                            for (let i = 0; i < tags.length; i++) {
+                                postBody += tags[i].innerText.trim().split("\n")[0]
+                            }
+
+                            form.find('.postInput').val(postBody)
+                            return true;
+                        })
+
+                        //Get the button:
+                        mybutton = document.getElementById("scrollBtn");
+
+                        // When the user scrolls down 20px from the top of the document, show the button
+                        window.onscroll = function () {
+                            scrollFunction()
+                        };
+
+                        function scrollFunction() {
+                            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                                mybutton.style.display = "block";
+                            } else {
+                                mybutton.style.display = "none";
+                            }
+                        }
+
+                        // When the user clicks on the button, scroll to the top of the document
+                        function topFunction() {
+                            document.body.scrollTop = 0; // For Safari
+                            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+                        }
+
+
+                        // date picker
+                        $(function () {
+                            var dateFormat = "dd-mm-yy",
+                                from = $("#insertion_date_from")
+                                    .datepicker({
+                                        defaultDate: "+1w",
+                                        changeMonth: true,
+                                        changeYear: true,
+                                        // numberOfMonths: 3,
+                                        dateFormat: dateFormat
+                                    })
+                                    .on("change", function () {
+                                        to.datepicker("option", "minDate", getDate(this));
+                                        // from.val(getDate(this));
+
+                                    }),
+                                to = $("#insertion_date_to").datepicker({
+                                    defaultDate: "+1w",
+                                    changeMonth: true,
+                                    // numberOfMonths: 3,
+                                    changeYear: true,
+                                    dateFormat: dateFormat
+                                })
+                                    .on("change", function () {
+                                        from.datepicker("option", "maxDate", getDate(this));
+
+                                    });
+
+                            function getDate(element) {
+                                var date;
+                                try {
+                                    date = $.datepicker.parseDate(dateFormat, element.value);
+                                } catch (error) {
+                                    date = null;
+                                }
+
+                                return date;
+                            }
+                        });
+
+                                // date picker 2
+                        $(function () {
+                            var dateFormat = "dd-mm-yy",
+                                from = $("#taken_date_from")
+                                    .datepicker({
+                                        defaultDate: "+1w",
+                                        changeMonth: true,
+                                        changeYear: true,
+                                        // numberOfMonths: 3,
+                                        dateFormat: dateFormat
+                                    })
+                                    .on("change", function () {
+                                        to.datepicker("option", "minDate", getDate(this));
+                                        // from.val(getDate(this));
+
+                                    }),
+                                to = $("#taken_date_to").datepicker({
+                                    defaultDate: "+1w",
+                                    changeMonth: true,
+                                    // numberOfMonths: 3,
+                                    changeYear: true,
+                                    dateFormat: dateFormat
+                                })
+                                    .on("change", function () {
+                                        from.datepicker("option", "maxDate", getDate(this));
+
+                                    });
+
+                            function getDate(element) {
+                                var date;
+                                try {
+                                    date = $.datepicker.parseDate(dateFormat, element.value);
+                                } catch (error) {
+                                    date = null;
+                                }
+
+                                return date;
+                            }
+                        });
+
+                           lock = false
+                       }
+                     }
+                   });
+            }
+        };
+        document.addEventListener("scroll", lazyload);
+        });
+
+    </script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends 'topbar.html' %}
+{% load static %}
+
+{% block content %}
+    <style>
+    html, body {
+        overflow: hidden;
+    }
+</style>
+
+    <!-- Main Sidebar Container -->
+  <aside style="position: absolute; top: 12vh; padding-top: 5vw;" class="main-sidebar">
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <li style="text-align: center" class="sadnav-item nav-item">
+            <a href="{% url 'textGallery' %}" class="nav-link">
+              <i class="nav-icon fas fa-font"></i>
+              <span>
+                Text
+              </span>
+            </a>
+          </li>
+          <li style="text-align: center" class="sadnav-item nav-item">
+            <a href="{% url 'placesGallery' %}" class="nav-link">
+              <i class="nav-icon fas fa-search-location"></i>
+              <span>
+                Scenes
+              </span>
+            </a>
+          </li>
+          <li style="text-align: center" class="sadnav-item nav-item">
+            <a href="{% url 'peopleGallery' %}" class="nav-link">
+              <i class="nav-icon fa fa-users"></i>
+              <span>
+                People
+              </span>
+            </a>
+          </li>
+          <li style="text-align: center" class="sadnav-item nav-item">
+            <a href="{% url 'objectsGallery' %}" class="nav-link">
+              <i class="nav-icon fas fa-cubes"></i>
+              <span>
+                Objects
+              </span>
+            </a>
+          </li>
+          <li style="text-align: center" class="sadnav-item nav-item">
+            <a href="{% url 'gallery' %}" class="nav-link">
+              <i class="nav-icon fas fa-calendar-alt"></i>
+              <span>
+                Dates
+              </span>
+            </a>
+          </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+      <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+  </aside>
+
+
+    <div class="mygrid">
+        <div class="text-div">
+            <h1 class="stats-text">{{ countTagSource.ocr }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">text</p>
+        </div>
+
+        <div class="people-div">
+            <h1 class="stats-text">{{ numbers.person }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">people</p>
+        </div>
+
+        <div class="scenes-div">
+            <h1 class="stats-text">{{ countTagSource.places }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">scenes</p>
+        </div>
+
+        <div class="obj-div">
+            <h1 class="stats-text">{{ countTagSource.object }}</h1>
+            <p class="stats-text" style="margin-top: -4vh">objects</p>
+        </div>
+         <div class="piechart" id="chart1">
+        </div>
+        <div class="barchart" id="chart2">
+        </div>
+
+    </div>
+<script type="text/javascript">
+
+    drawChart();
+    function drawChart() {
+        countTagsDjango = {{ counts|safe }};
+        var dataPoints = [];
+        var countTotal = 0;
+        for (var key in countTagsDjango) {
+            countTotal = countTotal + countTagsDjango[key];
+        }
+        for (var key in countTagsDjango) {
+            dataPoints.push({ 'y': countTagsDjango[key], 'label': key, 'percentage': ((countTagsDjango[key]/countTotal)*100).toFixed(2)});
+        }
+	var element = document.getElementById("chart1")
+	var positionInfo = element.getBoundingClientRect()
+	var height = 8*positionInfo.height/10;
+	var width = 8*positionInfo.width/10;
+        var chart = new CanvasJS.Chart("chart1", {
+            theme: "light2", // "light1", "light2", "dark1", "dark2"
+            exportEnabled: true,
+            animationEnabled: true,
+            title: {
+                text: "Top Most Common Tags",
+                fontSize: 20,
+                fontFamily: "arial",
+            },
+            data: [{
+                type: "doughnut",
+                startAngle: 25,
+                innerRadius: 35,
+                toolTipContent: "<b>{label}</b>: {percentage}%",
+                showInLegend: "true",
+                legendText: "{label}",
+                indexLabelFontSize: 18,
+                indexLabel: "{label} - {y}",
+                dataPoints: dataPoints,
+            }],
+		width: width,
+		height: height
+        });
+        chart.render();
+
+    }
+
+    drawBarChart();
+    function drawBarChart() {
+        countTagSourceDjango = {{ countTagSource|safe }};
+        var dataPoints = [];
+        var countTotal = 0;
+       for (var key in countTagSourceDjango) {
+            countTotal = countTotal + countTagSourceDjango[key];
+        }
+        for (var key in countTagSourceDjango) {
+            dataPoints.push({ 'y': countTagSourceDjango[key], 'label': key, 'percentage': ((countTagSourceDjango[key]/countTotal)*100).toFixed(2)});
+        }
+	var element = document.getElementById("chart2")
+	var positionInfo = element.getBoundingClientRect()
+	var height = 8*positionInfo.height/10;
+	var width = 8*positionInfo.width/10;
+        var chart = new CanvasJS.Chart("chart2", {
+            exportEnabled: true,
+            animationEnabled: true,
+            title: {
+                text: "Top Most Common Tag Sources",
+                fontSize: 20,
+                fontFamily: "arial",
+                margin: 20,
+                fontStyle: "bold",
+            },
+            axisX: {
+                interval: 1,
+                labelFontSize: 15
+            },
+            axisY: {
+                title: "Counts",
+                margin: 1,
+                includeZero: true,
+            },
+            data: [{
+                type: "bar",
+                toolTipContent: "<b>{label}</b>: {y} ({percentage}%)",
+                dataPoints: dataPoints,
+                indexLabelFontSize: 15
+            }],
+		width: width,
+		height: height
+        });
+        chart.render();
+
+    }
+	document.addEventListener("DOMContentLoaded", function() {
+        var lazyloadThrottleTimeout;
+
+        function lazyload () {
+            if(lazyloadThrottleTimeout) {
+              clearTimeout(lazyloadThrottleTimeout);
+            }
+
+            lazyloadThrottleTimeout = setTimeout(function() {
+                    var scrollTop = window.pageYOffset;
+		    drawChart()
+                    drawBarChart()
+            }, 20);
+        }
+
+            document.addEventListener("scroll", lazyload);
+            window.addEventListener("resize", lazyload);
+            window.addEventListener("orientationChange", lazyload);
+        });
+</script>
+{% endblock %}

@@ -1,4 +1,3 @@
-
 # Created by https://www.toptal.com/developers/gitignore/api/django
 # Edit at https://www.toptal.com/developers/gitignore?templates=django
 
@@ -23,5 +22,18 @@
 */env.bak/
 */venv.bak/
 */pythonenv*
+*/face-thumbnails/*
+*/thumbnails/*
+project/app/resources/tesseract-OCR/
+project/app/resources/breedclassifier-model/
+project/.scannerwork/
+
+
+project/app/resources/breedclassifier-model/
+project/app/resources/neoServer/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
+
+
+
+

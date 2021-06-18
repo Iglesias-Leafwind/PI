@@ -1,7 +1,7 @@
 import numpy as np
-from keras.applications.vgg16 import VGG16
-from keras.applications.vgg16 import preprocess_input
-from keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.preprocessing import image
 from numpy import linalg as LA
 
 
@@ -17,15 +17,13 @@ class VGGNet:
 
     def vgg_extract_feat(self, img_path):
         img = image.load_img(img_path, target_size=(self.input_shape[0], self.input_shape[1]))
-        height = img.height
-        width = img.width
         img = image.img_to_array(img)
         img = np.expand_dims(img, axis=0)
         img = preprocess_input(img)
         feat = self.model_vgg.predict(img)
         norm_feat = feat[0] / LA.norm(feat[0])
 
-        return norm_feat, height, width
+        return norm_feat
 
 
 # database = 'database' # pasta com as imagens

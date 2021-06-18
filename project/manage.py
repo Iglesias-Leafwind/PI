@@ -3,10 +3,8 @@
 import os
 import subprocess
 import sys
-import time
-
-from elasticsearch import Elasticsearch
-
+from scripts.esScript import close_es,open_es
+from scripts.neoScript import close_neo4j,open_neo4j
 
 def main():
     """Run administrative tasks."""
@@ -20,31 +18,12 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    #openES()
-    #time.sleep(5)
+    open_es()
+    open_neo4j()
     execute_from_command_line(sys.argv)
-    #closeES()
+    close_es()
+    close_neo4j()
 
-# CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#"/home/alexis/elasticsearch-7.12.1/bin/elasticsearch"
-esPath = "D:\\Programs\\elasticsearch-7.12.0\\bin\\elasticsearch"
-
-def openES():
-    global elasticsearchClient
-    elasticsearchClient = subprocess.Popen(esPath)
-
-
-def closeES():
-    elasticsearchClient.terminate()
-    print("---------------------------------------------terminate---------------------------------------------")
-    time.sleep(1)
-    if elasticsearchClient.returncode is None:
-        # It has not terminated. Kill it.
-        elasticsearchClient.kill()
-        print("---------------------------------------------kill---------------------------------------------")
-
-
-es = Elasticsearch()
 
 if __name__ == '__main__':
     main()
