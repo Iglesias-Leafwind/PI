@@ -131,10 +131,6 @@ def index(request):
             results[tag] = [ (a, b, get_people(a)) for a, b in results_[key] ]
 
 
-
-            print(results[tag][0])
-            print(type(results[tag][0]))
-            print(len(results[tag][0]))
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
