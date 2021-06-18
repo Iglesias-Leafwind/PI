@@ -238,8 +238,7 @@ class SimpleFileSystemManager:
 
                 return deletedImages
         except Exception as e:
-            logging.info("[Deleting]: [ERROR] Delete error ")
-            print(e)
+            logging.info("[Deleting]: [ERROR] Delete error " + str(e))
 
 
 

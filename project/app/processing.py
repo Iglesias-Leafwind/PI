@@ -4,13 +4,9 @@ import reverse_geocoder as rg
 import threading
 from app.face_recognition import FaceRecognition
 from app.breed_classifier import BreedClassifier
-import time
-import sys
 from datetime import datetime
-from os.path import join
 import random
 import numpy as np
-import requests
 from neomodel import db
 from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
@@ -582,8 +578,6 @@ def deleteFolder(uri, frr=frr):
     if deleted_images is None or len(deleted_images) == 0:
         return
 
-    logging.info("[Deleting]: [INFO] Starting to delete images from cache")
-    resultsLock.acquire()
     try:
         imgfs = set(ftManager.imageFeatures)
         for di in deleted_images:
