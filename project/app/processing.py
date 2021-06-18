@@ -571,7 +571,7 @@ def deleteFolder(uri, frr=frr):
         try:
             processingLock.acquire()
             deleting = True
-            deleted_images = fs.delete_folder_from_fs(uri)
+            deleted_images = fs.delete_folder_from_fs(uri,frr)
         finally:
             deleting = False
             processingLock.release()
@@ -588,7 +588,6 @@ def deleteFolder(uri, frr=frr):
         imgfs = set(ftManager.imageFeatures)
         for di in deleted_images:
             imgfs.remove(di)
-            frr.remove_image(di.hash)
 
         ftManager.imageFeatures = list(imgfs)
         f = []
@@ -602,7 +601,7 @@ def deleteFolder(uri, frr=frr):
 
     try:
         if len(to_be_deleted) != 0:
-            deleteFolder(to_be_deleted.pop())
+            deleteFolder(to_be_deleted.pop(),frr)
     except Exception as e:
         logging.info("[Deleting]: [ERROR] " + str(e))
 
@@ -627,7 +626,7 @@ def getAllImagesOfFolder(folder):
     node = Folder.nodes.get_or_none(id_=folder.id)
     if node:
         if len(node.images):
-            return node.images
+            return [(i, i.tag.all()) for i in node.images]
 
 
 def getPlaces(img_path):

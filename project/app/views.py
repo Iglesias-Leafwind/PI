@@ -486,10 +486,17 @@ def get_image_results(query_array,page):
     return results
 
 def searchFolder(request, name):
-    results = getAllImagesOfFolder(name)
-    return render(request, index_string,
-                  {'filters_form': FilterSearchForm(), 'form': query, 'image_form': image, 'results': results, 'error': False})
+    results = {}
+    results['results'] = getAllImagesOfFolder(name)
 
+    opts = searchFilterOptions
+    opts['current_url'] = request.get_full_path()
+    filters = FilterSearchForm(initial=opts)
+    query = SearchForm()  # query form stays the same
+    image = SearchForImageForm()  # fetching image form response
+
+    return render(request, index_string,
+                  {'filters_form': filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
 def delete(request, path):
     do(deleteFolder, path)
@@ -512,8 +519,11 @@ def managefolders(request):
         image = SearchForImageForm()
         pathf = EditFoldersForm()
         folders = fs.get_all_uris()
+        folders_with_url = [] 
+        for folder in folders:
+            folders_with_url += [(folder, folder.replace("/","\\"))]
         return render(request, 'managefolders.html',
-                      {'form': form, 'image_form': image, 'folders': folders, 'path_form': pathf})
+                      {'form': form, 'image_form': image, 'folders': folders_with_url, '' 'path_form': pathf})
 
 people_url_string = '/people'
 def managepeople(request):
