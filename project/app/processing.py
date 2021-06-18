@@ -2,9 +2,10 @@ import json
 import string
 import reverse_geocoder as rg
 import threading
-from app.face_recognition import FaceRecognition
-from app.breed_classifier import BreedClassifier
+#from app.face_recognition import FaceRecognition
+#from app.breed_classifier import BreedClassifier
 from datetime import datetime
+from urllib.parse import unquote
 import random
 import numpy as np
 from neomodel import db
@@ -66,7 +67,7 @@ def testing_thread_capacity():
     cpu_med = (cpu_sum / iterating)
     ram_med = (ram_sum / iterating)
 
-    deleteFolder(dir_path, frr)
+    deleteFolder(dir_path)#, frr)
     cpuPerThread = cpu_med - cpu_normal
     cpuPerThread /= 2
 
@@ -83,10 +84,10 @@ logging.info("[Loading]: [INFO] Loading Object Extraction")
 obj_extr = do(ObjectExtract)
 
 logging.info("[Loading]: [INFO] Loading face recognition")
-frr = do(FaceRecognition)
+#frr = do(FaceRecognition)
 
 logging.info("[Loading]: [INFO] Loading breed classifier")
-bc = do(BreedClassifier)
+#bc = do(BreedClassifier)
 
 while not obj_extr.done():
     time.sleep(0.1)
@@ -94,14 +95,14 @@ while not obj_extr.done():
 obj_extr = obj_extr.result()
 logging.info("[Loading]: [INFO] Finished loading Object Extraction")
 
-while not frr.done():
-    time.sleep(0.1)
-frr = frr.result()
+#while not frr.done():
+#    time.sleep(0.1)
+#frr = frr.result()
 logging.info("[Loading]: [INFO] Finished loading face recognition")
 
-while not bc.done():
-    time.sleep(0.1)
-bc = bc.result()
+#while not bc.done():
+#    time.sleep(0.1)
+#bc = bc.result()
 logging.info("[Loading]: [INFO] Finished loading breed classifier")
 
 ftManager = ImageFeaturesManager()
@@ -436,7 +437,7 @@ def processing(dir_files):
                                 breedLock.acquire()
                                 logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
 
-                                classify_breed_part(read_image, tags, image)
+                                #classify_breed_part(read_image, tags, image)
                             finally:
                                 breedLock.release()
                     try:
@@ -444,7 +445,7 @@ def processing(dir_files):
                         logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Face Recognition of " + img_path)
 
                         db.begin()
-                        face_rec_part(read_image, img_path, tags, image)
+                        #face_rec_part(read_image, img_path, tags, image)
                         db.commit()
                     finally:
                         faceRecLock.release()
@@ -549,7 +550,7 @@ def alreadyProcessed(img_path):
 
 to_be_deleted = set()
 deleting = False
-def deleteFolder(uri, frr=frr):
+def deleteFolder(uri):#, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
     global deleting, to_be_deleted
@@ -567,7 +568,7 @@ def deleteFolder(uri, frr=frr):
         try:
             processingLock.acquire()
             deleting = True
-            deleted_images = fs.delete_folder_from_fs(uri,frr)
+            deleted_images = fs.delete_folder_from_fs(uri)
         finally:
             deleting = False
             processingLock.release()
@@ -583,7 +584,6 @@ def deleteFolder(uri, frr=frr):
         imgfs = set(ftManager.imageFeatures)
         for di in deleted_images:
             imgfs.remove(di)
-
         ftManager.imageFeatures = list(imgfs)
         f = []
         for i in ftManager.imageFeatures:
@@ -596,14 +596,14 @@ def deleteFolder(uri, frr=frr):
 
     try:
         if len(to_be_deleted) != 0:
-            deleteFolder(to_be_deleted.pop(),frr)
+            deleteFolder(to_be_deleted.pop())#,frr)
     except Exception as e:
         logging.info("[Deleting]: [ERROR] " + str(e))
 
 def findSimilarImages(uri):
     if len(ftManager.npFeatures) == 0:
         return []
-    norm_feat = model.vgg_extract_feat(uri)  # extrair infos
+    norm_feat = model.vgg_extract_feat(uri)
     feats = np.array(ftManager.npFeatures)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
@@ -616,13 +616,15 @@ def findSimilarImages(uri):
 
     return imlist
 
-def getAllImagesOfFolder(folder):
+def getAllImagesOfFolder(folder, page):
+    folder = unquote(folder)
     folder = fs.get_last_node(folder)
     node = Folder.nodes.get_or_none(id_=folder.id)
     if node:
-        if len(node.images):
-            return [(i, i.tag.all()) for i in node.images]
-
+        results = node.getImagesByPage(page)
+        if len(results):
+            return [(i, i.tag.all(), i.getPersonsName()) for i in results]
+    return []
 
 def getPlaces(img_path):
     # load the test image

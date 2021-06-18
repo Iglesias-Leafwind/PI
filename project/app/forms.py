@@ -62,7 +62,7 @@ class PersonsForm(forms.Form):
 
         all_rels = []
         if showDict['unverified']:
-            all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if not pp.approved]
+            all_rels += Person().getRIP(False, 1)
 
         if showDict['verified']:
             all_rels += [ ( pp, p, i ) for (p, i) in people for pp in p.image.all_relationships(i) if pp.approved]

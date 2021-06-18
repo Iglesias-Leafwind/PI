@@ -158,7 +158,7 @@ class SimpleFileSystemManager:
             path = os.path.join(path, p)
         return path
 
-    def delete_folder_from_fs(self, uri, frr):
+    def delete_folder_from_fs(self, uri):
         try:
             if self.exist(uri):
                 node = self.get_last_node(uri)
@@ -182,7 +182,8 @@ class SimpleFileSystemManager:
                     if images is not None:
                         for image in images:
                             try:
-                                frr.remove_image(image.hash)
+                                pass
+                                #frr.remove_image(di)
                             except Exception as e:
                                 print("Couldn't remove person thumbnail and/or person entity because: " + str(e))
                             if len(image.folder) > 1: # if image is in different folders

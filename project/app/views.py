@@ -14,7 +14,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location, Folder
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, \
-    getAllImagesOfFolder, frr
+    getAllImagesOfFolder#, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
@@ -98,7 +98,9 @@ def index(request):
 
             results_ = get_image_results(query_array,1)
             print('after search')
-            key = list(results_.keys())[0]
+            if len(results_.keys()) != 0:
+                key = list(results_.keys())[0]
+
 
             if len(query_array) > 0:
                 def sort_by_score(elem):
@@ -116,13 +118,7 @@ def index(request):
 
 
             results = {}
-            images = [i[0] for i in results_[key]]
-
-            get_people = lambda img : [p.name for p in img.person.all()]
-            #results[tag] = results_[key]
-            results[tag] = [ (a, b, get_people(a)) for a, b in results_[key] ]
-
-
+            results[tag] = [ (a, b, a.getPersonsName()) for a, b in results_[key] ]
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
@@ -139,9 +135,9 @@ def index(request):
 
 def lazyLoading(request, page, name):
     query_array = name.split(" ")
+    print('start search')
     results = get_image_results(query_array, page)
     print('after search')
-    get_people = lambda img: [p.name for p in img.person.all()]
     if len(results.keys()) > 0:
         key = list(results.keys())[0]
         def sort_by_score(elem):
@@ -153,7 +149,7 @@ def lazyLoading(request, page, name):
                     if q in t.name:
                         score += image.tag.relationship(t).score
                         break
-            return - (score / len(query_array))
+            return - (score / max(1, len(query_array)))
 
         results[key].sort(key=sort_by_score)
         returning = {}
@@ -172,7 +168,7 @@ def lazyLoading(request, page, name):
                 tag_entity = tag
                 tag_list += [tag_entity.name]
             returning[result[0].hash]["tags"] = tag_list
-            returning[result[0].hash]["persons"] = get_people(result[0])
+            returning[result[0].hash]["persons"] = result[0].getPersonsName()
         import json
         return HttpResponse(json.dumps(returning), content_type='text/json')
 
@@ -317,7 +313,7 @@ isLaterThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.repl
 def get_image_results(query_array,page):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
-    result_hashs = list([x.meta.id for x in search(query_array,page)])
+    result_hashs = [x.meta.id for x in search(query_array,page)]
 
     #print('len result_hashs : ' , len(result_hashs))
     results = {tag: []}  # blank results dictionary
@@ -470,12 +466,14 @@ def get_image_results(query_array,page):
                     set_all_img_tags += [tag_object]
             results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
 
-
     return results
 
-def searchFolder(request, name):
+def searchFolder(request, name, page):
+    if page > 1:
+        return searchFolderJson(request, name, page)
+
     results = {}
-    results['results'] = getAllImagesOfFolder(name)
+    results['results'] = getAllImagesOfFolder(name, 1)
 
     opts = searchFilterOptions
     opts['current_url'] = request.get_full_path()
@@ -485,6 +483,32 @@ def searchFolder(request, name):
     
     return render(request, index_string,
                   {'filters_form': filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
+
+
+def searchFolderJson(request, name, page):
+    results = {}
+    results['results'] = getAllImagesOfFolder(name, page)
+    returning = {}
+    for result in results['results']:
+        image_neo = result[0]
+        if (image_neo.hash not in returning):
+            returning[image_neo.hash] = {}
+
+        returning[image_neo.hash]["folder_uri"] = image_neo.folder_uri
+        returning[image_neo.hash]["name"] = image_neo.name
+        returning[image_neo.hash]["width"] = image_neo.width
+        returning[image_neo.hash]["height"] = image_neo.height
+        returning[image_neo.hash]["creation_date"] = image_neo.creation_date
+        tag_list = []
+        for tag in result[1]:
+            tag_list += [tag.name]
+        returning[image_neo.hash]["tags"] = tag_list
+        returning[image_neo.hash]["persons"] = result[2]
+    import json
+    return HttpResponse(json.dumps(returning), content_type='text/json')
+
+
+
 
 def delete(request, path):
     do(deleteFolder, path)
@@ -525,10 +549,10 @@ def managepeople(request):
         showDict['verified'] = filters2['verified']
 
         return redirect(people_url_string)
-
+    page = 1
     form = SearchForm()
     image = SearchForImageForm()
-    names = PersonsForm()
+    names = PersonsForm(page)
     filters = PeopleFilterForm(initial=showDict)
     return render(request, 'renaming.html',
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
@@ -585,8 +609,6 @@ def update_faces(request):
             thumbname = data['person_image_%s' % str(i)]
             new_personname = data['person_name_%s' % str(i)]
 
-            # retirar isto abaixo dps!!!
-            #new_personname = new_personname.split(' ')[0]
             old_personname = data['person_before_%s' % str(i)]
             verified = True
             if not data['person_verified_%s' % str(i)]:

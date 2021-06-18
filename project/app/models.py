@@ -70,6 +70,10 @@ class ImageNeo(StructuredNode):
     location = RelationshipTo("Location", WasTakenIn.rel, model=WasTakenIn)
     folder = RelationshipTo("Folder", IsIn.rel, model=IsIn)
 
+    def getPersonsName(self):
+        query = "MATCH (i:ImageNeo{hash:$hash})-[r:`Display a`]->(p:Person) RETURN DISTINCT p.name"
+        results, meta = db.cypher_query(query, {"hash":self.hash})
+        return [row[0] for row in results]
 
 class Tag(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
@@ -113,6 +117,13 @@ class Person(StructuredNode):
         query = "MATCH (p:Person) WITH count(p) AS persons RETURN persons"
         results, meta = db.cypher_query(query)
         return [row[0] for row in results]
+
+    def getRIP(self, tf, page):
+        size = 20
+        page = max(1, page)
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]-(p:Person) WHERE r.approved = $tf RETURN r, i, p SKIP $skip LIMIT $limit"
+        results, meta = db.cypher_query(query,{'tf': tf, 'skip': (page - 1) * size, 'limit': page * size})
+        return [(DisplayA.inflate(row[0]), ImageNeo.inflate(row[1]), Person.inflate(row[2])) for row in results]
 
 class Country(StructuredNode):
     name = StringProperty(unique_index=True, required=True)
@@ -172,3 +183,11 @@ class Folder(StructuredNode):
         query = "MATCH (f:Folder {id_:$id_})-[*]-> (c:Folder) RETURN c.name"
         results, meta = db.cypher_query(query, {"id_": self.id_})
         return [path[0] for path in results]
+
+    def getImagesByPage(self, page): # page [1:inf[
+        size = 20
+        page = max(1, page)
+        query = "MATCH (i:ImageNeo)-[:`Is in`]->(f:Folder {id_:$id_}) RETURN i SKIP $skip LIMIT $limit"
+        results, meta = db.cypher_query(query, {"id_": self.id_, "skip": (page - 1) * size, "limit": page * size})
+        return [ImageNeo.inflate(row[0]) for row in results]
+

@@ -39,6 +39,6 @@ urlpatterns = [
     path('scenes', views.scenes_gallery, name='placesGallery'),
     path('text', views.text_gallery, name='textGallery'),
     path('gallery', views.calendar_gallery, name='gallery'),
-    path('folder/<str:name>', views.searchFolder, name='getAllImagesOfFolder'),
+    path('folder/<str:name>/<int:page>', views.searchFolder, name='getAllImagesOfFolder'),
     path('images/<str:name>/<int:page>', views.lazyLoading, name='lazyLoading'),
 ]

@@ -210,8 +210,9 @@
                             {% if image.0 is not None %}
                                 <div class="col">
                                     <div class="card shadow-sm img_box">
-                                        {% with 'thumbnails'|add:'/'|add:image.0.hash|add:'.jpg' as image_static %}
+                                        {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as image_static %}
                                             <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+
                                         {% endwith %}
                                         <div class="card-body">
                                             <p class="card-text">{{ image.0.name|truncatechars:16}}</p>
@@ -598,12 +599,18 @@
         var prevHeight = getDocHeight()
         var TagName = document.getElementById("TagName")
         TagName = TagName.innerText
-        TagName = TagName.split('#').join('');
         function lazyload () {
             if (!lock && getDocHeight() <= getScrollXY()[1] + window.innerHeight) {
                 lock = true
                 page_number = page_number + 1
-                var link = "images/" + TagName + "/"
+                var link = ""
+                if (TagName.includes("#")){
+                    TagName = TagName.split('#').join('');
+                    link = "images/" + TagName + "/"
+                }else{
+                    var urls = document.URL.split("/")
+                    link = "/folder/" + urls[urls.length - 2] + "/"
+                }
                 link = link + page_number
                 $.ajax({
                    type: "GET",
