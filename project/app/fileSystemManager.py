@@ -183,8 +183,8 @@ class SimpleFileSystemManager:
                         for image in images:
                             try:
                                 frr.remove_image(image.hash)
-                            finally:
-                                print("Couldn't remove person thumbnail and/or person entity")
+                            except Exception as e:
+                                print("Couldn't remove person thumbnail and/or person entity because: " + str(e))
                             if len(image.folder) > 1: # if image is in different folders
                                 currentImageUri, root = self.__splitUriAndGetRoot__(image.folder_uri)
                                 currentImageUri = self.__builFullPath__(currentImageUri)

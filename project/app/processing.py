@@ -578,6 +578,7 @@ def deleteFolder(uri, frr=frr):
     if deleted_images is None or len(deleted_images) == 0:
         return
 
+    resultsLock.acquire()
     try:
         imgfs = set(ftManager.imageFeatures)
         for di in deleted_images:
