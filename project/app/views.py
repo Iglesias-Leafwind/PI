@@ -14,7 +14,7 @@ from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsFo
 from app.models import ImageES, ImageNeo, Tag, Person, Location, Folder
 
 from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, \
-    getAllImagesOfFolder#, frr
+    getAllImagesOfFolder, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
     is_small, is_medium, is_large, reset_filters, timeHelper
@@ -552,7 +552,7 @@ def managepeople(request):
     page = 1
     form = SearchForm()
     image = SearchForImageForm()
-    names = PersonsForm(page)
+    names = PersonsForm()
     filters = PeopleFilterForm(initial=showDict)
     return render(request, 'renaming.html',
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})

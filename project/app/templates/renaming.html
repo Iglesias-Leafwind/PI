@@ -15,7 +15,7 @@
             <div style="border-top: none; margin-top: -5%; margin-left: 10% " class="modal-footer">
                 <button type="submit" name="reload" class="btn btn-primary">Save & reload changes</button>
             </div>
-            <div class="importantcontainer">
+            <div class="importantcontainer" id="faces">
                 {% csrf_token %}
               {% for nfield in names_form.get_interest_fields %}
 
@@ -33,7 +33,6 @@
                     {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
                 {% endfor %}
             </div>
-
-     </form>
-
+        </form>
+    </div>
 {% endblock %}

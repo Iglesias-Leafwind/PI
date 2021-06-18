@@ -118,11 +118,9 @@ class Person(StructuredNode):
         results, meta = db.cypher_query(query)
         return [row[0] for row in results]
 
-    def getRIP(self, tf, page):
-        size = 20
-        page = max(1, page)
-        query = "MATCH (i:ImageNeo)-[r:`Display a`]-(p:Person) WHERE r.approved = $tf RETURN r, i, p SKIP $skip LIMIT $limit"
-        results, meta = db.cypher_query(query,{'tf': tf, 'skip': (page - 1) * size, 'limit': page * size})
+    def getRIP(self, tf):
+        query = "MATCH (i:ImageNeo)-[r:`Display a`]-(p:Person) WHERE r.approved = $tf RETURN r, i, p"
+        results, meta = db.cypher_query(query,{'tf': tf})
         return [(DisplayA.inflate(row[0]), ImageNeo.inflate(row[1]), Person.inflate(row[2])) for row in results]
 
 class Country(StructuredNode):
