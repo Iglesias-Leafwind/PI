@@ -153,7 +153,7 @@ def lazyLoading(request, page, name):
     query_array = name.split(" ")
     results = get_image_results(query_array, page)
     print('after search')
-
+    get_people = lambda img: [p.name for p in img.person.all()]
     if len(results.keys()) > 0:
         key = list(results.keys())[0]
         def sort_by_score(elem):
@@ -169,6 +169,7 @@ def lazyLoading(request, page, name):
 
         results[key].sort(key=sort_by_score)
         returning = {}
+
         for result in results[key]:
             image_neo = result[0]
             if(result[0].hash not in returning):
@@ -183,6 +184,7 @@ def lazyLoading(request, page, name):
                 tag_entity = tag
                 tag_list += [tag_entity.name]
             returning[result[0].hash]["tags"] = tag_list
+            returning[result[0].hash]["persons"] = get_people(result[0])
         import json
         return HttpResponse(json.dumps(returning), content_type='text/json')
 

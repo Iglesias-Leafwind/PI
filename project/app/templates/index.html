@@ -605,7 +605,6 @@
                 page_number = page_number + 1
                 var link = "images/" + TagName + "/"
                 link = link + page_number
-                console.log(page_number)
                 $.ajax({
                    type: "GET",
                    url: link,
@@ -614,6 +613,16 @@
                        if(!(Object.keys(results).length === 0)){
                            for (const [hash, image] of Object.entries(images)) {
                               var tags_span = ""
+                               var person_tag_html = ""
+                                if(image.persons.length > 0){
+                                    person_tag_html = person_tag_html + `<br><span>People:</span>`
+                                }
+                                for(var i = 0; i< image.persons.length; i++){
+                                    person_tag_html = person_tag_html + `
+                                                    <div class="tagsDiv" >
+                                                            <a style="text-decoration: none; color:black;" href="results?query=` + image.persons[i] + `"><span class="tag" style="background-color: hotpink"> #` + image.persons[i] + ` </span></a>
+                                                    </div>`
+                                }
                               for (var i = 0; i < image.tags.length; i++) {
                                   tags_span = tags_span + `<span class="tag"> #` + image.tags[i] + ` <i hidden
                                                         class="deleteIcon fas fa-times"
@@ -664,7 +673,7 @@
                                                     </button>
                                                 </div>
                                                 <div class="tagsDiv" id="` + hash + `">` + tags_span + `
-                                                </div>
+                                                </div>` + person_tag_html + `
                                                 <input hidden class="postInput" type="text" name="tags">
                                                 <p title="` + image.folder_uri + "/" + image.name + `" class="imagePath" style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 99%; display : block;">
                                                     Path: ` + image.folder_uri + "/" + image.name + `</p>
