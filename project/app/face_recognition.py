@@ -232,7 +232,7 @@ class FaceRecognition:
             p = Person.nodes.get_or_none(name=k)
             if p is not None:
                 p.delete()
-        self.reload()
+                
     def delete_thumbs(self, image_hash):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:
