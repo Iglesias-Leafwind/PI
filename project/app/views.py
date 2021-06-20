@@ -13,17 +13,17 @@ from elasticsearch_dsl import Index, Search, Q
 from app.forms import SearchForm, SearchForImageForm, EditFoldersForm, PersonsForm, PeopleFilterForm, EditTagForm, FilterSearchForm
 from app.models import ImageES, ImageNeo, Tag, Person, Location, Folder
 
-from app.processing import getOCR, getExif, dhash, findSimilarImages, upload_images, fs, deleteFolder, \
-    getAllImagesOfFolder, frr
+from app.processing import get_ocr, get_exif, dhash, find_similar_images, upload_images, fs, delete_folder, \
+    get_all_images_of_folder, frr
 
 from app.utils import add_tag, delete_tag, objectExtractionThreshold, faceRecThreshold, breedsThreshold, \
-    is_small, is_medium, is_large, reset_filters, timeHelper
+    is_small, is_medium, is_large, reset_filters, timeHelper, placesThreshold
 from scripts.esScript import es
 from app.nlpFilterSearch import process_query, process_text
 from app.utils import searchFilterOptions, showDict,faceRecLock
 import re
 import itertools
-
+import logging
 from scripts.pathsPC import do
 
 
@@ -69,75 +69,92 @@ def index(request):
         image = SearchForImageForm(request.POST, request.FILES)  # fetching image form response
 
         if image.is_valid() and image.cleaned_data["image"]:  # if search by image is valid
-            imagepath = image.cleaned_data["image"]  # get inserted path
-            image_array = findSimilarImages(imagepath)  # find similar images
-            results = {"results": []}  # blank results dictionary
-            for i in image_array:  # looping through the results of the search
-                getresult = ImageNeo.nodes.get_or_none(hash=i)  # fetching each corresponding node
-                if getresult:  # if it exists
-                    results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
+            results = search_by_image_page_resources(image)
             return render(request, index_string,
                           {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
         else:  # the form filled had a mistake
-            results = {}  # blank results dictionary
-            for tag in Tag.nodes.all():  # looping through all tag nodes
-                results["#" + tag.name] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
-                count = 0  # counter
-                for lst_image in results["#" + tag.name]:  # for each image of the value of this tag
-                    results["#" + tag.name][count] = (lst_image, lst_image.tag.all())  # replace it by a tuple w/ its tags
-                    count += 1  # increase counter
+            results = error_in_form_showing_all_images()
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': True})
     else:
         if 'query' in request.GET:
-            query = SearchForm()  # cleaning this form
-            image = SearchForImageForm()  # fetching the images form
-            query_text = request.GET.get("query")  # fetching the inputted query
-            query_array = process_query(query_text)  # processing query with nlp
-            query_original = process_text(query_text)
-            tag = "#" + " #".join(query_original)  # arranging tags with '#' before
-
-            results_ = get_image_results(query_array,1)
-            print('after search')
-            if len(results_.keys()) != 0:
-                key = list(results_.keys())[0]
-
-
-            if len(query_array) > 0:
-                def sort_by_score(elem):
-                    image = elem[0]
-                    tags = elem[1]
-                    score = 0
-                    for t in tags: # t -> Tag (NeoNode)
-                        for q in query_array:
-                            if q in t.name:
-                                score += image.tag.relationship(t).score
-                                break
-                    return - (score / len(query_array))
-
-                results_[key].sort(key=sort_by_score)
-
-
-            results = {}
-            results[tag] = [ (a, b, a.getPersonsName()) for a, b in results_[key] ]
+            image, query, results = query_search_page_resources(request)
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
         else:  # first time in the page - no forms filled
-            query = SearchForm()
-            image = SearchForImageForm()
-            results = {}
-            for tag in Tag.nodes.all():
-                results["#" + tag.name] = tag.image.all()
-                count = 0
-                for lst_image in results["#" + tag.name]:
-                    results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
-                    count += 1
+            image, query, results = first_time_in_page_resources()
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
-def lazyLoading(request, page, name):
+
+def first_time_in_page_resources():
+    query = SearchForm()
+    image = SearchForImageForm()
+    results = {}
+    for tag in Tag.nodes.all():
+        results["#" + tag.name] = tag.image.all()
+        count = 0
+        for lst_image in results["#" + tag.name]:
+            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())
+            count += 1
+    return image, query, results
+
+
+def error_in_form_showing_all_images():
+    results = {}  # blank results dictionary
+    for tag in Tag.nodes.all():  # looping through all tag nodes
+        results["#" + tag.name] = tag.image.all()  # inserting each tag in the dict w/ all its images as values
+        count = 0  # counter
+        for lst_image in results["#" + tag.name]:  # for each image of the value of this tag
+            results["#" + tag.name][count] = (lst_image, lst_image.tag.all())  # replace it by a tuple w/ its tags
+            count += 1  # increase counter
+    return results
+
+
+def search_by_image_page_resources(image):
+    imagepath = image.cleaned_data["image"]  # get inserted path
+    image_array = find_similar_images(imagepath)  # find similar images
+    results = {"results": []}  # blank results dictionary
+    for i in image_array:  # looping through the results of the search
+        getresult = ImageNeo.nodes.get_or_none(hash=i)  # fetching each corresponding node
+        if getresult:  # if it exists
+            results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
+    return results
+
+
+def query_search_page_resources(request):
+    logging.info("[Searching]: [INFO] Started Searching.")
+    query = SearchForm()  # cleaning this form
+    image = SearchForImageForm()  # fetching the images form
+    query_text = request.GET.get("query")  # fetching the inputted query
+    query_array = process_query(query_text)  # processing query with nlp
+    query_original = process_text(query_text)
+    tag = "#" + " #".join(query_original)  # arranging tags with '#' before
+    results_ = get_image_results(query_array, 1)
+    logging.info("[Searching]: [INFO] Finished Searching.")
+    if len(results_.keys()) != 0:
+        key = list(results_.keys())[0]
+    if len(query_array) > 0:
+        def sort_by_score(elem):
+            image = elem[0]
+            tags = elem[1]
+            score = 0
+            for t in tags:  # t -> Tag (NeoNode)
+                for q in query_array:
+                    if q in t.name:
+                        score += image.tag.relationship(t).score
+                        break
+            return - (score / len(query_array))
+
+        results_[key].sort(key=sort_by_score)
+    results = {}
+    results[tag] = [(a, b, a.getPersonsName()) for a, b in results_[key]]
+    return image, query, results
+
+content_type_json = 'text/json'
+def lazy_loading(request, page, name):
     query_array = name.split(" ")
-    print('start search')
+    logging.info("[Searching]: [INFO] Started Searching.")
     results = get_image_results(query_array, page)
-    print('after search')
+    logging.info("[Searching]: [INFO] Finished Searching.")
     if len(results.keys()) > 0:
         key = list(results.keys())[0]
         def sort_by_score(elem):
@@ -154,23 +171,29 @@ def lazyLoading(request, page, name):
         results[key].sort(key=sort_by_score)
         returning = {}
 
-        for result in results[key]:
-            image_neo = result[0]
-            if(result[0].hash not in returning):
-                returning[result[0].hash] = {}
-            returning[result[0].hash]["folder_uri"] = image_neo.folder_uri
-            returning[result[0].hash]["name"] = image_neo.name
-            returning[result[0].hash]["width"] = image_neo.width
-            returning[result[0].hash]["height"] = image_neo.height
-            returning[result[0].hash]["creation_date"] = image_neo.creation_date
-            tag_list = []
-            for tag in result[1]:
-                tag_entity = tag
-                tag_list += [tag_entity.name]
-            returning[result[0].hash]["tags"] = tag_list
-            returning[result[0].hash]["persons"] = result[0].getPersonsName()
+        create_return_lazy(key, results, returning)
+
         import json
-        return HttpResponse(json.dumps(returning), content_type='text/json')
+        return HttpResponse(json.dumps(returning), content_type=content_type_json)
+
+
+def create_return_lazy(key, results, returning):
+    for result in results[key]:
+        image_neo = result[0]
+        if (result[0].hash not in returning):
+            returning[result[0].hash] = {}
+        returning[result[0].hash]["folder_uri"] = image_neo.folder_uri
+        returning[result[0].hash]["name"] = image_neo.name
+        returning[result[0].hash]["width"] = image_neo.width
+        returning[result[0].hash]["height"] = image_neo.height
+        returning[result[0].hash]["creation_date"] = image_neo.creation_date
+        tag_list = []
+        for tag in result[1]:
+            tag_entity = tag
+            tag_list += [tag_entity.name]
+        returning[result[0].hash]["tags"] = tag_list
+        returning[result[0].hash]["persons"] = result[0].getPersonsName()
+
 
 def change_filters(request):
     if request.method != 'POST':
@@ -203,48 +226,22 @@ def change_filters(request):
 
     time_format_string = '%d-%m-%Y'
     if searchFilterOptions['insertion_date_activate']: # update dates
-        try:
-            timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], time_format_string)
-            searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
-        except ValueError: # invalid format
-            searchFilterOptions['insertion_date_from'] = None
-            timeHelper['insertion_date_from'] = None
-        try:
-            timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], time_format_string)
-            searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
-        except ValueError:  # invalid format
-            searchFilterOptions['insertion_date_to'] = None
-            timeHelper['insertion_date_to'] = None
+
+        set_from_insertion_date(form, time_format_string)
+
+        set_to_insertion_date(form, time_format_string)
 
     searchFilterOptions['taken_date_activate'] = form['taken_date_activate']
     if searchFilterOptions['taken_date_activate']: # update dates
-        try:
-            timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], time_format_string)
-            searchFilterOptions['taken_date_from'] = form['taken_date_from']
-        except ValueError: # invalid format
-            searchFilterOptions['taken_date_from'] = None
-            timeHelper['taken_date_from'] = None
+        set_from_taken_date(form, time_format_string)
 
-        try:
-            timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], time_format_string)
-            searchFilterOptions['taken_date_to'] = form['taken_date_to']
-        except ValueError:  # invalid format
-            searchFilterOptions['taken_date_to'] = None
-            timeHelper['taken_date_to'] = None
+        set_to_taken_date(form, time_format_string)
 
     # -- confiance object extraction --
     max_obj_extr = form['objects_range_max']
     min_obj_extr = form['objects_range_min']
 
-    if min_obj_extr < objectExtractionThreshold * 100:
-        min_obj_extr = objectExtractionThreshold * 100
-    elif min_obj_extr > 100:
-        min_obj_extr = 100
-
-    if max_obj_extr < min_obj_extr:
-        max_obj_extr = min_obj_extr
-    elif max_obj_extr > 100:
-        max_obj_extr = 100
+    max_obj_extr, min_obj_extr = set_object_extr_limits(max_obj_extr, min_obj_extr)
 
     searchFilterOptions['objects_range_max'] = int(max_obj_extr)
     searchFilterOptions['objects_range_min'] = int(min_obj_extr)
@@ -253,15 +250,7 @@ def change_filters(request):
     max_face = form['people_range_max']
     min_face = form['people_range_min']
 
-    if min_face < faceRecThreshold * 100:
-        min_face = faceRecThreshold * 100
-    elif min_face > 100:
-        min_face = 100
-
-    if max_face < min_obj_extr:
-        max_face = min_obj_extr
-    elif max_face > 100:
-        max_face = 100
+    max_face, min_face = set_face_rec_limits(max_face, min_face, min_obj_extr)
 
     searchFilterOptions['people_range_max'] = int(max_face)
     searchFilterOptions['people_range_min'] = int(min_face)
@@ -272,15 +261,7 @@ def change_filters(request):
     max_breeds = form['breeds_range_max']
     min_breeds = form['breeds_range_min']
 
-    if min_breeds < breedsThreshold * 100:
-        min_breeds = breedsThreshold * 100
-    elif min_breeds > 100:
-        min_breeds = 100
-
-    if max_breeds < min_breeds:
-        max_breeds = min_breeds
-    elif max_breeds > 100:
-        max_breeds = 100
+    max_breeds, min_breeds = set_breeds_limits(max_breeds, min_breeds)
 
     searchFilterOptions['breeds_range_max'] = int(max_breeds)
     searchFilterOptions['breeds_range_min'] = int(min_breeds)
@@ -291,21 +272,98 @@ def change_filters(request):
     max_places = form['places_range_max']
     min_places = form['places_range_min']
 
-    if min_places < breedsThreshold * 100:
-        min_places = breedsThreshold * 100
-    elif min_places > 100:
-        min_places = 100
-
-    if max_places < min_places:
-        max_places = min_places
-    elif max_places > 100:
-        max_places = 100
+    max_places, min_places = set_places_limits(max_places, min_places)
 
     searchFilterOptions['places_range_max'] = int(max_places)
     searchFilterOptions['places_range_min'] = int(min_places)
     # -- end confiance places --
 
     return redirect(form['current_url'])
+
+
+def set_places_limits(max_places, min_places):
+    if min_places < placesThreshold * 100:
+        min_places = placesThreshold * 100
+    elif min_places > 100:
+        min_places = 100
+    if max_places < min_places:
+        max_places = min_places
+    elif max_places > 100:
+        max_places = 100
+    return max_places, min_places
+
+
+def set_breeds_limits(max_breeds, min_breeds):
+    if min_breeds < breedsThreshold * 100:
+        min_breeds = breedsThreshold * 100
+    elif min_breeds > 100:
+        min_breeds = 100
+    if max_breeds < min_breeds:
+        max_breeds = min_breeds
+    elif max_breeds > 100:
+        max_breeds = 100
+    return max_breeds, min_breeds
+
+
+def set_face_rec_limits(max_face, min_face, min_obj_extr):
+    if min_face < faceRecThreshold * 100:
+        min_face = faceRecThreshold * 100
+    elif min_face > 100:
+        min_face = 100
+    if max_face < min_obj_extr:
+        max_face = min_obj_extr
+    elif max_face > 100:
+        max_face = 100
+    return max_face, min_face
+
+
+def set_object_extr_limits(max_obj_extr, min_obj_extr):
+    if min_obj_extr < objectExtractionThreshold * 100:
+        min_obj_extr = objectExtractionThreshold * 100
+    elif min_obj_extr > 100:
+        min_obj_extr = 100
+    if max_obj_extr < min_obj_extr:
+        max_obj_extr = min_obj_extr
+    elif max_obj_extr > 100:
+        max_obj_extr = 100
+    return max_obj_extr, min_obj_extr
+
+
+def set_to_taken_date(form, time_format_string):
+    try:
+        timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], time_format_string)
+        searchFilterOptions['taken_date_to'] = form['taken_date_to']
+    except ValueError:  # invalid format
+        searchFilterOptions['taken_date_to'] = None
+        timeHelper['taken_date_to'] = None
+
+
+def set_from_taken_date(form, time_format_string):
+    try:
+        timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], time_format_string)
+        searchFilterOptions['taken_date_from'] = form['taken_date_from']
+    except ValueError:  # invalid format
+        searchFilterOptions['taken_date_from'] = None
+        timeHelper['taken_date_from'] = None
+
+
+def set_to_insertion_date(form, time_format_string):
+    try:
+        timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], time_format_string)
+        searchFilterOptions['insertion_date_to'] = form['insertion_date_to']
+    except ValueError:  # invalid format
+        searchFilterOptions['insertion_date_to'] = None
+        timeHelper['insertion_date_to'] = None
+
+
+def set_from_insertion_date(form, time_format_string):
+    try:
+        timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], time_format_string)
+        searchFilterOptions['insertion_date_from'] = form['insertion_date_from']
+    except ValueError:  # invalid format
+        searchFilterOptions['insertion_date_from'] = None
+        timeHelper['insertion_date_from'] = None
+
 
 isBeforeThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
 isLaterThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
@@ -320,131 +378,34 @@ def get_image_results(query_array,page):
     for hash in result_hashs:  # iterating through the result's hashes
         remove = set()
         img = ImageNeo.nodes.get_or_none(hash=hash)  # fetching the reuslts nodes from DB
-        if img is None:  # if there is no image with this hash in DB
-            continue  # ignore, advance
-
-
-        if not searchFilterOptions['size_small'] and is_small(img.height, img.width):
-            continue
-
-        if not searchFilterOptions['size_medium'] and is_medium(img.height, img.width):
-            continue
-
-        if not searchFilterOptions['size_large'] and is_large(img.height, img.width):
+        skip = check_if_image_in_filter_sizes(img)
+        if skip:
             continue
 
 
         # ---- dates -----
-        if searchFilterOptions['insertion_date_activate']:
-
-            fromm = timeHelper['insertion_date_from']
-            if fromm is not None and isBeforeThan(img.insertion_date, fromm):
-                    continue # is before the limit, not shown
-            too = timeHelper['insertion_date_to']
-            if too is not None and isLaterThan(img.insertion_date, too):
-                    continue
-
-        if searchFilterOptions['taken_date_activate']:
-            if img.creation_date is None:
-                continue
-            try:
-                d = datetime.datetime.strptime(img.creation_date, '%Y:%m:%d %H:%M:%S')
-            except ValueError:  # invalid format
-                continue
-
-            fromm = timeHelper['taken_date_from']
-            if fromm is not None:
-                if isBeforeThan(d, fromm):
-                    continue # is before the limit, not shown
-            too = timeHelper['taken_date_to']
-            if too is not None:
-                if isLaterThan(d, too):
-                    continue
+        skip = check_if_image_in_filter_dates(img)
+        if skip:
+            continue
 
         #       ---- people ---
 
-        people = img.person.all()
-        # verifica se a query ta dentro do nome
-        dentro = any([q in p.name.lower() for q in query_array for p in people])
-        if dentro:
-            if not searchFilterOptions['people']:
-                remove.add(True)
-            else:
-                people = img.person.all()
-                relationships = [img.person.all_relationships(t) for t in people if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
-                relationships = [rel for r in relationships for rel in r]
-                #print('len rels', len(relationships))
-                # if len(relationships) > 0:
-                minn = searchFilterOptions['people_range_min']
-                maxx = searchFilterOptions['people_range_max']
-                outside_limits = all([rel.confiance * 100 < minn or rel.confiance * 100 > maxx for rel in relationships])
-                #print([rel.confiance for rel in relationships])
-                remove.add(outside_limits)
-
+        remove_image_not_in_filter_persons(img, query_array, remove)
 
         # -- manual --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-                remove.add(not searchFilterOptions['manual'])
+        remove_image_not_in_filter_manual(img, query_array, remove)
 
         # -- object --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            if not searchFilterOptions['automatic']:
-                remove.add(True)
-            else:
-                tags = [t for t in img.tag.match(originalTagSource='object')]
-                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
-                relationships = [ rel for r in relationships for rel in r]
-                # if len(relationships) > 0:
-                minn = searchFilterOptions['objects_range_min']
-                maxx = searchFilterOptions['objects_range_max']
-                outside_limits = all([rel.score*100 < minn or rel.score*100 > maxx for rel in relationships])
-                #print([rel.score for rel in relationships])
-                remove.add(outside_limits) # adiciona Falso se n houver nenhum
-
+        remove_image_not_in_filter_objects(img, query_array, remove)
 
         # -- ocr --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            remove.add(not searchFilterOptions['text'])
+        remove_image_not_in_filter_ocr(img, query_array, remove)
 
         # -- places --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            if not searchFilterOptions['places']:
-                remove.add(True)
-            else:
-                tags = [t for t in img.tag.match(originalTagSource='places')]
-                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
-                relationships = [rel for r in relationships for rel in r]
-                #if len(relationships) > 0:
-                minn = searchFilterOptions['places_range_min']
-                maxx = searchFilterOptions['places_range_max']
-                outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
-                remove.add(outside_limits)
+        remove_image_not_in_filter_places(img, query_array, remove)
 
         # -- breeds --
-        tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
-        dentro = any([q in t for q in query_array for t in tags])
-        if dentro:
-            #print('dentro breeds')
-            if not searchFilterOptions['breeds']:
-                remove.add(True)
-            else:
-                tags = [t for t in img.tag.match(originalTagSource='breeds')]
-                relationships = [img.tag.all_relationships(t) for t in tags if not set(t.name.lower().split(' ')).isdisjoint(query_array)]
-                relationships = [rel for r in relationships for rel in r]
-                #if len(relationships) > 0:
-                minn = searchFilterOptions['breeds_range_min']
-                maxx = searchFilterOptions['breeds_range_max']
-                outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
-                #print('breeds', [rel.score for rel in relationships])
-                remove.add(outside_limits)
+        remove_image_not_in_filter_breeds(img, query_array, remove)
 
         # locations
         locations = [t for t in img.location ]
@@ -457,23 +418,167 @@ def get_image_results(query_array,page):
         if dentro:
             remove.add(False)
 
-        if not all(remove):
-            img.features = None
-            all_img_tags = img.tag.all()
-            set_all_img_tags = []
-            for tag_object in all_img_tags:
-                if tag_object not in set_all_img_tags:
-                    set_all_img_tags += [tag_object]
-            results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
+        remove_unwanted_images_from_search_results(img, remove, results, tag)
 
     return results
 
-def searchFolder(request, name, page):
+
+def remove_unwanted_images_from_search_results(img, remove, results, tag):
+    if not all(remove):
+        img.features = None
+        all_img_tags = img.tag.all()
+        set_all_img_tags = []
+        for tag_object in all_img_tags:
+            if tag_object not in set_all_img_tags:
+                set_all_img_tags += [tag_object]
+        results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
+
+
+def remove_image_not_in_filter_breeds(img, query_array, remove):
+    tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
+    dentro = any([q in t for q in query_array for t in tags])
+    if dentro:
+        # print('dentro breeds')
+        if not searchFilterOptions['breeds']:
+            remove.add(True)
+        else:
+            tags = [t for t in img.tag.match(originalTagSource='breeds')]
+            relationships = [img.tag.all_relationships(t) for t in tags if
+                             not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+            relationships = [rel for r in relationships for rel in r]
+            # if len(relationships) > 0:
+            minn = searchFilterOptions['breeds_range_min']
+            maxx = searchFilterOptions['breeds_range_max']
+            outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
+            # print('breeds', [rel.score for rel in relationships])
+            remove.add(outside_limits)
+
+
+def remove_image_not_in_filter_places(img, query_array, remove):
+    tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
+    dentro = any([q in t for q in query_array for t in tags])
+    if dentro:
+        if not searchFilterOptions['places']:
+            remove.add(True)
+        else:
+            tags = [t for t in img.tag.match(originalTagSource='places')]
+            relationships = [img.tag.all_relationships(t) for t in tags if
+                             not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+            relationships = [rel for r in relationships for rel in r]
+            # if len(relationships) > 0:
+            minn = searchFilterOptions['places_range_min']
+            maxx = searchFilterOptions['places_range_max']
+            outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
+            remove.add(outside_limits)
+
+
+def remove_image_not_in_filter_ocr(img, query_array, remove):
+    tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
+    dentro = any([q in t for q in query_array for t in tags])
+    if dentro:
+        remove.add(not searchFilterOptions['text'])
+
+
+def remove_image_not_in_filter_objects(img, query_array, remove):
+    tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
+    dentro = any([q in t for q in query_array for t in tags])
+    if dentro:
+        if not searchFilterOptions['automatic']:
+            remove.add(True)
+        else:
+            tags = [t for t in img.tag.match(originalTagSource='object')]
+            relationships = [img.tag.all_relationships(t) for t in tags if
+                             not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+            relationships = [rel for r in relationships for rel in r]
+            # if len(relationships) > 0:
+            minn = searchFilterOptions['objects_range_min']
+            maxx = searchFilterOptions['objects_range_max']
+            outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
+            # print([rel.score for rel in relationships])
+            remove.add(outside_limits)  # adiciona Falso se n houver nenhum
+
+
+def remove_image_not_in_filter_manual(img, query_array, remove):
+    tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
+    dentro = any([q in t for q in query_array for t in tags])
+    if dentro:
+        remove.add(not searchFilterOptions['manual'])
+
+
+def remove_image_not_in_filter_persons(img, query_array, remove):
+    people = img.person.all()
+    # verifica se a query ta dentro do nome
+    dentro = any([q in p.name.lower() for q in query_array for p in people])
+    if dentro:
+        if not searchFilterOptions['people']:
+            remove.add(True)
+        else:
+            people = img.person.all()
+            relationships = [img.person.all_relationships(t) for t in people if
+                             not set(t.name.lower().split(' ')).isdisjoint(query_array)]
+            relationships = [rel for r in relationships for rel in r]
+            # print('len rels', len(relationships))
+            # if len(relationships) > 0:
+            minn = searchFilterOptions['people_range_min']
+            maxx = searchFilterOptions['people_range_max']
+            outside_limits = all([rel.confiance * 100 < minn or rel.confiance * 100 > maxx for rel in relationships])
+            # print([rel.confiance for rel in relationships])
+            remove.add(outside_limits)
+
+
+def check_if_image_in_filter_dates(img):
+    returns = False
+    if searchFilterOptions['insertion_date_activate']:
+        returns |= check_if_image_in_filter_date_inserted(img)
+    if searchFilterOptions['taken_date_activate']:
+        returns |= check_if_image_in_filter_date_taken(img)
+    return returns
+
+
+def check_if_image_in_filter_date_inserted(img):
+    fromm = timeHelper['insertion_date_from']
+    if fromm is not None and isBeforeThan(img.insertion_date, fromm):
+        return True  # is before the limit, not shown
+    too = timeHelper['insertion_date_to']
+    if too is not None and isLaterThan(img.insertion_date, too):
+        return True
+    return False
+
+
+def check_if_image_in_filter_date_taken(img):
+    if img.creation_date is None:
+        return True
+    try:
+        d = datetime.datetime.strptime(img.creation_date, '%Y:%m:%d %H:%M:%S')
+    except ValueError:  # invalid format
+        return True
+    fromm = timeHelper['taken_date_from']
+    if fromm is not None and isBeforeThan(d, fromm):
+        return True  # is before the limit, not shown
+    too = timeHelper['taken_date_to']
+    if too is not None and isLaterThan(d, too):
+        return True
+    return False
+
+
+def check_if_image_in_filter_sizes(img):
+    if img is None:  # if there is no image with this hash in DB
+        return True  # ignore, advance
+    if not searchFilterOptions['size_small'] and is_small(img.height, img.width):
+        return True
+    if not searchFilterOptions['size_medium'] and is_medium(img.height, img.width):
+        return True
+    if not searchFilterOptions['size_large'] and is_large(img.height, img.width):
+        return True
+    return False
+
+
+def search_folder(request, name, page):
     if page > 1:
-        return searchFolderJson(request, name, page)
+        return search_folder_json(request, name, page)
 
     results = {}
-    results['results'] = getAllImagesOfFolder(name, 1)
+    results['results'] = get_all_images_of_folder(name, 1)
 
     opts = searchFilterOptions
     opts['current_url'] = request.get_full_path()
@@ -485,9 +590,9 @@ def searchFolder(request, name, page):
                   {'filters_form': filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
 
-def searchFolderJson(request, name, page):
+def search_folder_json(request, name, page):
     results = {}
-    results['results'] = getAllImagesOfFolder(name, page)
+    results['results'] = get_all_images_of_folder(name, page)
     returning = {}
     for result in results['results']:
         image_neo = result[0]
@@ -505,14 +610,14 @@ def searchFolderJson(request, name, page):
         returning[image_neo.hash]["tags"] = tag_list
         returning[image_neo.hash]["persons"] = result[2]
     import json
-    return HttpResponse(json.dumps(returning), content_type='text/json')
+    return HttpResponse(json.dumps(returning), content_type=content_type_json)
 
 
 
-
+to_folders = '/folders'
 def delete(request, path):
-    do(deleteFolder, path)
-    response = redirect('/folders')
+    do(delete_folder, path)
+    response = redirect(to_folders)
     return response
 
 def managefolders(request):
@@ -524,7 +629,7 @@ def managefolders(request):
         pathf = EditFoldersForm()
         folders = fs.getAllUris()
         '''
-        response = redirect('/folders')
+        response = redirect(to_folders)
         return response
     else:
         form = SearchForm()
@@ -535,7 +640,7 @@ def managefolders(request):
         for folder in folders:
             folders_with_url += [(folder, folder.replace("/","\\"))]
         return render(request, 'managefolders.html',
-                      {'form': form, 'image_form': image, 'folders': folders_with_url, '' 'path_form': pathf})
+                      {'form': form, 'image_form': image, 'folders': folders_with_url, 'path_form': pathf})
 
 people_url_string = '/people'
 def managepeople(request):
@@ -549,7 +654,6 @@ def managepeople(request):
         showDict['verified'] = filters2['verified']
 
         return redirect(people_url_string)
-    page = 1
     form = SearchForm()
     image = SearchForImageForm()
     names = PersonsForm()
@@ -558,28 +662,28 @@ def managepeople(request):
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
 
 def search(tags,page):
-    imageInPage = 20
+    image_in_page = 20
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
-    s = Search(using=es, index='image').query(q).extra(from_=(page-1)*imageInPage, size=page*imageInPage)
+    s = Search(using=es, index='image').query(q).extra(from_=(page-1)*image_in_page, size=page*image_in_page)
     return s.execute()
 
-def alreadyProcessed(img_path):
+def already_processed(img_path):
     image = cv2.imread(img_path)
-    hash = dhash(image)
-    existed = ImageNeo.nodes.get_or_none(hash=hash)
+    image_hash = dhash(image)
+    existed = ImageNeo.nodes.get_or_none(hash=image_hash)
 
     return True if existed else False
 
 def upload(request):
     data = json.loads(request.body)
     upload_images(data["path"])
-    return redirect('/folders')
+    return redirect(to_folders)
 
 def searchtag(request):
     get = [request.GET.get('tag')]
     q = Q('bool', should=[Q('term', tags=tag) for tag in get], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
-    execute = s.execute()
+    s.execute()
     return render(request, 'index.html')
 
 def update_folders(request):
@@ -644,16 +748,16 @@ def dashboard(request):
     results = {}
 
     count_tags = {}
-    for tagName, count in Tag().getTop10Tags():
-        count_tags[tagName] = count
+    for tag_name, count in Tag().getTop10Tags():
+        count_tags[tag_name] = count
 
     ## original tag source statistics
     count_original_tag_source = {}
     all_tag_labels = {"ocr": "text", "manual": "manual", "object": "objects", "places": "places",
                     "location": "locations", "folder": "folders", "breeds": "breeds", "person": "people"}
 
-    for sourceName, tagsCount in Tag().tagSourceStatistics():
-        count_original_tag_source[sourceName] = tagsCount
+    for source_name, tags_count in Tag().tagSourceStatistics():
+        count_original_tag_source[source_name] = tags_count
 
     count_original_tag_source["person"] = Person().countPerson()[0]
 
@@ -684,15 +788,8 @@ def calendar_gallery(request):
             creation_date = str(img.creation_date)
             insertion_date = insertion_date.split(" ")[0]
             creation_date = creation_date.split(" ")[0]
-            if insertion_date not in dates_insertion:
-                dates_insertion[insertion_date] = 1
-            else:
-                dates_insertion[insertion_date] += 1
-            if creation_date != "None":
-                if creation_date not in dates_creation:
-                    dates_creation[creation_date] = 1
-                else:
-                    dates_creation[creation_date] += 1
+
+            create_or_add_to_insertion_and_creation_date(creation_date, dates_creation, dates_insertion, insertion_date)
 
             previous_images += [img]
 
@@ -705,6 +802,19 @@ def calendar_gallery(request):
     dates_creation = json.dumps(dates_creation)
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': dates_insertion, 'datesCreation': dates_creation})
+
+
+def create_or_add_to_insertion_and_creation_date(creation_date, dates_creation, dates_insertion, insertion_date):
+    if insertion_date not in dates_insertion:
+        dates_insertion[insertion_date] = 1
+    else:
+        dates_insertion[insertion_date] += 1
+    if creation_date != "None":
+        if creation_date not in dates_creation:
+            dates_creation[creation_date] = 1
+        else:
+            dates_creation[creation_date] += 1
+
 
 def objects_gallery(request):
     form = SearchForm()
@@ -769,7 +879,7 @@ def text_gallery(request):
 def export_to_zip(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
-        return HttpResponse(content_type='text/json')
+        return HttpResponse(content_type=content_type_json)
 
     ids = ids.split("&")
     # Create zip
@@ -792,7 +902,7 @@ def export_to_zip(request, ids):
 def export_to_excel(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
-        return HttpResponse(content_type='text/json')
+        return HttpResponse(content_type=content_type_json)
 
     ids = ids.split("&")
 
@@ -815,16 +925,21 @@ def export_to_excel(request, ids):
         tags = [t.name for t in img.tag]
         persons = [p.name for p in img.person]
         locations = []
-        for l in img.location:
-            locations.append(l.name)
-            for city in l.city:
-                locations.append(city.name)
-                for region in city.region:
-                    locations.append(region.name)
-                    for country in region.country:
-                        locations.append(country.name)
+
+        iterate_through_all_neo_nodes(img, locations)
 
         csv_file.writerow([uri, creation_time, insertion_date, img_format, width,
                            height, tags, persons, locations])
 
     return response
+
+
+def iterate_through_all_neo_nodes(img, locations):
+    for l in img.location:
+        locations.append(l.name)
+        for city in l.city:
+            locations.append(city.name)
+            for region in city.region:
+                locations.append(region.name)
+                for country in region.country:
+                    locations.append(country.name)

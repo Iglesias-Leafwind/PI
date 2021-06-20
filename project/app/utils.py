@@ -77,30 +77,34 @@ searchFilterOptions = {}
 reset_filters()
 
 
-def getImagesPerUri(pathName):
-    dirsAndFiles = {}  # key - dir name, value - list of files (imgs)
+def get_images_per_uri(path_name):
+    dirs_and_files = {}  # key - dir name, value - list of files (imgs)
 
-    if os.path.exists(pathName):
-        fileList = os.listdir(pathName)
+    if os.path.exists(path_name):
+        file_list = os.listdir(path_name)
 
-        for f in fileList:
-            f = os.path.join(pathName, f)
+        for f in file_list:
+            f = os.path.join(path_name, f)
 
             if os.path.isdir(f):
-                dirsAndFiles.update(getImagesPerUri(f))
+                dirs_and_files.update(get_images_per_uri(f))
             else:
-                image_type = imghdr.what(f)
-                if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or f.endswith('JPG') or image_type in ['jpeg', 'png', 'bmp']:
-                    if pathName in dirsAndFiles.keys():
-                        dirsAndFiles[pathName].append(os.path.basename(f))
-                    else:
-                        dirsAndFiles[pathName] = [os.path.basename(f)]
-                else:
-                    #print(f, image_type)
-                    pass
-    return dirsAndFiles
+                check_file_type(dirs_and_files, f, path_name)
+    return dirs_and_files
 
-def getRandomNumber():
+
+def check_file_type(dirs_and_files, f, path_name):
+    image_type = imghdr.what(f)
+    if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or f.endswith('JPG') or image_type in ['jpeg',
+                                                                                                           'png',
+                                                                                                           'bmp']:
+        if path_name in dirs_and_files.keys():
+            dirs_and_files[path_name].append(os.path.basename(f))
+        else:
+            dirs_and_files[path_name] = [os.path.basename(f)]
+
+
+def get_random_number():
     return random.randint(1, 1 << 63)
 
 def add_tag(hashcode, tag_name):
@@ -145,9 +149,8 @@ def delete_es_tag(hashcode, tag):
     a.update(using=es, tags=a.tags)
     a.save(using=es)
     
-def getFaceThumbnail(img, box, save_in=None):
+def get_face_thumbnail(img, box, save_in=None):
     top, right, bottom, left= box
-    # img = cv2.imread(img_path)
     cropimg = img[top:bottom, left:right]
     cropimg = cv2.resize(cropimg, (50,50))
     if save_in is not None:
@@ -182,6 +185,6 @@ class ImageFeature:
 
 class ImageFeaturesManager:
     def __init__(self):
-        self.imageFeatures = []
-        self.npFeatures = []
+        self.image_features = []
+        self.np_features = []
 
