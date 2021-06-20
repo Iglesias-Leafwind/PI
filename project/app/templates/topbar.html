@@ -46,17 +46,19 @@
         <div class="inner-form">
             {{ form.query }}
             <span class="hovering">
-                <button title="Search By Similar Image" class="search-btn pointer no-focus" type="button" data-bs-toggle="modal" data-bs-target="#searchByPhoto"><i class="fa fa-camera"></i></button>
+                <button title="Search By Similar Image" class="search-btn pointer no-focus" type="button" data-bs-toggle="modal" data-bs-target="#searchByPhoto"><em class="fa fa-camera"></em></button>
             </span>
         </div>
+        <ol>
         {% for field in form %}
             {% if field.errors %}<li class="white">{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
         {% endfor %}
+        </ol>
         </form>
         <span class="btn-group-span" style="width: 20vw; display: inline-block">
-            <a title="Manage People" href="{% url 'managepeople' %}"><i class="fa fa-user"></i></a>
-            <a title="Manage Folders" href="{% url 'managefolders' %}"><i class="fa fa-folder-open"></i></a>
-            <a title="Dashboard" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i></a>
+            <a title="Manage People" href="{% url 'managepeople' %}"><em class="fa fa-user"></em></a>
+            <a title="Manage Folders" href="{% url 'managefolders' %}"><em class="fa fa-folder-open"></em></a>
+            <a title="Dashboard" href="{% url 'dashboard' %}"><em class="fas fa-chart-line"></em></a>
         </span>
 </div>
 <div class="modal fade" id="searchByPhoto" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -72,9 +74,11 @@
             {{ image_form }}
       </div>
         <div>
+        <ol>
             {% for field in form %}
 			    {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
             {% endfor %}
+        </ol>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

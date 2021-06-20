@@ -12,8 +12,8 @@ class FaceRecogTestCase(TestCase):
         print("\n\\|/Testing Face Recognition")
 
     def test_get_box(self):
-        faceRecog = FaceRecognition()
-        result = faceRecog.get_face_boxes(dir_path + "/face.jpg")
+        face_recog = FaceRecognition()
+        result = face_recog.get_face_boxes(dir_path + "/face.jpg")
         self.assertEqual(result[0] is None, False)
         self.assertEqual(result[1] is None, False)
 

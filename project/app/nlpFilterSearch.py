@@ -11,14 +11,14 @@ tag_map['V'] = wordnet.VERB
 tag_map['R'] = wordnet.ADV
 
 
-def tokenizeText(text):
+def tokenize_text(text):
     return set(word_tokenize(text))
 
-def filterPunctuation(word_tokens):
+def filter_punctuation(word_tokens):
     filtered_word_tokens = [w for w in word_tokens if (w not in string.punctuation and all(c not in string.punctuation for c in w)) or "-" in w]
     return set(filtered_word_tokens)
 
-def filterStopWords(filtered_word_tokens):
+def filter_stop_words(filtered_word_tokens):
     return set([w for w in filtered_word_tokens if w not in set(stopwords.words('english'))])
 
 def stemming_method(real_word_tokens):
@@ -38,7 +38,7 @@ def stemming_method(real_word_tokens):
     
     return set(stemmed_words)
 
-def posTagging(stemmed_words):
+def pos_tagging(stemmed_words):
     return set(pos_tag(stemmed_words))
 
 def lemmatization_method(words_with_tags):
@@ -56,16 +56,16 @@ def get_synsets(lemmatized_words):
 
 def process_text(text):
     text = text.lower()
-    results = tokenizeText(text)
-    results = filterPunctuation(results)
+    results = tokenize_text(text)
+    results = filter_punctuation(results)
     return results
 
 def process_query(text):
     text = text.lower()
     words = process_text(text)
-    results = filterStopWords(words)
+    results = filter_stop_words(words)
     results = stemming_method(results)
-    results = posTagging(results)
+    results = pos_tagging(results)
     results = lemmatization_method(results)
     results = get_synsets(results)
     return results | words

@@ -24,10 +24,3 @@ class VGGNet:
         norm_feat = feat[0] / LA.norm(feat[0])
 
         return norm_feat
-
-
-# database = 'database' # pasta com as imagens
-# folderName = 'features' # pasta com as imagens
-# fileName = 'vgg_featureCNN.h5'
-
-# model = VGGNet()
