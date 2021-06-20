@@ -4,7 +4,7 @@ import string
 from collections import defaultdict
 import cv2
 import numpy as np
-
+import logging
 import face_recognition as fr
 
 from app.models import Person, DisplayA, ImageNeo, ImageES
@@ -73,7 +73,6 @@ class FaceRecognition:
         if self.name2encodings == {}:
             return None, encoding, 1
         matches = {}
-        unknown = 0
 
         unknown_list = []
         # print(exp)
@@ -109,7 +108,6 @@ class FaceRecognition:
 
             matches[score] = k
             unknown_list.append(len(listt) - sum(listt))
-            # unknown += len(listt) - sum(listt)
 
         if matches == {}:
             return None, encoding, 1
@@ -161,7 +159,7 @@ class FaceRecognition:
 
         old_person = Person.nodes.get_or_none(name=old_personname)
         if old_person is None:
-            print('OLD PERSON IS NONE')
+            #print('OLD PERSON IS NONE')
             return
         
         existent_rel = old_person.image.all_relationships(img)
@@ -213,7 +211,7 @@ class FaceRecognition:
             img.update(using=es, tags=img.tags)
             img.save(using=es)
         except Exception as e:
-            print("idk: " + str(e))
+            logging.info("[Face Recog]: [ERROR] Change in ES: " + str(e))
     def remove_image(self, image_hash):
         self.delete_thumbs(image_hash)
 
@@ -245,5 +243,4 @@ class FaceRecognition:
             if os.path.exists(tt):
                 os.remove(tt)
             else:
-                print("n existe")
-                print(tt, t)
+                logging.info("[Face Recog]: [ERROR] Deleting, thumbnail doesn't exist: " + str(tt))

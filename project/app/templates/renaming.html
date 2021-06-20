@@ -29,9 +29,11 @@
 
             </div>
             <div>
+            <ol>
                 {% for field in form %}
                     {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
                 {% endfor %}
+            </ol>
             </div>
         </form>
     </div>

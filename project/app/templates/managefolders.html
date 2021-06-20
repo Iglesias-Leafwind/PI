@@ -4,15 +4,17 @@
 {% block content %}
     <div class="center-small">
         <h2 style="float: left" class="left fit full">Source folders</h2>
-        <a style="float:right;" href="{% url 'updateFolders' %}"><i class="fas fa-redo"></i></a>
+        <a style="float:right;" href="{% url 'updateFolders' %}"><em class="fas fa-redo"></em></a>
         <div style="width: 60vw">
         <form method="get" action="{% url 'managefolders' %}"> <!-- it doesnt work because I need barras. barras all over the place -->
         <div class="inner-path">
             {{ path_form.path }}
         </div>
+        <ol>
         {% for field in form %}
             {% if field.errors %}<li class="white">{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
         {% endfor %}
+        </ol>
         </form>
         </div>
     <div>
@@ -28,7 +30,7 @@
                        <a class="folder-btn" href="{% url 'getAllImagesOfFolder' name=uri page=1 %}">{{folder}}</a>
                     </td>
                     <td class="f3">
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem{{ forloop.counter }}" class="delete-btn"><i class="fas fa-trash c40"></i></button>
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#deleteItem{{ forloop.counter }}" class="delete-btn"><em class="fas fa-trash c40"></em></button>
                     </td>
                 </tr>
                     <div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"  id="deleteItem{{ forloop.counter }}">

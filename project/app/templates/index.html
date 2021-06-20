@@ -211,7 +211,7 @@
                                 <div class="col">
                                     <div class="card shadow-sm img_box">
                                         {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as image_static %}
-                                            <img class="imageThumbnailInMenu" id="{{ image.0.hash }}" src="{% static image_static %}">
+                                            <img class="imageThumbnailInMenu" alt="image thumbnail in menu" id="{{ image.0.hash }}" src="{% static image_static %}">
 
                                         {% endwith %}
                                         <div class="card-body">
@@ -222,7 +222,7 @@
                                                             data-bs-toggle="modal" data-bs-target="#resultDetails{{ forloop.parentloop.counter }}{{ forloop.counter }}">View
                                                     </button>
                                                 </div> <!--btn group-->
-                                                <img class="checked_img" src="{% static '/img/check2.svg' %}">
+                                                <img class="checked_img" alt="selected image icon" src="{% static '/img/check2.svg' %}">
                                             </div> <!--d-flex justify-content-between align-items-center-->
                                         </div> <!--card-body-->
                                     </div> <!--card shadow-sm-->
@@ -243,13 +243,13 @@
                                                   enctype="multipart/form-data">
                                                 <div class="modal-body">
                                                     {% with '/thumbnails/'|add:image.0.hash|add:'.jpg' as imgPath %}
-                                                        <img class="imageThumbnail" src="{% static imgPath %}">
+                                                        <img class="imageThumbnail" alt="Image thumbnail in modal" src="{% static imgPath %}">
                                                     {% endwith %}
 
-                                                    <i class="tagsIcon editTagsIcon fas fa-pencil-alt"
-                                                       title="edit tags"></i>
-                                                    <i class="tagsIcon addTagsIcon fas fa-plus-square"
-                                                       title="add new tag"></i>
+                                                    <em class="tagsIcon editTagsIcon fas fa-pencil-alt"
+                                                       title="edit tags"></em>
+                                                    <em class="tagsIcon addTagsIcon fas fa-plus-square"
+                                                       title="add new tag"></em>
                                                     <div class="addTagDiv" hidden>
                                                         <input type="text" class="form-control"/>
                                                         <button type="button" class="addTag btn btn-primary"
@@ -258,9 +258,9 @@
                                                     </div>
                                                     <div class="tagsDiv" id="{{ image.0.hash }}">
                                                         {% for elem in image.1 %}
-                                                            <span class="tag"> #{{ elem.name }} <i hidden
+                                                            <span class="tag"> #{{ elem.name }} <em hidden
                                                                                                    class="deleteIcon fas fa-times"
-                                                                                                   title="delete this tag"></i></span>
+                                                                                                   title="delete this tag"></em></span>
                                                         {% endfor %}
                                                     </div>
                                                 <br>
@@ -301,7 +301,7 @@
             </div>
         {% endfor %}
         {% with 'img/arrow-up.svg' as myarrow %}
-            <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img src="{% static myarrow %}"></button>
+            <button onclick="topFunction()" id="scrollBtn" title="Go to top"><img alt="scroll button arrow" src="{% static myarrow %}"></button>
         {% endwith %}
     </div>
     <script>
@@ -605,8 +605,8 @@
                 page_number = page_number + 1
                 var link = ""
                 if (TagName.includes("#")){
-                    TagName = TagName.split('#').join('');
-                    link = "images/" + TagName + "/"
+                    link_tag_name = TagName.split('#').join('');
+                    link = "images/" + link_tag_name + "/"
                 }else{
                     var urls = document.URL.split("/")
                     link = "/folder/" + urls[urls.length - 2] + "/"

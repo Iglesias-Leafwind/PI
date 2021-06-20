@@ -13,7 +13,7 @@ from numpyencoder import NumpyEncoder
 from app.fileSystemManager import SimpleFileSystemManager
 from app.models import ImageNeo, Person, Tag, Location, Country, City, Folder, ImageES, Region
 from app.object_extraction import ObjectExtract
-from app.utils import ImageFeature, getImagesPerUri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock, breedLock,locationLock,faceRecLock,placesLock, lock
+from app.utils import ImageFeature, get_images_per_uri, ImageFeaturesManager, ocrLock, processingLock, resultsLock, uploadLock, objectLock, breedLock,locationLock,faceRecLock,placesLock, lock
 import torch
 from torch.autograd import Variable as V
 import torchvision.models as models
@@ -67,7 +67,7 @@ def testing_thread_capacity():
     cpu_med = (cpu_sum / iterating)
     ram_med = (ram_sum / iterating)
 
-    deleteFolder(dir_path, frr)
+    delete_folder(dir_path, frr)
     cpuPerThread = cpu_med - cpu_normal
     cpuPerThread /= 2
 
@@ -139,7 +139,7 @@ centre_crop = trn.Compose([
 
 
 
-def filterSentence(sentence):
+def filter_sentence(sentence):
     english_vocab = set(w.lower() for w in words.words())
     stop_words = set(w.lower() for w in stopwords.words('english'))
     word_tokens = word_tokenize(sentence)
@@ -152,7 +152,7 @@ def upload_images(uri):
     logging.info("            feature extraction starts         ")
     logging.info("----------------------------------------------")
 
-    dirFiles = getImagesPerUri(uri)
+    dir_files = get_images_per_uri(uri)
 
     cpu_curr = psutil.cpu_percent()
     ram_curr = psutil.virtual_memory().percent
@@ -171,10 +171,10 @@ def upload_images(uri):
         threads = 1
     threads = int(threads)
     logging.info("[Uploading]: Dividing")
-    tasks = divide_tasks_to_many(dirFiles, threads)
+    tasks = divide_tasks_to_many(dir_files, threads)
     folders = []
     for task in tasks:
-        print(task)
+        logging.info("[Processing]: [INFO] Task found: " + str(task))
         folders += list(task.keys())
     folders = list(set(folders))
     logging.info("[Uploading]: Folders found " + str(folders))
@@ -230,7 +230,7 @@ def face_rec_part(read_image, img_path, tags, image):
         frr.save_face_identification(name=name, encoding = enc, conf=conf, imghash=image.hash)
 
         face_thumb_path = os.path.join('static', 'face-thumbnails', str(int(round(time.time() * 1000))) + '.jpg')
-        app.utils.getFaceThumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
+        app.utils.get_face_thumbnail(openimage, b, save_in=os.path.join('app', face_thumb_path))
         p = Person.nodes.get_or_none(name=name)
         if p is None:
             p = Person(name=name).save()
@@ -243,7 +243,7 @@ def face_rec_part(read_image, img_path, tags, image):
 
 def classify_breed_part(read_image, tags, image_db):
     breed, breed_conf = bc.predict_image(read_image)
-    if breed_conf > app.utils.breedsThreshold:  # TODO: adapt!
+    if breed_conf > app.utils.breedsThreshold:
         tags.append(breed)
 
         tag = Tag.nodes.get_or_none(name=breed)
@@ -253,267 +253,21 @@ def classify_breed_part(read_image, tags, image_db):
 
 def processing(dir_files):
     proc_string = "[Processing]:"
-    for dir in dir_files.keys():
-        try:
-            uploadLock.acquire()
-            threadTasks[dir] += 1
-        finally:
-            uploadLock.release()
+
+    add_thread_tasks(dir_files)
 
     for dir in dir_files.keys():
         img_list = dir_files[dir]
-        try:
-            processingLock.acquire()
-            db.begin()
-            if not fs.exist(dir):
-                last_node = fs.create_uri_in_neo4j(dir)
-            else:
-                last_node = fs.get_last_node(dir)
-        finally:
-            db.commit()
-            processingLock.release()
+
+        last_node = check_if_folder_exists_and_create_it(dir)
+
         at_least_one = False
-        folderNeoNode = Folder.nodes.get(id_=last_node.id)
+        folder_neo_node = Folder.nodes.get(id_=last_node.id)
         for index, img_name in enumerate(img_list):
-            try:
-                img_path = os.path.join(dir, img_name)
-                logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Doing " + str(index+1) + " / " + str(len(img_list)))
-
-                logging.info(proc_string + " " + threading.current_thread().name + " [INFO] I am in " + img_path)
-                i = ImageFeature()
-
-                read_image = cv2.imread(img_path)
-                (H, W) = read_image.shape[:2]
-                if read_image is None:
-                    logging.info(proc_string + " " + threading.current_thread().name + " [ERR] Read of " + img_path + " is None")
-                    continue
-                hash = dhash(read_image)
-
-                existed = ImageNeo.nodes.get_or_none(hash=hash)
-                i.hash = hash
-
-                if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
-
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Image " + img_path + " has already been processed")
-
-                    if existed.folder_uri == dir:
-                        at_least_one |= True
-                        continue
-
-                    try:
-                        processingLock.acquire()
-                        # if the current image's folder is different
-                        existed.folder.connect(folderNeoNode)
-                    finally:
-                        processingLock.release()
-                    at_least_one |= True
-                    continue
-                else:
-                    tags = []
-
-                    # extract infos
-                    norm_feat = model.vgg_extract_feat(img_path)
-                    f = json.dumps(norm_feat, cls=NumpyEncoder)
-                    i.features = f
-                    iJson = json.dumps(i.__dict__)
-
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Exif of " + img_path)
-                    propertiesdict = getExif(img_path)
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Thumbnail of " + img_path)
-                    generateThumbnail(img_path, hash)
-
-                    if "datetime" in propertiesdict:
-                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                         name=img_name,
-                                         processing=iJson,
-                                         format=img_name.split(".")[1],
-                                         width=W,
-                                         height=H,
-                                         hash=hash,
-                                         creation_date=propertiesdict["datetime"],
-                                         insertion_date=datetime.now())
-                    else:
-                        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
-                                         name=img_name,
-                                         processing=iJson,
-                                         format=img_name.split(".")[1],
-                                         width=W,
-                                         height=H,
-                                         hash=hash,
-                                         insertion_date=datetime.now())
-
-                    try:
-                        processingLock.acquire()
-                        existed = ImageNeo.nodes.get_or_none(hash=hash)
-                        if existed:
-                            if existed.folder_uri != dir:
-                                # if the current image's folder is different
-                                existed.folder.connect(folderNeoNode)
-                            at_least_one |= True
-                            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Image " + img_path + " already exists!")
-                            continue
-                        try:
-                            image.save()
-                            at_least_one |= True
-                        except Exception as e:
-                            logging.info(proc_string + " " + threading.current_thread().name + " [ERR] Saving image err " + str(e))
-                            continue
-                    finally:
-                        processingLock.release()
-
-                    if "latitude" in propertiesdict and "longitude" in propertiesdict:
-                        # crc = [city,region,country] names array
-                        try:
-                            locationLock.acquire()
-                            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Location of " + img_path)
-                            crc = get_locations(propertiesdict["latitude"], propertiesdict["longitude"])
-                            crc[0] = crc[0].lower()
-                            crc[1] = crc[1].lower()
-                            crc[2] = crc[2].lower()
-                        finally:
-                            locationLock.release()
-
-                        try:
-                            processingLock.acquire()
-                            db.begin()
-                            location = Location.nodes.get_or_none(name=crc[0])
-                            if location is None:
-                                location = Location(name=crc[0]).save()
-
-                            tags.append(crc[0])
-                            image.location.connect(location, {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
-
-                            city = City.nodes.get_or_none(name=crc[0])
-                            if city is None:
-                                city = City(name=crc[0]).save()
-
-                            tags.append(crc[0])
-                            location.city.connect(city)
-
-                            region = Region.nodes.get_or_none(name=crc[1])
-                            if region is None:
-                                region = Region(name=crc[1]).save()
-                            tags.append(crc[1])
-                            city.region.connect(region)
-
-                            country = Country.nodes.get_or_none(name=crc[2])
-                            if country is None:
-                                country = Country(name=crc[2]).save()
-
-                            tags.append(crc[2])
-                            region.country.connect(country)
-                            db.commit()
-                        except Exception as e:
-                            db.rollback()
-                            continue
-                        finally:
-                            processingLock.release()
-
-                    image.folder.connect(folderNeoNode)
-
-
-
-                    try:
-                        objectLock.acquire()
-                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Objects of " + img_path)
-                        res = obj_extr.get_objects(img_path)
-                    finally:
-                        objectLock.release()
-
-
-                    for object, confidence in res:
-                        try:
-                            processingLock.acquire()
-                            tag = Tag.nodes.get_or_none(name=object)
-                            if tag is None:
-                                tag = Tag(name=object).save()
-                            tags.append(object)
-                            image.tag.connect(tag,{'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
-                        finally:
-                            processingLock.release()
-
-                        if object in ['cat', 'dog']:
-                            try:
-                                breedLock.acquire()
-                                logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
-
-                                classify_breed_part(read_image, tags, image)
-                            finally:
-                                breedLock.release()
-                    try:
-                        faceRecLock.acquire()
-                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Face Recognition of " + img_path)
-
-                        db.begin()
-                        face_rec_part(read_image, img_path, tags, image)
-                        db.commit()
-                    finally:
-                        faceRecLock.release()
-
-                    try:
-                        placesLock.acquire()
-                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Places of " + img_path)
-
-                        places_list = getPlaces(img_path)
-                    finally:
-                        placesLock.release()
-                    for places, prob in places_list:
-
-                        places = places.split("/")
-                        for place in places:
-                            try:
-                                processingLock.acquire()
-                                p = " ".join(place.split("_")).strip()
-                                t = Tag.nodes.get_or_none(name=p)
-                                if t is None:
-                                    t = Tag(name=p,
-                                            originalTagName=p,
-                                            originalTagSource='places').save()
-                                tags.append(p)
-                                image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
-                            finally:
-                                processingLock.release()
-
-                    try:
-                        ocrLock.acquire()
-                        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] OCR of " + img_path)
-
-                        wordList = getOCR(read_image)
-                    finally:
-                        ocrLock.release()
-
-                    if wordList and len(wordList) > 0:
-                        for word in wordList:
-                            try:
-                                processingLock.acquire()
-                                t = Tag.nodes.get_or_none(name=word)
-                                if t is None:
-                                    t = Tag(name=word).save()
-                                tags.append(word)
-                                image.tag.connect(t,{'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
-                            finally:
-                                processingLock.release()
-
-                    # add features to "cache"
-                    try:
-                        resultsLock.acquire()
-                        ftManager.npFeatures.append(norm_feat)
-                        i.features = norm_feat
-                        ftManager.imageFeatures.append(i)
-                    finally:
-                        resultsLock.release()
-
-                    ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
-
-
-                    completed = index+1
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Finished " + img_path)
-                    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Done " + str(completed) + " / " + str(len(img_list)))
-                    at_least_one |= True
-            except Exception as e:
-                logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": ")
-                print(e)
-
+            skip, at_least_one = extraction_process(at_least_one, dir, folder_neo_node, img_list, img_name, index,
+                                              proc_string)
+            if skip:
+                continue
         if not at_least_one:
             try:
                 processingLock.acquire()
@@ -521,12 +275,315 @@ def processing(dir_files):
             finally:
                 processingLock.release()
 
-        try:
-            uploadLock.acquire()
-            threadTasks[dir]-= 1
-        finally:
-            uploadLock.release()
+        subtract_thread_tasks(dir)
 
+    remove_thread_tasks()
+
+    logging.info("[Processing]: [INFO] Tasks to be completed: " + str(threadTasks))
+
+
+def extraction_process(at_least_one, dir, folder_neo_node, img_list, img_name, index, proc_string):
+    try:
+        img_path = os.path.join(dir, img_name)
+        logging.info(
+            proc_string + " " + threading.current_thread().name + " [INFO] Doing " + str(index + 1) + " / " + str(
+                len(img_list)))
+
+        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] I am in " + img_path)
+        i = ImageFeature()
+
+        read_image = cv2.imread(img_path)
+        (h, w) = read_image.shape[:2]
+        if read_image is None:
+            logging.info(
+                proc_string + " " + threading.current_thread().name + " [ERR] Read of " + img_path + " is None")
+            return True, at_least_one
+        image_hash = dhash(read_image)
+
+        existed = ImageNeo.nodes.get_or_none(hash=image_hash)
+        i.hash = image_hash
+
+        if existed:  # if an image already exists in DB (found an ImageNeo with the same hashcode)
+
+            logging.info(
+                proc_string + " " + threading.current_thread().name + " [INFO] Image " + img_path + " has already been processed")
+
+            skip, at_least_one = check_dir_and_connect(at_least_one, dir, existed, folder_neo_node)
+            if skip:
+                return True, at_least_one
+        else:
+            tags = []
+
+            image, norm_feat, propertiesdict = creating_image_neo_object_and_extracting_exif_and_image_features(
+                h, w, image_hash, i, img_name, img_path, proc_string)
+
+            skip, at_least_one = checking_if_image_exists(at_least_one, dir, folder_neo_node, image, image_hash,
+                                                          img_path, proc_string)
+            if skip:
+                return True, at_least_one
+            skip = extract_locations(image, img_path, proc_string, propertiesdict, tags)
+            if skip:
+                return True, at_least_one
+
+            image.folder.connect(folder_neo_node)
+
+            extract_objects_and_breeds(image, img_path, proc_string, read_image, tags)
+
+            extract_faces(image, img_path, proc_string, read_image, tags)
+
+            extract_places(image, img_path, proc_string, tags)
+
+            extract_text(image, img_path, proc_string, read_image, tags)
+
+            adding_to_es(i, image, img_path, norm_feat, tags)
+
+            completed = index + 1
+            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Finished " + img_path)
+            logging.info(
+                proc_string + " " + threading.current_thread().name + " [INFO] Done " + str(completed) + " / " + str(
+                    len(img_list)))
+            at_least_one |= True
+    except Exception as e:
+        logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": " + str(e))
+    return False, at_least_one
+
+
+def check_dir_and_connect(at_least_one, dir, existed, folder_neo_node):
+    if existed.folder_uri == dir:
+        at_least_one |= True
+        return True, at_least_one
+    try:
+        processingLock.acquire()
+        # if the current image's folder is different
+        existed.folder.connect(folder_neo_node)
+    finally:
+        processingLock.release()
+    at_least_one |= True
+    return True, at_least_one
+
+
+def checking_if_image_exists(at_least_one, dir, folder_neo_node, image, image_hash, img_path, proc_string):
+    try:
+        processingLock.acquire()
+        existed = ImageNeo.nodes.get_or_none(hash=image_hash)
+        if existed:
+            if existed.folder_uri != dir:
+                # if the current image's folder is different
+                existed.folder.connect(folder_neo_node)
+            at_least_one |= True
+            logging.info(
+                proc_string + " " + threading.current_thread().name + " [INFO] Image " + img_path + " already exists!")
+            return True, at_least_one
+        try:
+            image.save()
+            at_least_one |= True
+        except Exception as e:
+            logging.info(proc_string + " " + threading.current_thread().name + " [ERR] Saving image err " + str(e))
+            return True, at_least_one
+    finally:
+        processingLock.release()
+    return False, at_least_one
+
+
+def extract_locations(image, img_path, proc_string, propertiesdict, tags):
+    if "latitude" in propertiesdict and "longitude" in propertiesdict:
+        # crc = [city,region,country] names array
+        try:
+            locationLock.acquire()
+            logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Location of " + img_path)
+            crc = get_locations(propertiesdict["latitude"], propertiesdict["longitude"])
+            crc[0] = crc[0].lower()
+            crc[1] = crc[1].lower()
+            crc[2] = crc[2].lower()
+        finally:
+            locationLock.release()
+
+        try:
+            processingLock.acquire()
+            db.begin()
+            location = Location.nodes.get_or_none(name=crc[0])
+            if location is None:
+                location = Location(name=crc[0]).save()
+
+            tags.append(crc[0])
+            image.location.connect(location,
+                                   {'latitude': propertiesdict["latitude"], 'longitude': propertiesdict["longitude"]})
+
+            city = City.nodes.get_or_none(name=crc[0])
+            if city is None:
+                city = City(name=crc[0]).save()
+
+            tags.append(crc[0])
+            location.city.connect(city)
+
+            region = Region.nodes.get_or_none(name=crc[1])
+            if region is None:
+                region = Region(name=crc[1]).save()
+            tags.append(crc[1])
+            city.region.connect(region)
+
+            country = Country.nodes.get_or_none(name=crc[2])
+            if country is None:
+                country = Country(name=crc[2]).save()
+
+            tags.append(crc[2])
+            region.country.connect(country)
+            db.commit()
+        except Exception as e:
+            logging.info(proc_string + " " + threading.current_thread().name + " [ERR] Extracting locations " + str(e))
+            db.rollback()
+            return True
+        finally:
+            processingLock.release()
+    return False
+
+
+def adding_to_es(i, image, img_path, norm_feat, tags):
+    # add features to "cache"
+    try:
+        resultsLock.acquire()
+        ftManager.np_features.append(norm_feat)
+        i.features = norm_feat
+        ftManager.image_features.append(i)
+    finally:
+        resultsLock.release()
+    ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
+
+
+def extract_text(image, img_path, proc_string, read_image, tags):
+    try:
+        ocrLock.acquire()
+        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] OCR of " + img_path)
+
+        word_list = get_ocr(read_image)
+    finally:
+        ocrLock.release()
+    if word_list and len(word_list) > 0:
+        for word in word_list:
+            try:
+                processingLock.acquire()
+                t = Tag.nodes.get_or_none(name=word)
+                if t is None:
+                    t = Tag(name=word).save()
+                tags.append(word)
+                image.tag.connect(t, {'originalTagName': word, 'originalTagSource': 'ocr', 'score': 0.6})
+            finally:
+                processingLock.release()
+
+
+def extract_places(image, img_path, proc_string, tags):
+    try:
+        placesLock.acquire()
+        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Places of " + img_path)
+
+        places_list = get_places(img_path)
+    finally:
+        placesLock.release()
+    for places, prob in places_list:
+
+        places = places.split("/")
+        for place in places:
+            try:
+                processingLock.acquire()
+                p = " ".join(place.split("_")).strip()
+                t = Tag.nodes.get_or_none(name=p)
+                if t is None:
+                    t = Tag(name=p,
+                            originalTagName=p,
+                            originalTagSource='places').save()
+                tags.append(p)
+                image.tag.connect(t, {'originalTagName': p, 'originalTagSource': 'places', 'score': prob})
+            finally:
+                processingLock.release()
+
+
+def extract_faces(image, img_path, proc_string, read_image, tags):
+    try:
+        faceRecLock.acquire()
+        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Face Recognition of " + img_path)
+
+        db.begin()
+        face_rec_part(read_image, img_path, tags, image)
+        db.commit()
+    finally:
+        faceRecLock.release()
+
+
+def extract_objects_and_breeds(image, img_path, proc_string, read_image, tags):
+    try:
+        objectLock.acquire()
+        logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Objects of " + img_path)
+        res = obj_extr.get_objects(img_path)
+    finally:
+        objectLock.release()
+    for object, confidence in res:
+        try:
+            processingLock.acquire()
+            tag = Tag.nodes.get_or_none(name=object)
+            if tag is None:
+                tag = Tag(name=object).save()
+            tags.append(object)
+            image.tag.connect(tag, {'originalTagName': object, 'originalTagSource': 'object', 'score': confidence})
+        finally:
+            processingLock.release()
+
+        if object in ['cat', 'dog']:
+            try:
+                breedLock.acquire()
+                logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Breeds of " + img_path)
+
+                classify_breed_part(read_image, tags, image)
+            finally:
+                breedLock.release()
+
+
+def creating_image_neo_object_and_extracting_exif_and_image_features(h, w, image_hash, i, img_name, img_path, proc_string):
+    # extract infos
+    norm_feat = model.vgg_extract_feat(img_path)
+    f = json.dumps(norm_feat, cls=NumpyEncoder)
+    i.features = f
+    i_json = json.dumps(i.__dict__)
+    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Exif of " + img_path)
+    propertiesdict = get_exif(img_path)
+    logging.info(proc_string + " " + threading.current_thread().name + " [INFO] Thumbnail of " + img_path)
+    generate_thumbnail(img_path, image_hash)
+    if "datetime" in propertiesdict:
+        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                         name=img_name,
+                         processing=i_json,
+                         format=img_name.split(".")[1],
+                         width=w,
+                         height=h,
+                         hash=image_hash,
+                         creation_date=propertiesdict["datetime"],
+                         insertion_date=datetime.now())
+    else:
+        image = ImageNeo(folder_uri=os.path.split(img_path)[0],
+                         name=img_name,
+                         processing=i_json,
+                         format=img_name.split(".")[1],
+                         width=w,
+                         height=h,
+                         hash=image_hash,
+                         insertion_date=datetime.now())
+    return image, norm_feat, propertiesdict
+
+
+def check_if_folder_exists_and_create_it(dir):
+    try:
+        processingLock.acquire()
+        db.begin()
+        if not fs.exist(dir):
+            last_node = fs.create_uri_in_neo4j(dir)
+        else:
+            last_node = fs.get_last_node(dir)
+    finally:
+        db.commit()
+        processingLock.release()
+    return last_node
+
+
+def remove_thread_tasks():
     try:
         uploadLock.acquire()
         for dir in threadTasks:
@@ -534,23 +591,40 @@ def processing(dir_files):
                 threadTasks.pop(dir)
     finally:
         uploadLock.release()
-    print(threadTasks)
-    
+
+
+def subtract_thread_tasks(dir):
+    try:
+        uploadLock.acquire()
+        threadTasks[dir] -= 1
+    finally:
+        uploadLock.release()
+
+
+def add_thread_tasks(dir_files):
+    for dir in dir_files.keys():
+        try:
+            uploadLock.acquire()
+            threadTasks[dir] += 1
+        finally:
+            uploadLock.release()
+
+
 def get_locations(latitude, longitude):
     results = rg.search((latitude,longitude), mode=1)
     return [results[0]['name'], results[0]['admin2'], results[0]['admin1']]
 
 
-def alreadyProcessed(img_path):
+def already_processed(img_path):
     image = cv2.imread(img_path)
-    hash = dhash(image)
-    existed = ImageNeo.nodes.get_or_none(hash=hash)
+    image_hash = dhash(image)
+    existed = ImageNeo.nodes.get_or_none(hash=image_hash)
 
     return existed
 
 to_be_deleted = set()
 deleting = False
-def deleteFolder(uri, frr=frr):
+def delete_folder(uri, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
     global deleting, to_be_deleted
@@ -581,30 +655,30 @@ def deleteFolder(uri, frr=frr):
 
     resultsLock.acquire()
     try:
-        imgfs = set(ftManager.imageFeatures)
+        imgfs = set(ftManager.image_features)
         for di in deleted_images:
             imgfs.remove(di)
-        ftManager.imageFeatures = list(imgfs)
+        ftManager.image_features = list(imgfs)
         f = []
-        for i in ftManager.imageFeatures:
+        for i in ftManager.image_features:
             f.append(i.features)
 
-        ftManager.npFeatures = f
+        ftManager.np_features = f
     finally:
         resultsLock.release()
     logging.info("[Deleting]: [INFO] Finished deleting images from cache")
 
     try:
         if len(to_be_deleted) != 0:
-            deleteFolder(to_be_deleted.pop(),frr)
+            delete_folder(to_be_deleted.pop(), frr)
     except Exception as e:
         logging.info("[Deleting]: [ERROR] " + str(e))
 
-def findSimilarImages(uri):
-    if len(ftManager.npFeatures) == 0:
+def find_similar_images(uri):
+    if len(ftManager.np_features) == 0:
         return []
     norm_feat = model.vgg_extract_feat(uri)
-    feats = np.array(ftManager.npFeatures)
+    feats = np.array(ftManager.np_features)
     scores = np.dot(norm_feat, feats.T)
     rank = np.argsort(scores)[::-1]
 
@@ -612,11 +686,11 @@ def findSimilarImages(uri):
 
     imlist = []
     for i, index in enumerate(rank[0:maxres]):
-        imlist.append(str(ftManager.imageFeatures[index].hash) )
+        imlist.append(str(ftManager.image_features[index].hash))
 
     return imlist
 
-def getAllImagesOfFolder(folder, page):
+def get_all_images_of_folder(folder, page):
     folder = unquote(folder)
     folder = fs.get_last_node(folder)
     node = Folder.nodes.get_or_none(id_=folder.id)
@@ -626,7 +700,7 @@ def getAllImagesOfFolder(folder, page):
             return [(i, i.tag.all(), i.getPersonsName()) for i in results]
     return []
 
-def getPlaces(img_path):
+def get_places(img_path):
     # load the test image
     img = Image.open(img_path).convert('RGB')
     input_img = V(centre_crop(img).unsqueeze(0))
@@ -639,28 +713,28 @@ def getPlaces(img_path):
     return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > app.utils.placesThreshold]
 
 
-def getOCR(image):
+def get_ocr(image):
     min_confidence = 0.6
     results = []
     # These must be multiple of 32
-    newW = 128
-    newH = 128
+    new_w = 128
+    new_h = 128
     orig = image.copy()
     (H, W) = image.shape[:2]
 
     # set the new width and height and then determine the ratio in change
     # for both the width and height
-    rW = W / float(newW)
-    rH = H / float(newH)
+    r_w = W / float(new_w)
+    r_h = H / float(new_h)
 
     # resize the image and grab the new image dimensions
-    image = cv2.resize(image, (newW, newH))
+    image = cv2.resize(image, (new_w, new_h))
     (H, W) = image.shape[:2]
 
     # define the two output layer names for the EAST detector model that
     # we are interested -- the first is the output probabilities and the
     # second can be used to derive the bounding box coordinates of text
-    layerNames = [
+    layer_names = [
         "feature_fusion/Conv_7/Sigmoid",
         "feature_fusion/concat_3"]
 
@@ -670,77 +744,17 @@ def getOCR(image):
                                  (123.68, 116.78, 103.94), swapRB=True, crop=False)
 
     net.setInput(blob)
-    (scores, geometry) = net.forward(layerNames)
+    (scores, geometry) = net.forward(layer_names)
 
     # grab the number of rows and columns from the scores volume, then
     # initialize our set of bounding box rectangles and corresponding
     # confidence scores
-    (numRows, numCols) = scores.shape[2:4]
+    (num_rows, num_cols) = scores.shape[2:4]
     rects = []
     confidences = []
     # loop over the number of rows
-    for y in range(0, numRows):
-        # extract the scores (probabilities), followed by the geometrical
-        # data used to derive potential bounding box coordinates that
-        # surround text
-        scoresData = scores[0, 0, y]
-        xData0 = geometry[0, 0, y]
-        xData1 = geometry[0, 1, y]
-        xData2 = geometry[0, 2, y]
-        xData3 = geometry[0, 3, y]
-        anglesData = geometry[0, 4, y]
-        # loop over the number of columns
-        for x in range(0, numCols):
-            # if our score does not have sufficient probability, ignore it
-            if scoresData[x] < min_confidence:
-                continue
-            # compute the offset factor as our resulting feature maps will
-            # be 4x smaller than the input image
-            (offsetX, offsetY) = (x * 4.0, y * 4.0)
-            # extract the rotation angle for the prediction and then
-            # compute the sin and cosine
-            angle = anglesData[x]
-            cos = np.cos(angle)
-            sin = np.sin(angle)
-            # use the geometry volume to derive the width and height of
-            # the bounding box
-            h = xData0[x] + xData2[x]
-            w = xData1[x] + xData3[x]
-            # compute both the starting and ending (x, y)-coordinates for
-            # the text prediction bounding box
-            endX = int(offsetX + (cos * xData1[x]) + (sin * xData2[x]))
-            endY = int(offsetY - (sin * xData1[x]) + (cos * xData2[x]))
-            startX = int(endX - w)
-            startY = int(endY - h)
-            # add the bounding box coordinates and probability score to
-            # our respective lists
-            rects.append((startX, startY, endX, endY))
-            confidences.append(scoresData[x])
-    # apply non-maxima suppression to suppress weak, overlapping bounding
-    # boxes
-    boxes = non_max_suppression(np.array(rects), probs=confidences)
-    # loop over the bounding boxes
-    (maxH, maxW) = orig.shape[:2]
-    for (startX, startY, endX, endY) in boxes:
-        # scale the bounding box coordinates based on the respective
-        # ratios
-        startX = int(startX * rW) - 20
-        if (startX <= 0):
-            startX = 1
-        startY = int(startY * rH) - 20
-        if (startY <= 0):
-            startY = 1
-        endX = int(endX * rW) + 20
-        if (endX >= maxW):
-            endX = maxW - 1
-        endY = int(endY * rH) + 20
-        if (endY >= maxH):
-            endY = maxH - 1
-        # draw the bounding box on the image
-        ROI = orig[startY:endY, startX:endX]
-        imageText = pytesseract.image_to_string(ROI, config=custom_config)
-        result = imageText.replace("\x0c", " ").replace("\n", " ")
-        results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
+    results = ocr_boxes_algorithm(confidences, geometry, min_confidence, num_cols, num_rows, orig, r_h, r_w, rects, results,
+                                  scores)
 
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # Load image, grayscale, Gaussian blur, adaptive threshold
@@ -761,8 +775,8 @@ def getOCR(image):
         if area > 10000:
             x, y, w, h = cv2.boundingRect(c)
             ROI = orig[y:y + h, x:x + w]
-            imageText = pytesseract.image_to_string(ROI, config=custom_config)
-            result = imageText.replace("\x0c", " ").replace("\n", " ")
+            image_text = pytesseract.image_to_string(ROI, config=custom_config)
+            result = image_text.replace("\x0c", " ").replace("\n", " ")
             results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
 
     # Transform set into a single string
@@ -772,17 +786,83 @@ def getOCR(image):
     for ele in set(results):
         phrase += ele
         phrase += " "
-    for elem in filterSentence(phrase):
+    for elem in filter_sentence(phrase):
         retrn += [elem]
     return set(retrn)
 
 
-def dhash(image, hashSize=8):
+def ocr_boxes_algorithm(confidences, geometry, min_confidence, num_cols, num_rows, orig, r_h, r_w, rects, results, scores):
+    for y in range(0, num_rows):
+        # extract the scores (probabilities), followed by the geometrical
+        # data used to derive potential bounding box coordinates that
+        # surround text
+        scores_data = scores[0, 0, y]
+        x_data0 = geometry[0, 0, y]
+        x_data1 = geometry[0, 1, y]
+        x_data2 = geometry[0, 2, y]
+        x_data3 = geometry[0, 3, y]
+        angles_data = geometry[0, 4, y]
+        # loop over the number of columns
+        for x in range(0, num_cols):
+            # if our score does not have sufficient probability, ignore it
+            if scores_data[x] < min_confidence:
+                continue
+            # compute the offset factor as our resulting feature maps will
+            # be 4x smaller than the input image
+            (offset_x, offset_y) = (x * 4.0, y * 4.0)
+            # extract the rotation angle for the prediction and then
+            # compute the sin and cosine
+            angle = angles_data[x]
+            cos = np.cos(angle)
+            sin = np.sin(angle)
+            # use the geometry volume to derive the width and height of
+            # the bounding box
+            h = x_data0[x] + x_data2[x]
+            w = x_data1[x] + x_data3[x]
+            # compute both the starting and ending (x, y)-coordinates for
+            # the text prediction bounding box
+            end_x = int(offset_x + (cos * x_data1[x]) + (sin * x_data2[x]))
+            end_y = int(offset_y - (sin * x_data1[x]) + (cos * x_data2[x]))
+            start_x = int(end_x - w)
+            start_y = int(end_y - h)
+            # add the bounding box coordinates and probability score to
+            # our respective lists
+            rects.append((start_x, start_y, end_x, end_y))
+            confidences.append(scores_data[x])
+    # apply non-maxima suppression to suppress weak, overlapping bounding
+    # boxes
+    boxes = non_max_suppression(np.array(rects), probs=confidences)
+    # loop over the bounding boxes
+    (max_h, max_w) = orig.shape[:2]
+    for (start_x, start_y, end_x, end_y) in boxes:
+        # scale the bounding box coordinates based on the respective
+        # ratios
+        start_x = int(start_x * r_w) - 20
+        if (start_x <= 0):
+            start_x = 1
+        start_y = int(start_y * r_h) - 20
+        if (start_y <= 0):
+            start_y = 1
+        end_x = int(end_x * r_w) + 20
+        if (end_x >= max_w):
+            end_x = max_w - 1
+        end_y = int(end_y * r_h) + 20
+        if (end_y >= max_h):
+            end_y = max_h - 1
+        # draw the bounding box on the image
+        ROI = orig[start_y:end_y, start_x:end_x]
+        image_text = pytesseract.image_to_string(ROI, config=custom_config)
+        result = image_text.replace("\x0c", " ").replace("\n", " ")
+        results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
+    return results
+
+
+def dhash(image, hash_size=8):
     # convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # resize the grayscale image, adding a single column (width) so we
     # can compute the horizontal gradient
-    resized = cv2.resize(gray, (hashSize + 1, hashSize))
+    resized = cv2.resize(gray, (hash_size + 1, hash_size))
     # compute the (relative) horizontal gradient between adjacent
     # column pixels
     diff = resized[:, 1:] > resized[:, :-1]
@@ -797,7 +877,7 @@ def convert_hash(h):
     return int(np.array(h, dtype="float64"))
 
 
-def loadCatgoriesPlaces():
+def load_catgories_places():
     # load the class label for scene recognition
     file_name = 'categories_places365.txt'
     global classes
@@ -808,12 +888,12 @@ def loadCatgoriesPlaces():
     classes = tuple(classes)
 
 
-def loadFileSystemManager():
+def load_file_system_manager():
     roots = Folder.nodes.filter(root=True)
 
     if not roots: return
 
-    def buildUri(node, uri, ids):
+    def build_uri(node, uri, ids):
         if not node: return
         uri += node.name + "/"
         ids.append(node.id_)
@@ -822,18 +902,21 @@ def loadFileSystemManager():
             fs.add_full_path_uri(uri, ids)
 
         for child in node.children:
-            buildUri(child, uri, ids)
+            build_uri(child, uri, ids)
             ids.pop()  # backtracking
 
     for root in roots:
         uri = root.name + "/"
         ids = [root.id_]
         for child in root.children:
-            buildUri(child, uri, ids)
+            build_uri(child, uri, ids)
             ids.pop()  # backtracking
 
+class ExifNotFound(Exception):
+    """Raised when the exif is not found"""
+    pass
 
-def getExif(img_path):
+def get_exif(img_path):
     returning = {}
     try:
         with open(img_path, 'rb') as image_file:
@@ -859,9 +942,9 @@ def getExif(img_path):
                         longitude *= -1
                     returning["longitude"] = longitude
             else:
-                raise Exception("No exif")
+                raise ExifNotFound
 
-    except Exception as e:
+    except Exception:
         pass
 
     image = cv2.imread(img_path)
@@ -872,10 +955,10 @@ def getExif(img_path):
 
 
 # load all images to memory
-def setUp():
+def set_up():
     images = ImageNeo.nodes.all()
     npfeatures = []
-    imageFeatures = []
+    image_features = []
 
     for image in images:
         i = ImageFeature(**json.loads(image.processing))
@@ -883,11 +966,11 @@ def setUp():
             continue
         i.features = np.array(json.loads(i.features))
         npfeatures.append(i.features)
-        imageFeatures.append(i)
+        image_features.append(i)
     logging.info("[Loading]: [INFO] Loading places")
-    plc = do(loadCatgoriesPlaces)
+    plc = do(load_catgories_places)
     logging.info("[Loading]: [INFO] Loading file system")
-    filess = do(loadFileSystemManager)
+    filess = do(load_file_system_manager)
 
     while not plc.done():
         time.sleep(0.1)
@@ -896,15 +979,15 @@ def setUp():
         time.sleep(0.1)
     logging.info("[Loading]: [INFO] Finished loading file system")
 
-    ftManager.npFeatures = npfeatures
-    ftManager.imageFeatures = imageFeatures
+    ftManager.np_features = npfeatures
+    ftManager.image_features = image_features
     testing_thread_capacity()
 
-def generateThumbnail(imagepath, hash):
-    thumbnailH = 225
-    thumbnailW = 225
+def generate_thumbnail(imagepath, image_hash):
+    thumbnail_h = 225
+    thumbnail_w = 225
 
-    dim = (thumbnailW, thumbnailH)
+    dim = (thumbnail_w, thumbnail_h)
 
     # load the input image
     image = cv2.imread(imagepath)
@@ -912,19 +995,19 @@ def generateThumbnail(imagepath, hash):
 
     padding_lr = 0
     padding_tb = 0
-    if(w - thumbnailW > h - thumbnailH):
-        ratio = thumbnailW/w
-        thumbnailH = int(h * ratio)
-        padding_tb = int((thumbnailW-thumbnailH)/2)
+    if(w - thumbnail_w > h - thumbnail_h):
+        ratio = thumbnail_w/w
+        thumbnail_h = int(h * ratio)
+        padding_tb = int((thumbnail_w-thumbnail_h)/2)
     else:
-        ratio = thumbnailH/h
-        thumbnailW = int(w * ratio)
-        padding_lr = int((thumbnailH-thumbnailW)/2)
+        ratio = thumbnail_h/h
+        thumbnail_w = int(w * ratio)
+        padding_lr = int((thumbnail_h-thumbnail_w)/2)
 
     image = cv2.copyMakeBorder(image, padding_tb, padding_tb, padding_lr, padding_lr, cv2.BORDER_REPLICATE)
     # resize image
     resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
-    saving = os.path.join("app", "static", "thumbnails", str(hash)) + ".jpg"
+    saving = os.path.join("app", "static", "thumbnails", str(image_hash)) + ".jpg"
     cv2.imwrite(saving, resized, [cv2.IMWRITE_JPEG_QUALITY, 25])
 
     # 83 087 673
@@ -932,4 +1015,4 @@ def generateThumbnail(imagepath, hash):
     # 99,65 %
     return(saving)
 
-setUp()
+set_up()
