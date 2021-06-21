@@ -2,7 +2,8 @@ import sys
 import time
 import os
 import subprocess
-dir_path = os.path.dirname(os.path.realpath(__file__))
+import pathlib
+dir_path = pathlib.Path().absolute()
 
 activate = os.path.join(dir_path, "venv/Scripts/python.exe")
 

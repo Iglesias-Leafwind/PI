@@ -1,3 +1,7 @@
+## @package app
+#  This module contains forms used in templates for frontend
+#
+#  More details.
 from django import forms
 from string import Template
 
@@ -12,24 +16,37 @@ from app.models import Person, DisplayA, ImageNeo
 
 from app.models import Person
 
-
+## this is a form to generate a picture widget used in face recognition page
+#
+#  More details.
 class PictureWidget(forms.widgets.Widget):
+    ## Renders the picture widget
+    #
+    #  More details.
     def render(self, name, value, attrs=None, **kwargs):
         html = Template("""<img src="$link"/>""")
         return mark_safe(html.substitute(link=value))
 
-
+## Search form that contains the query text search
+#
+#  More details.
 class SearchForm(forms.Form):
     query = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Search for an image...'}), max_length=100, required=False)
 
-
+## Image form that contains the query image search
+#
+#  More details.
 class SearchForImageForm(forms.Form):
     image = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert image path.'}), required=False)
 
-
+## Edit folders form that is used to add a new source folder
+#
+#  More details.
 class EditFoldersForm(forms.Form):
     path = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Insert new source folder.'}), label=" ", required=False)
-
+## The verified or not verified for showing people in face recog page
+#
+#  More details.
 class PeopleFilterForm(forms.Form):
     unverified = forms.BooleanField(required=False, label='Show Unverified', initial=showDict['unverified'], widget= CheckboxInput(
         attrs= {'class' : 'form-check-input',
@@ -39,7 +56,9 @@ class PeopleFilterForm(forms.Form):
         attrs= {'class' : 'form-check-input',
                 'onclick':'this.form.submit();'}
     ))
-
+## Person form contains everything that is going to be displayed in the face recog page
+#
+#  More details.
 class PersonsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -78,13 +97,16 @@ class PersonsForm(forms.Form):
             self.initial[field_image_id] = rel[1].hash
             self.initial[field_verified] = rel[0].approved
 
-
-
+    ## Yields every fields stat into a single return
+    # so that it can be used for the face recog page
+    #  More details.
     def get_interest_fields(self):
         for field_name in self.fields:
             if field_name.startswith('person_'):
                 yield self[field_name]
-
+## Set ups the filter on a search
+#
+#  More details.
 class FilterSearchForm(forms.Form):
     automatic = forms.BooleanField(required=False, label='Objects detected', label_suffix='')
     manual = forms.BooleanField(required=False, label='Manual tags', label_suffix='')
@@ -131,5 +153,9 @@ class FilterSearchForm(forms.Form):
 <label for="to">to</label>
 <input type="text" id="to" name="to">
 """
+
+## Form for editing Tags
+#
+#  More details.
 class EditTagForm(forms.Form):
     tagsForm = forms.CharField(widget=forms.Textarea)

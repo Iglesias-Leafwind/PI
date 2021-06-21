@@ -1,0 +1,25 @@
+var classfile_system_manager_1_1_simple_file_system_manager =
+[
+    [ "__init__", "classfile_system_manager_1_1_simple_file_system_manager.html#a072080b853e19d2ced9bbf82de45133a", null ],
+    [ "__buil_full_path__", "classfile_system_manager_1_1_simple_file_system_manager.html#af43ea54d988e86bebf531a079e24abc2", null ],
+    [ "__full_path_for_folder_node__", "classfile_system_manager_1_1_simple_file_system_manager.html#ae529d147af14a7a9bc4382c0afab3b42", null ],
+    [ "__split_uri_and_get_root__", "classfile_system_manager_1_1_simple_file_system_manager.html#a780b43b86f296e2be06170d5a3b59817", null ],
+    [ "add_full_path_uri", "classfile_system_manager_1_1_simple_file_system_manager.html#a74dc2f9c1e63476b86879ae0bd579c70", null ],
+    [ "check_for_childrens_and_delete_them", "classfile_system_manager_1_1_simple_file_system_manager.html#ab5cdac46d44e511e0e52d8133bb1e460", null ],
+    [ "create_uri_in_neo4j", "classfile_system_manager_1_1_simple_file_system_manager.html#a5ad00ae3cdc816c6a7d5f79d07968351", null ],
+    [ "create_uri_in_neo4j_for_folders", "classfile_system_manager_1_1_simple_file_system_manager.html#ac2dd346ec874fcffdbd26c297aca44a9", null ],
+    [ "delete_cities", "classfile_system_manager_1_1_simple_file_system_manager.html#a8199ed8444d091d4c0cd1322e2043501", null ],
+    [ "delete_connected_tags_and_persons", "classfile_system_manager_1_1_simple_file_system_manager.html#a41641a2f9552f9cd495836bdc35580d5", null ],
+    [ "delete_countries", "classfile_system_manager_1_1_simple_file_system_manager.html#ad60e1a9825436b221174074d062b128a", null ],
+    [ "delete_folder_from_fs", "classfile_system_manager_1_1_simple_file_system_manager.html#a6c0eedf1514c65c1206a07998cbe0c96", null ],
+    [ "delete_images", "classfile_system_manager_1_1_simple_file_system_manager.html#abec98d0dc3f1b19ea3566e93bc64b83e", null ],
+    [ "delete_locations", "classfile_system_manager_1_1_simple_file_system_manager.html#a87520184e34024b7d970a41fa15191fa", null ],
+    [ "delete_regions", "classfile_system_manager_1_1_simple_file_system_manager.html#a8deb9394616d66e71a228e93a89651ba", null ],
+    [ "exist", "classfile_system_manager_1_1_simple_file_system_manager.html#a80ee5f5f6902d14e5951ce144fc5076a", null ],
+    [ "expand_uri", "classfile_system_manager_1_1_simple_file_system_manager.html#ac90ba1ee876816d1e38dfc9d8cbe7d07", null ],
+    [ "get_all_uris", "classfile_system_manager_1_1_simple_file_system_manager.html#a62a4e859d50ae1281cb150049286c6db", null ],
+    [ "get_folders_to_be_deleted_from_uri", "classfile_system_manager_1_1_simple_file_system_manager.html#a96e1d74a5c47d33dcfb7bb8c58a2cf0f", null ],
+    [ "get_last_node", "classfile_system_manager_1_1_simple_file_system_manager.html#a039dc5a476df36f221f2442d159777ce", null ],
+    [ "pop_folders_from_to_be_deleted", "classfile_system_manager_1_1_simple_file_system_manager.html#ac7abf161d50fcf212a89b6ee3953c7c1", null ],
+    [ "trees", "classfile_system_manager_1_1_simple_file_system_manager.html#a1e9b05aeaf53be5f081ecb938da80f84", null ]
+];

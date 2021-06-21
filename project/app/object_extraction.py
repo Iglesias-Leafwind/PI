@@ -1,7 +1,13 @@
+## @package app
+#  This module contains object extraction class
+# that is used to extract objects
+#  More details.
 import torch
 from app.utils import objectExtractionThreshold
-# https://github.com/ultralytics/yolov5/issues/36
 
+## Class object extraction that contains the loaded model when created
+#
+#  More details.
 class ObjectExtract:
     def __init__(self):
         # exige que o utilizador esteja ligado à net da primeira vez (ele faz uns downloads)
@@ -12,6 +18,9 @@ class ObjectExtract:
         model = torch.hub.load(path, 'resnet50', pretrained=True)
         """
 
+    ## Get objects from an image
+    #
+    #  More details.
     def get_objects(self, image_path):
         results = self.model(image_path)
 

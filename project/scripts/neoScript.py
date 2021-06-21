@@ -1,3 +1,7 @@
+## @package scripts
+#  Module for neo4j startup and closure
+#
+#  More details.
 import subprocess
 from neo4j import GraphDatabase
 import time
@@ -10,7 +14,7 @@ def alter_password(tx):
 dir_path = os.path.dirname(os.path.realpath(__file__))
 head, _ = os.path.split(dir_path)
 dir_path = os.path.join(head, "app/resources/neoServer/bin/neo4j")
-
+## Method to initialize neo4j database
 def open_neo4j():
     print("--------------------------NEO--------------------")
     global neo4j
@@ -25,9 +29,9 @@ def open_neo4j():
             neo = GraphDatabase.driver(uri, auth=(user, password))
             return neo
         except Exception:
-            print("---- connection error ----")
+            print("---- Trying to connect ----")
             time.sleep(1)
-
+## Method to close neo4j database
 def close_neo4j():
     if neo4j is not None:
         neo4j.terminate()

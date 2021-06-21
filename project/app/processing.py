@@ -1,3 +1,7 @@
+## @package app
+#  This module contains everything that is needed to process an image
+#
+#  More details.
 import json
 import string
 import reverse_geocoder as rg
@@ -44,6 +48,9 @@ threadTasks = {}
 
 
 
+## We test the thread capacity on server startup just to see
+#   how much a single thread uses of cpu and ram while processing
+#  More details.
 def testing_thread_capacity():
     global cpuPerThread
     global ramPerThread
@@ -138,7 +145,9 @@ centre_crop = trn.Compose([
 ])
 
 
-
+## This will filter the text that comes out of ocr
+#
+#  More details.
 def filter_sentence(sentence):
     english_vocab = set(w.lower() for w in words.words())
     stop_words = set(w.lower() for w in stopwords.words('english'))
@@ -146,7 +155,10 @@ def filter_sentence(sentence):
     filtered = [word.lower() for word in word_tokens if word not in stop_words if
                 len(word) >= 4 and (len(word) <= 8 or word in english_vocab)]
     return filtered
-
+## When we upload a directory
+#   we call this function that will see how many threads and images there is to be processed
+#
+#  More details.
 def upload_images(uri):
     logging.info("----------------------------------------------")
     logging.info("            feature extraction starts         ")
@@ -196,7 +208,9 @@ def upload_images(uri):
         do(processing, task)
 
         i += 1
-
+## Will divide tasks that threads have into a certain qty
+# that will be how many threads we are going to use to process a directory
+#  More details.
 def divide_tasks_to_many(dir_files, qty):
     threading = 0
     tasks = []
@@ -216,7 +230,9 @@ def divide_tasks_to_many(dir_files, qty):
                 threading = 0
 
     return tasks
-
+## Face recognition processing part
+#
+#  More details.
 def face_rec_part(read_image, img_path, tags, image):
     # image aberta -> read_image
     openimage, boxes = frr.get_face_boxes(open_img=read_image, image_path=img_path)
@@ -240,7 +256,9 @@ def face_rec_part(read_image, img_path, tags, image):
         # encodings falta
         image.person.connect(p, {'coordinates': list(b), 'icon': face_thumb_path, 'confiance': conf, 'encodings': enc, 'approved': False})
         # """
-
+## Breeds processing part
+#
+#  More details.
 def classify_breed_part(read_image, tags, image_db):
     breed, breed_conf = bc.predict_image(read_image)
     if breed_conf > app.utils.breedsThreshold:
@@ -250,7 +268,9 @@ def classify_breed_part(read_image, tags, image_db):
         if tag is None:
             tag = Tag(name=breed).save()
         image_db.tag.connect(tag, {'originalTagName':breed, 'originalTagSource': 'breeds', 'score':breed_conf})
-
+## Processing using every algorithm and modules available of a task with many directories and images
+#
+#  More details.
 def processing(dir_files):
     proc_string = "[Processing]:"
 
@@ -281,7 +301,9 @@ def processing(dir_files):
 
     logging.info("[Processing]: [INFO] Tasks to be completed: " + str(threadTasks))
 
-
+## Extraction of image features, objects,faces,locations,places,text
+#
+#  More details.
 def extraction_process(at_least_one, dir, folder_neo_node, img_list, img_name, index, proc_string):
     try:
         img_path = os.path.join(dir, img_name)
@@ -347,7 +369,9 @@ def extraction_process(at_least_one, dir, folder_neo_node, img_list, img_name, i
         logging.info("[Processing]: [ERR] In " + threading.current_thread().name + ": " + str(e))
     return False, at_least_one
 
-
+## Checking if a directory already exists in neo4j and creating or connecting if it exists
+#
+#  More details.
 def check_dir_and_connect(at_least_one, dir, existed, folder_neo_node):
     if existed.folder_uri == dir:
         at_least_one |= True
@@ -361,7 +385,9 @@ def check_dir_and_connect(at_least_one, dir, existed, folder_neo_node):
     at_least_one |= True
     return True, at_least_one
 
-
+## Checking if an image already exists in neo4j
+#
+#  More details.
 def checking_if_image_exists(at_least_one, dir, folder_neo_node, image, image_hash, img_path, proc_string):
     try:
         processingLock.acquire()
@@ -384,7 +410,9 @@ def checking_if_image_exists(at_least_one, dir, folder_neo_node, image, image_ha
         processingLock.release()
     return False, at_least_one
 
-
+## Extracting locations from latitude and longitude extracted info from exif
+#
+#  More details.
 def extract_locations(image, img_path, proc_string, propertiesdict, tags):
     if "latitude" in propertiesdict and "longitude" in propertiesdict:
         # crc = [city,region,country] names array
@@ -437,7 +465,9 @@ def extract_locations(image, img_path, proc_string, propertiesdict, tags):
             processingLock.release()
     return False
 
-
+## Adding features to elasticSearch
+#
+#  More details.
 def adding_to_es(i, image, img_path, norm_feat, tags):
     # add features to "cache"
     try:
@@ -449,7 +479,9 @@ def adding_to_es(i, image, img_path, norm_feat, tags):
         resultsLock.release()
     ImageES(meta={'id': image.hash}, uri=img_path, tags=tags, hash=image.hash).save(using=es)
 
-
+## Extracting text from an image while processing
+#
+#  More details.
 def extract_text(image, img_path, proc_string, read_image, tags):
     try:
         ocrLock.acquire()
@@ -470,7 +502,9 @@ def extract_text(image, img_path, proc_string, read_image, tags):
             finally:
                 processingLock.release()
 
-
+## Extracting places from an image while processing
+#
+#  More details.
 def extract_places(image, img_path, proc_string, tags):
     try:
         placesLock.acquire()
@@ -496,7 +530,9 @@ def extract_places(image, img_path, proc_string, tags):
             finally:
                 processingLock.release()
 
-
+## Extracting faces from an image while processing
+#
+#  More details.
 def extract_faces(image, img_path, proc_string, read_image, tags):
     try:
         faceRecLock.acquire()
@@ -508,7 +544,9 @@ def extract_faces(image, img_path, proc_string, read_image, tags):
     finally:
         faceRecLock.release()
 
-
+## Extracting objects and breeds from an image while processing
+#
+#  More details.
 def extract_objects_and_breeds(image, img_path, proc_string, read_image, tags):
     try:
         objectLock.acquire()
@@ -536,7 +574,9 @@ def extract_objects_and_breeds(image, img_path, proc_string, read_image, tags):
             finally:
                 breedLock.release()
 
-
+## Extracting exif data image features and creating neo4j image object
+#
+#  More details.
 def creating_image_neo_object_and_extracting_exif_and_image_features(h, w, image_hash, i, img_name, img_path, proc_string):
     # extract infos
     norm_feat = model.vgg_extract_feat(img_path)
@@ -568,7 +608,9 @@ def creating_image_neo_object_and_extracting_exif_and_image_features(h, w, image
                          insertion_date=datetime.now())
     return image, norm_feat, propertiesdict
 
-
+## Checking if a folder already exists in neo4j and get it or create it
+#
+#  More details.
 def check_if_folder_exists_and_create_it(dir):
     try:
         processingLock.acquire()
@@ -582,7 +624,9 @@ def check_if_folder_exists_and_create_it(dir):
         processingLock.release()
     return last_node
 
-
+## Removing a task from the threads checker
+#
+#  More details.
 def remove_thread_tasks():
     try:
         uploadLock.acquire()
@@ -592,7 +636,9 @@ def remove_thread_tasks():
     finally:
         uploadLock.release()
 
-
+## Subtracting number of threads working on a task
+#
+#  More details.
 def subtract_thread_tasks(dir):
     try:
         uploadLock.acquire()
@@ -600,7 +646,9 @@ def subtract_thread_tasks(dir):
     finally:
         uploadLock.release()
 
-
+## Adding number of threads working on a task
+#
+#  More details.
 def add_thread_tasks(dir_files):
     for dir in dir_files.keys():
         try:
@@ -609,12 +657,16 @@ def add_thread_tasks(dir_files):
         finally:
             uploadLock.release()
 
-
+## Get latitude and longitude locations through reverse_geocoding
+#
+#  More details.
 def get_locations(latitude, longitude):
     results = rg.search((latitude,longitude), mode=1)
     return [results[0]['name'], results[0]['admin2'], results[0]['admin1']]
 
-
+## Checking if an image has already been processed
+#
+#  More details.
 def already_processed(img_path):
     image = cv2.imread(img_path)
     image_hash = dhash(image)
@@ -624,6 +676,9 @@ def already_processed(img_path):
 
 to_be_deleted = set()
 deleting = False
+## Deleting a folder and their respective images
+#
+#  More details.
 def delete_folder(uri, frr=frr):
     logging.info("[Deleting]: [INFO] Trying to delete " + uri)
     deleted_images = None
@@ -673,7 +728,9 @@ def delete_folder(uri, frr=frr):
             delete_folder(to_be_deleted.pop(), frr)
     except Exception as e:
         logging.info("[Deleting]: [ERROR] " + str(e))
-
+## Finding similar images based on a image path
+#
+#  More details.
 def find_similar_images(uri):
     if len(ftManager.np_features) == 0:
         return []
@@ -689,7 +746,9 @@ def find_similar_images(uri):
         imlist.append(str(ftManager.image_features[index].hash))
 
     return imlist
-
+## Get all images of a folder
+#
+#  More details.
 def get_all_images_of_folder(folder, page):
     folder = unquote(folder)
     folder = fs.get_last_node(folder)
@@ -699,7 +758,9 @@ def get_all_images_of_folder(folder, page):
         if len(results):
             return [(i, i.tag.all(), i.getPersonsName()) for i in results]
     return []
-
+## Get places from the places trained model
+#
+#  More details.
 def get_places(img_path):
     # load the test image
     img = Image.open(img_path).convert('RGB')
@@ -712,7 +773,9 @@ def get_places(img_path):
 
     return [(classes[idx[i]], probs[i]) for i in range(0, 10) if probs[i] > app.utils.placesThreshold]
 
-
+## Get ocr using 2 algorithms
+#
+#  More details.
 def get_ocr(image):
     min_confidence = 0.6
     results = []
@@ -790,7 +853,9 @@ def get_ocr(image):
         retrn += [elem]
     return set(retrn)
 
-
+## OCR boxes algorithm
+#
+#  More details.
 def ocr_boxes_algorithm(confidences, geometry, min_confidence, num_cols, num_rows, orig, r_h, r_w, rects, results, scores):
     for y in range(0, num_rows):
         # extract the scores (probabilities), followed by the geometrical
@@ -856,7 +921,15 @@ def ocr_boxes_algorithm(confidences, geometry, min_confidence, num_cols, num_row
         results += (re.sub('[^0-9a-zA-Z ]+', '', result)).split(" ")
     return results
 
-
+## convert the image to grayscale
+# resize the grayscale image, adding a single column (width) so we
+# can compute the horizontal gradient
+# compute the (relative) horizontal gradient between adjacent
+# column pixels
+# convert the difference image to a hash
+# Finally it converts the hash into a python built in int and returns it
+#
+#  More details.
 def dhash(image, hash_size=8):
     # convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -870,13 +943,17 @@ def dhash(image, hash_size=8):
     h = sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
     return convert_hash(h)
 
-
+## Converts the hash to NumPy's 64-bit float and then back to
+# Python's built in int
+#  More details.
 def convert_hash(h):
     # convert the hash to NumPy's 64-bit float and then back to
     # Python's built in int
     return int(np.array(h, dtype="float64"))
 
-
+## Load places model
+#
+#  More details.
 def load_catgories_places():
     # load the class label for scene recognition
     file_name = 'categories_places365.txt'
@@ -887,7 +964,9 @@ def load_catgories_places():
             classes.append(line.strip().split(' ')[0][3:])
     classes = tuple(classes)
 
-
+## Load file system manager
+#
+#  More details.
 def load_file_system_manager():
     roots = Folder.nodes.filter(root=True)
 
@@ -911,11 +990,16 @@ def load_file_system_manager():
         for child in root.children:
             build_uri(child, uri, ids)
             ids.pop()  # backtracking
-
+## Exif not found custom exception in case of exif error
+#
+#  More details.
 class ExifNotFound(Exception):
     """Raised when the exif is not found"""
     pass
-
+## get exif metadate from images by checking if
+# exif exists and getting each each parameter
+#
+#  More details.
 def get_exif(img_path):
     returning = {}
     try:
@@ -954,7 +1038,9 @@ def get_exif(img_path):
     return returning
 
 
-# load all images to memory
+## Load images to memory
+#
+#  More details.
 def set_up():
     images = ImageNeo.nodes.all()
     npfeatures = []
@@ -982,7 +1068,9 @@ def set_up():
     ftManager.np_features = npfeatures
     ftManager.image_features = image_features
     testing_thread_capacity()
-
+## Generates a thumbnail of an image
+#
+#  More details.
 def generate_thumbnail(imagepath, image_hash):
     thumbnail_h = 225
     thumbnail_w = 225

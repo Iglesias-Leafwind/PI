@@ -1,3 +1,7 @@
+## @package app
+#  This is the local file system manager so that we can easily
+# check folders and get paths easily
+#  More details.
 import logging
 import os
 import re
@@ -6,7 +10,16 @@ import sys
 from app.models import ImageES,Folder
 from scripts.esScript import es
 from app.utils import get_random_number, ImageFeature, processingLock
-
+## Class node that is the folder
+# Contains:
+#   folder name
+#   folder children (a dictionary of nodes)
+#   folder parent (a node or None if it doesn't have a parent)
+#   folder id
+#   deleting if it is being deleted or not (Stars with False)
+#   terminated if the current node is the last one of a path then it is terminated
+# example: for uri C:\User\abcd\ef\, node 'ef' is terminated
+#  More details.
 class Node:
     def __init__(self, name: str, id: int, terminated=False):
         self.name = name  # folder name
@@ -20,20 +33,32 @@ class Node:
         # ex: for uri C:\User\abcd\ef\, node 'ef' is terminated
         self.terminated = terminated
 
+
     def __hash__(self):
         return hash(self.name)
 
     def __str__(self):
         return self.name
 
+    ## Deletes a node
+    #       pop
+    #  More details.
     def delete_node(self, node):
         if node.name in self.children:
             self.children.pop(node.name)
-
+## File system manager class
+# This is where the file system manager tree is created
+#  More details.
 class SimpleFileSystemManager:
+    ## Starting with an empty dictionary
+    # with key: folder name and value node
+    #  More details.
     def __init__(self):
         self.trees = {}  # key: folder name, value: node.
 
+    ## Function checks if an uri exists in the file system
+    # @param uri: String
+    #  More details.
     def exist(self, uri: str):
         folders, root = self.__split_uri_and_get_root__(uri)
 
@@ -53,6 +78,10 @@ class SimpleFileSystemManager:
 
         return node.terminated ^ node.deleting
 
+    ## Adds a full path to the file system
+    # @param uri: string (the path)
+    # @param ids: list(integers)
+    #  More details.
     def add_full_path_uri(self, uri: str, ids: list):
         folders = re.split("[\\\/]+", uri)
         if folders[len(folders) - 1].strip() == "":
@@ -81,8 +110,9 @@ class SimpleFileSystemManager:
 
         node.terminated = True
 
-    # add a new folder under the given uri
+    ## Add a new folder under the given uri
     # given uri must exist in fileSystemManager
+    #  More details.
     def expand_uri(self, uri, folder, id):
         folders, root = self.__split_uri_and_get_root__(uri)
 
@@ -98,6 +128,9 @@ class SimpleFileSystemManager:
             new_node.terminated = True
             node.children[folder] = new_node
 
+    ## gets the last node of an uri
+    # @param uri String (path of a directory)
+    #  More details.
     def get_last_node(self, uri):
         folders, root = self.__split_uri_and_get_root__(uri)
 
@@ -113,6 +146,9 @@ class SimpleFileSystemManager:
 
             return node
 
+    ## Creates uri in neo4j
+    # @param uri: String (path of a directory)
+    #  More details.
     def create_uri_in_neo4j(self, uri):
         folders, root = self.__split_uri_and_get_root__(uri)
 
@@ -131,6 +167,9 @@ class SimpleFileSystemManager:
         node = self.create_uri_in_neo4j_for_folders(folders, node)
         return node
 
+    ## We go through each node from the folders and
+    # save it in neo4j as a folder
+    #  More details.
     def create_uri_in_neo4j_for_folders(self, folders, node):
         for i in range(1, len(folders)):
             folder = folders[i]
@@ -150,6 +189,11 @@ class SimpleFileSystemManager:
                 node.children[folder] = node = new_node
         return node
 
+    ## split uri path and get the root of that path
+    # @param uri: String (directory path)
+    # @rtype tuple of (array,node)
+    # @return Returns a tuple of the folders as an array and the root node
+    #  More details.
     def __split_uri_and_get_root__(self, uri):
         folders = re.split("[\\\/]+", uri)
         if folders[len(folders) - 1].strip() == "":
@@ -158,12 +202,19 @@ class SimpleFileSystemManager:
         root = folders[0]
         return folders, root
 
+    ## builds a full path from an array of paths
+    # @param paths: Array of strings
+    #  More details.
     def __buil_full_path__(self, paths):
         path = ""
         for p in paths:
             path = os.path.join(path, p)
         return path
 
+    ## deletes a folder from the file system
+    #   @param uri:  string (path of the folder we want to delete)
+    #   @param frr: face recognition class
+    #  More details.
     def delete_folder_from_fs(self, uri, frr):
         try:
             if self.exist(uri):
@@ -181,6 +232,9 @@ class SimpleFileSystemManager:
         except Exception as e:
             logging.info("[Deleting]: [ERROR] Delete error " + str(e))
 
+    ## POPS
+    # folder
+    #  More details.
     def pop_folders_from_to_be_deleted(self, folders_to_be_deleted, frr):
         deleted_images = []
         while folders_to_be_deleted != []:
@@ -206,6 +260,9 @@ class SimpleFileSystemManager:
             f.delete()
         return deleted_images
 
+    ## Get folders that are going to be deleted form the uri
+    #   @param uri: String (path of the folder that is being deleted)
+    #  More details.
     def get_folders_to_be_deleted_from_uri(self, uri):
         node = self.get_last_node(uri)
         if node and node.parent:
@@ -214,6 +271,8 @@ class SimpleFileSystemManager:
         foldersto_be_deleted = [Folder.nodes.get_or_none(id_=node.id)]
         return foldersto_be_deleted, node
 
+    ## Deletes images
+    #  More details.
     def delete_images(self, deleted_images, f, image):
         if len(image.folder) > 1:  # if image is in different folders
             current_image_uri, root = self.__split_uri_and_get_root__(image.folder_uri)
@@ -242,6 +301,9 @@ class SimpleFileSystemManager:
             except Exception as e:
                 logging.info("[Deleting]: [ERROR] Image missing: " + str(e))
 
+    ## Check if a node has children and deltes them
+    #   @param node: node class
+    #  More details.
     def check_for_childrens_and_delete_them(self, node):
         while node.parent:
             parent_folder = Folder.nodes.get_or_none(id_=node.parent.id)
@@ -260,12 +322,17 @@ class SimpleFileSystemManager:
                 break
         return node
 
+    ## gets full path from a folder node
+    #  More details.
     def __full_path_for_folder_node__(self, f):
         paths = f.getFullPath()
         paths.reverse()
         paths.append(f.name)
         return self.__buil_full_path__(paths)
 
+    ## Deletes connected tags and persons of an image
+    #   @param image: ImageNeo class
+    #  More details.
     def delete_connected_tags_and_persons(self, image):
         if len(image.tag) != 0:
             for t in image.tag:
@@ -279,6 +346,9 @@ class SimpleFileSystemManager:
                 if len(p.image) == 0:
                     p.delete()
 
+    ## Deletes connected locations of an image
+    #   @param image: ImageNeo class
+    #  More details.
     def delete_locations(self, image):
         if len(image.location) != 0:
             for l in image.location:
@@ -287,6 +357,9 @@ class SimpleFileSystemManager:
                     self.delete_cities(l)
                     l.delete()
 
+    ## Deletes connected cities
+    #   @param l: Location class
+    #  More details.
     def delete_cities(self, l):
         for city in l.city:
             city.location.disconnect(l)
@@ -294,6 +367,9 @@ class SimpleFileSystemManager:
                 self.delete_regions(city)
                 city.delete()
 
+    ## Deletes connected regions
+    #   @param city: City class
+    #  More details.
     def delete_regions(self, city):
         for region in city.region:
             region.city.disconnect(city)
@@ -301,12 +377,17 @@ class SimpleFileSystemManager:
                 self.delete_countries(region)
                 region.delete()
 
+    ## Deletes connected countries
+    #   @param region: Region class
+    #  More details.
     def delete_countries(self, region):
         for country in region.country:
             country.region.disconnect(region)
             if len(country.region) == 0:
                 country.delete()
 
+    ## Gets all paths from the file system
+    #  More details.
     def get_all_uris(self):
         uris = []
 

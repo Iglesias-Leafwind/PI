@@ -1,3 +1,7 @@
+## @package project
+#  Django config file.
+#
+#  More details.
 """
 ASGI config for project project.
 

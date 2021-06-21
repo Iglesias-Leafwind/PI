@@ -1,3 +1,7 @@
+## @package app
+#  this model contains project configuration
+#
+#  More details.
 from django.apps import AppConfig
 
 

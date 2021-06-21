@@ -1,0 +1,22 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node5 [label="forms.Form",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="forms.EditFoldersForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_edit_folders_form.html",tooltip="Edit folders form that is used to add a new source folder."];
+  Node5 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="forms.EditTagForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_edit_tag_form.html",tooltip="Form for editing Tags."];
+  Node5 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="forms.FilterSearchForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_filter_search_form.html",tooltip="Set ups the filter on a search."];
+  Node5 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="forms.PeopleFilterForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_people_filter_form.html",tooltip="The verified or not verified for showing people in face recog page."];
+  Node5 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="forms.PersonsForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_persons_form.html",tooltip="Person form contains everything that is going to be displayed in the face recog page."];
+  Node5 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="forms.SearchForImageForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_search_for_image_form.html",tooltip="Image form that contains the query image search."];
+  Node5 -> Node12 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="forms.SearchForm",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classforms_1_1_search_form.html",tooltip="Search form that contains the query text search."];
+}

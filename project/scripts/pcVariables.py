@@ -1,3 +1,7 @@
+## @package scripts
+#  This file setups the local path to call various functions in the resources folder
+#
+#  More details.
 import os
 dir_path = os.getcwd()
 dir_path,_ = os.path.split(dir_path)
