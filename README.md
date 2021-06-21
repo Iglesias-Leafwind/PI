@@ -24,7 +24,10 @@
 	* python Imageable.py
 * **or while in venv:**
 	* python Initialize.py
-
+** If downloading from git don't forget to go to our website: **
+	* ** http://xcoa.av.it.pt/~pi202021g03/ **
+** And download Resources folder! **
+	* ** Finally place it inside app folder **
 #### Known issues:
 * **JDK works between versions 11 and 15**
 * **Problems with neo4j or elasticsearch not finding java**
