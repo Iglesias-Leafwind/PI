@@ -1,3 +1,7 @@
+## @package app
+#  This module contains functions that will be called by django urls
+#   Meaning that these functions are what each endpoint will do
+#  More details.
 import csv
 import datetime
 import io
@@ -27,6 +31,9 @@ import logging
 from scripts.pathsPC import do
 
 
+## First page that the users will find themselves in when opening our app
+#
+#  More details.
 def landingpage(request):
     query = SearchForm()  # query form stays the same
     image = SearchForImageForm()  # fetching image form response
@@ -34,6 +41,9 @@ def landingpage(request):
     path_form = EditFoldersForm()
     return render(request, "landingpage.html", {'form': query, 'image_form': image, 'folders': folders, 'path_form':path_form})
 
+## Request where tags get updated of a specific image
+#
+#  More details.
 def update_tags(request, hash):
     new_tags_string = request.POST.get("tags")
     new_tags = re.split('#', new_tags_string)
@@ -58,6 +68,9 @@ from app.utils import showDict
 
 index_string = "index.html"
 
+## Index page is the search results page
+#
+#  More details.
 def index(request):
     # para os filtros
     opts = searchFilterOptions
@@ -84,7 +97,9 @@ def index(request):
             image, query, results = first_time_in_page_resources()
             return render(request, index_string, {'filters_form' : filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
-
+## Function to create forms for the first time in a page
+#
+#  More details.
 def first_time_in_page_resources():
     query = SearchForm()
     image = SearchForImageForm()
@@ -97,7 +112,9 @@ def first_time_in_page_resources():
             count += 1
     return image, query, results
 
-
+## When an error occurs in a form this function is called and it shows all images
+#
+#  More details.
 def error_in_form_showing_all_images():
     results = {}  # blank results dictionary
     for tag in Tag.nodes.all():  # looping through all tag nodes
@@ -108,7 +125,9 @@ def error_in_form_showing_all_images():
             count += 1  # increase counter
     return results
 
-
+## Searching by image
+#
+#  More details.
 def search_by_image_page_resources(image):
     imagepath = image.cleaned_data["image"]  # get inserted path
     image_array = find_similar_images(imagepath)  # find similar images
@@ -119,7 +138,9 @@ def search_by_image_page_resources(image):
             results["results"].append((getresult, getresult.tag.all()))  # append the node and its tags
     return results
 
-
+## Searching by text
+#
+#  More details.
 def query_search_page_resources(request):
     logging.info("[Searching]: [INFO] Started Searching.")
     query = SearchForm()  # cleaning this form
@@ -150,6 +171,9 @@ def query_search_page_resources(request):
     return image, query, results
 
 content_type_json = 'text/json'
+## Image results showing slowly (lazy loading)
+# this function loads images depending on the page it receives
+#  More details.
 def lazy_loading(request, page, name):
     query_array = name.split(" ")
     logging.info("[Searching]: [INFO] Started Searching.")
@@ -176,7 +200,9 @@ def lazy_loading(request, page, name):
         import json
         return HttpResponse(json.dumps(returning), content_type=content_type_json)
 
-
+## This will transform the results into a dictionary
+# So that it can transform into a json type
+#  More details.
 def create_return_lazy(key, results, returning):
     for result in results[key]:
         image_neo = result[0]
@@ -194,7 +220,9 @@ def create_return_lazy(key, results, returning):
         returning[result[0].hash]["tags"] = tag_list
         returning[result[0].hash]["persons"] = result[0].getPersonsName()
 
-
+## Reloads filters
+#
+#  More details.
 def change_filters(request):
     if request.method != 'POST':
         #print('shouldnt happen!!')
@@ -280,7 +308,9 @@ def change_filters(request):
 
     return redirect(form['current_url'])
 
-
+## Sets filter places limits
+#
+#  More details.
 def set_places_limits(max_places, min_places):
     if min_places < placesThreshold * 100:
         min_places = placesThreshold * 100
@@ -292,7 +322,9 @@ def set_places_limits(max_places, min_places):
         max_places = 100
     return max_places, min_places
 
-
+## Sets filter breeds limits
+#
+#  More details.
 def set_breeds_limits(max_breeds, min_breeds):
     if min_breeds < breedsThreshold * 100:
         min_breeds = breedsThreshold * 100
@@ -304,7 +336,9 @@ def set_breeds_limits(max_breeds, min_breeds):
         max_breeds = 100
     return max_breeds, min_breeds
 
-
+## Sets filter faces limits
+#
+#  More details.
 def set_face_rec_limits(max_face, min_face, min_obj_extr):
     if min_face < faceRecThreshold * 100:
         min_face = faceRecThreshold * 100
@@ -316,7 +350,9 @@ def set_face_rec_limits(max_face, min_face, min_obj_extr):
         max_face = 100
     return max_face, min_face
 
-
+## Sets filter objects limits
+#
+#  More details.
 def set_object_extr_limits(max_obj_extr, min_obj_extr):
     if min_obj_extr < objectExtractionThreshold * 100:
         min_obj_extr = objectExtractionThreshold * 100
@@ -328,7 +364,9 @@ def set_object_extr_limits(max_obj_extr, min_obj_extr):
         max_obj_extr = 100
     return max_obj_extr, min_obj_extr
 
-
+## Sets filter top taken date
+#
+#  More details.
 def set_to_taken_date(form, time_format_string):
     try:
         timeHelper['taken_date_to'] = datetime.datetime.strptime(form['taken_date_to'], time_format_string)
@@ -337,7 +375,9 @@ def set_to_taken_date(form, time_format_string):
         searchFilterOptions['taken_date_to'] = None
         timeHelper['taken_date_to'] = None
 
-
+## Sets filter bottom taken date
+#
+#  More details.
 def set_from_taken_date(form, time_format_string):
     try:
         timeHelper['taken_date_from'] = datetime.datetime.strptime(form['taken_date_from'], time_format_string)
@@ -346,7 +386,9 @@ def set_from_taken_date(form, time_format_string):
         searchFilterOptions['taken_date_from'] = None
         timeHelper['taken_date_from'] = None
 
-
+## Sets filter top insertion date
+#
+#  More details.
 def set_to_insertion_date(form, time_format_string):
     try:
         timeHelper['insertion_date_to'] = datetime.datetime.strptime(form['insertion_date_to'], time_format_string)
@@ -355,7 +397,9 @@ def set_to_insertion_date(form, time_format_string):
         searchFilterOptions['insertion_date_to'] = None
         timeHelper['insertion_date_to'] = None
 
-
+## Sets filter bottom insertion date
+#
+#  More details.
 def set_from_insertion_date(form, time_format_string):
     try:
         timeHelper['insertion_date_from'] = datetime.datetime.strptime(form['insertion_date_from'], time_format_string)
@@ -367,7 +411,9 @@ def set_from_insertion_date(form, time_format_string):
 
 isBeforeThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days < 0
 isLaterThan = lambda datee, filter_ : (datee.replace(tzinfo=None) - filter_.replace(tzinfo=None)).days > 0
-
+## Gets image results in a query
+#
+#  More details.
 def get_image_results(query_array,page):
     tag = "#" + " #".join(query_array)  # arranging tags with '#' before
 
@@ -422,7 +468,9 @@ def get_image_results(query_array,page):
 
     return results
 
-
+## Removes unwanted images from results
+#
+#  More details.
 def remove_unwanted_images_from_search_results(img, remove, results, tag):
     if not all(remove):
         img.features = None
@@ -433,7 +481,9 @@ def remove_unwanted_images_from_search_results(img, remove, results, tag):
                 set_all_img_tags += [tag_object]
         results[tag].append((img, set_all_img_tags))  # insert tags in the dictionary
 
-
+## Removes images not in filter breeds
+#
+#  More details.
 def remove_image_not_in_filter_breeds(img, query_array, remove):
     tags = [t.name.lower() for t in img.tag.match(originalTagSource='breeds')]
     dentro = any([q in t for q in query_array for t in tags])
@@ -453,7 +503,9 @@ def remove_image_not_in_filter_breeds(img, query_array, remove):
             # print('breeds', [rel.score for rel in relationships])
             remove.add(outside_limits)
 
-
+## Removes images not in filter places
+#
+#  More details.
 def remove_image_not_in_filter_places(img, query_array, remove):
     tags = [t.name.lower() for t in img.tag.match(originalTagSource='places')]
     dentro = any([q in t for q in query_array for t in tags])
@@ -471,14 +523,18 @@ def remove_image_not_in_filter_places(img, query_array, remove):
             outside_limits = all([rel.score * 100 < minn or rel.score * 100 > maxx for rel in relationships])
             remove.add(outside_limits)
 
-
+## Removes images not in filter ocr
+#
+#  More details.
 def remove_image_not_in_filter_ocr(img, query_array, remove):
     tags = [t.name.lower() for t in img.tag.match(originalTagSource='ocr')]
     dentro = any([q in t for q in query_array for t in tags])
     if dentro:
         remove.add(not searchFilterOptions['text'])
 
-
+## Removes images not in filter objects
+#
+#  More details.
 def remove_image_not_in_filter_objects(img, query_array, remove):
     tags = [t.name.lower() for t in img.tag.match(originalTagSource='object')]
     dentro = any([q in t for q in query_array for t in tags])
@@ -497,14 +553,18 @@ def remove_image_not_in_filter_objects(img, query_array, remove):
             # print([rel.score for rel in relationships])
             remove.add(outside_limits)  # adiciona Falso se n houver nenhum
 
-
+## Removes images not in filter manual
+#
+#  More details.
 def remove_image_not_in_filter_manual(img, query_array, remove):
     tags = [t.name.lower() for t in img.tag.match(originalTagSource='manual')]
     dentro = any([q in t for q in query_array for t in tags])
     if dentro:
         remove.add(not searchFilterOptions['manual'])
 
-
+## Removes images not in filter persons
+#
+#  More details.
 def remove_image_not_in_filter_persons(img, query_array, remove):
     people = img.person.all()
     # verifica se a query ta dentro do nome
@@ -525,7 +585,9 @@ def remove_image_not_in_filter_persons(img, query_array, remove):
             # print([rel.confiance for rel in relationships])
             remove.add(outside_limits)
 
-
+## Removes images not in filter dates
+#
+#  More details.
 def check_if_image_in_filter_dates(img):
     returns = False
     if searchFilterOptions['insertion_date_activate']:
@@ -534,7 +596,9 @@ def check_if_image_in_filter_dates(img):
         returns |= check_if_image_in_filter_date_taken(img)
     return returns
 
-
+## Removes images not in filter insertion date
+#
+#  More details.
 def check_if_image_in_filter_date_inserted(img):
     fromm = timeHelper['insertion_date_from']
     if fromm is not None and isBeforeThan(img.insertion_date, fromm):
@@ -544,7 +608,9 @@ def check_if_image_in_filter_date_inserted(img):
         return True
     return False
 
-
+## Removes images not in filter taken date
+#
+#  More details.
 def check_if_image_in_filter_date_taken(img):
     if img.creation_date is None:
         return True
@@ -560,7 +626,9 @@ def check_if_image_in_filter_date_taken(img):
         return True
     return False
 
-
+## Removes images not in the correct filter sizes
+#
+#  More details.
 def check_if_image_in_filter_sizes(img):
     if img is None:  # if there is no image with this hash in DB
         return True  # ignore, advance
@@ -572,7 +640,9 @@ def check_if_image_in_filter_sizes(img):
         return True
     return False
 
-
+## search images of a folder
+#
+#  More details.
 def search_folder(request, name, page):
     if page > 1:
         return search_folder_json(request, name, page)
@@ -589,7 +659,9 @@ def search_folder(request, name, page):
     return render(request, index_string,
                   {'filters_form': filters, 'form': query, 'image_form': image, 'results': results, 'error': False})
 
-
+## search images of a folder for lazy loading transforms into a json
+#
+#  More details.
 def search_folder_json(request, name, page):
     results = {}
     results['results'] = get_all_images_of_folder(name, page)
@@ -615,11 +687,16 @@ def search_folder_json(request, name, page):
 
 
 to_folders = '/folders'
+## Deletes a folder and its respective images
+#
+#  More details.
 def delete(request, path):
     do(delete_folder, path)
     response = redirect(to_folders)
     return response
-
+## Gets the folder managing page and it is where we upload an image
+#
+#  More details.
 def managefolders(request):
     if 'path' in request.GET:
         upload_images(request.GET.get('path'))
@@ -643,6 +720,9 @@ def managefolders(request):
                       {'form': form, 'image_form': image, 'folders': folders_with_url, 'path_form': pathf})
 
 people_url_string = '/people'
+## Managing faces page where we submit and check each face
+#
+#  More details.
 def managepeople(request):
 
     if request.method == 'POST':
@@ -660,38 +740,50 @@ def managepeople(request):
     filters = PeopleFilterForm(initial=showDict)
     return render(request, 'renaming.html',
                   {'form': form, 'image_form': image, 'names_form': names, 'filters': filters})
-
+## Elastic search search access
+#
+#  More details.
 def search(tags,page):
     image_in_page = 20
     q = Q('bool', should=[Q('term', tags=tag) for tag in tags], minimum_should_match=1)
     s = Search(using=es, index='image').query(q).extra(from_=(page-1)*image_in_page, size=page*image_in_page)
     return s.execute()
-
+## When an image is already processed
+#
+#  More details.
 def already_processed(img_path):
     image = cv2.imread(img_path)
     image_hash = dhash(image)
     existed = ImageNeo.nodes.get_or_none(hash=image_hash)
 
     return True if existed else False
-
+## Upload of an image
+#
+#  More details.
 def upload(request):
     data = json.loads(request.body)
     upload_images(data["path"])
     return redirect(to_folders)
-
+## Search in ElasticSearch by tag
+#
+#  More details.
 def searchtag(request):
     get = [request.GET.get('tag')]
     q = Q('bool', should=[Q('term', tags=tag) for tag in get], minimum_should_match=1)
     s = Search(using=es, index='image').query(q)
     s.execute()
     return render(request, 'index.html')
-
+## Updating all folders
+#
+#  More details.
 def update_folders(request):
     folders = fs.get_all_uris()
     for folder in folders:
         upload_images(folder)
     return HttpResponseRedirect(reverse('managefolders'))
-
+## Updating faces
+#
+#  More details.
 def update_faces(request):
     if request.method != 'POST':
         redirect(people_url_string)
@@ -737,7 +829,9 @@ def update_faces(request):
 
 
     return redirect(people_url_string)
-
+## Dashboard page request setup
+#
+#  More details.
 def dashboard(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -774,7 +868,9 @@ def dashboard(request):
     return render(request, 'dashboard.html',
                   {'form': form, 'image_form': image, 'results': results, 'counts': count_tags,
                    'countTagSource': count_original_tag_source, 'numbers': {'person': person_number, 'location': location_number}})
-
+## Calender gallery page setup
+#
+#  More details.
 def calendar_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -782,6 +878,7 @@ def calendar_gallery(request):
     dates_creation = {}
     previous_images = []
     img_list = ImageNeo.nodes.all()
+
     for img in img_list:
         if img not in previous_images:
             insertion_date = str(img.insertion_date)
@@ -803,7 +900,9 @@ def calendar_gallery(request):
     return render(request, 'gallery.html',
                   {'form': form, 'image_form': image, 'datesInsertion': dates_insertion, 'datesCreation': dates_creation})
 
-
+## creating or adding to insertion and creation date
+#
+#  More details.
 def create_or_add_to_insertion_and_creation_date(creation_date, dates_creation, dates_insertion, insertion_date):
     if insertion_date not in dates_insertion:
         dates_insertion[insertion_date] = 1
@@ -815,7 +914,9 @@ def create_or_add_to_insertion_and_creation_date(creation_date, dates_creation, 
         else:
             dates_creation[creation_date] += 1
 
-
+## Objects gallery page setup
+#
+#  More details.
 def objects_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -828,7 +929,9 @@ def objects_gallery(request):
 
     return render(request, 'objectsGallery.html',
                   {'form': form, 'image_form': image, 'objectTags': all_object_tags})
-
+## People gallery page setup
+#
+#  More details.
 def people_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -849,7 +952,9 @@ def people_gallery(request):
     #print(all_names_dict)
     return render(request, 'peopleGallery.html',
                   {'form': form, 'image_form': image, 'people': all_names_dict})
-
+## Scenes or places gallery page setup
+#
+#  More details.
 def scenes_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -862,7 +967,9 @@ def scenes_gallery(request):
 
     return render(request, 'placesGallery.html',
                   {'form': form, 'image_form': image, 'placesTags': all_place_tags})
-
+## Text gallery page setup
+#
+#  More details.
 def text_gallery(request):
     form = SearchForm()
     image = SearchForImageForm()
@@ -875,7 +982,9 @@ def text_gallery(request):
             
     return render(request, 'textGallery.html',
                   {'form': form, 'image_form': image, 'textTags': all_text_tags})
-
+## Exporting to zip
+#
+#  More details.
 def export_to_zip(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
@@ -898,7 +1007,9 @@ def export_to_zip(request, ids):
     response['Content-Type'] = 'application/x-zip-compressed'
     response['Content-Disposition'] = 'attachment; filename=images.zip'
     return response
-
+## Exporting to excel
+#
+#  More details.
 def export_to_excel(request, ids):
     ids = ids[1:]
     if ids.strip() == '':
@@ -933,7 +1044,9 @@ def export_to_excel(request, ids):
 
     return response
 
-
+## Iterates through neo4j nodes to get locations, their cities, the cities region, and the regions country
+#
+#  More details.
 def iterate_through_all_neo_nodes(img, locations):
     for l in img.location:
         locations.append(l.name)

@@ -1,9 +1,15 @@
+## @package scripts
+#  This file setups the local path to call various functions in the resources folder
+#
+#  More details.
+import os
+dir_path = os.getcwd()
+dir_path,_ = os.path.split(dir_path)
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 dbsPath = 'bolt://neo4j:12345@localhost:7687'
-ocrPath = 'app/resources/tesseract-OCR/tesseract'
-essPath = 'app/resources/elasticSearch/bin/elasticsearch.bat'
-
-var = 1
+ocrPath = os.path.join(dir_path,'app/resources/tesseract-OCR/tesseract')
+essPath = os.path.join(dir_path,'app/resources/elasticSearch/bin/elasticsearch.bat')
+var = 0
 
 ocr_ubuntu = r'/usr/bin/tesseract'
 ## Windows Iglesias:
@@ -23,6 +29,6 @@ elif var == 4:
     ocrPath = ocr_ubuntu
     essPath = "/home/alexis/Downloads/elasticsearch-7.12.1/bin/elasticsearch"
 ## Ubuntu Mariana:
-else:
+elif var == 5:
     ocrPath = ocr_ubuntu
     essPath = "/home/mar/Documents/UA/6-semester/PI/elasticsearch-7.12.0/bin/elasticsearch"

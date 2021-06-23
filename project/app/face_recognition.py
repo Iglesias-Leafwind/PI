@@ -1,3 +1,6 @@
+## @package app
+#  Module for face recognition related class and functions
+#  More details.
 import os
 import random
 import string
@@ -12,18 +15,27 @@ from app.utils import faceRecThreshold
 from scripts.esScript import es
 
 PEN_THRESHOLD = 50
-
+## Face recognition class
+# contains everything that is stored about faces and how the data is stored and rearranged
+#  More details.
 class FaceRecognition:
+    ## We initialize it as empty
+    # with name2encodings being a list of tuples [(face_encoding, conf, approved), ..]
+    #  More details.
     def __init__(self):
-        self.name2encodings = defaultdict(list) # [(face_encoding, conf, approved), ..]
+        self.name2encodings = defaultdict(list)
         self.update_data()
 
+    ## Updates the stored data
+    #  More details.
     def update_data(self):
         all_people = Person.nodes.all()
         for p in all_people:
             rels = [ (img, rrr) for img in p.image.all() for rrr in p.image.all_relationships(img)]
             self.name2encodings[p.name] = [ (r[1].encodings, r[1].confiance, r[1].approved, r[0].hash) for r in rels ]
 
+    ## Gets boxes around faces of an image
+    #  More details.
     def get_face_boxes(self, open_img=None, image_path=None):
         # 'lê' a imagem (dependendo de como esta funcao é chamada, pode-se
         # alterar o parametro para que já entre a imagem 'lida'
@@ -43,6 +55,8 @@ class FaceRecognition:
         # once again, ver o q retornar dependendo do que é necessário
         return image, boxes
 
+    ## Saves faces that are identified
+    #  More details.
     def save_face_identification(self, image=None, box = None, name=None, conf=1, encoding=None, approved=False, imghash=None):
         face_encoding = encoding
         if face_encoding is None:
@@ -60,6 +74,8 @@ class FaceRecognition:
         #print('guardou nova cara!! : ', name)
         return face_encoding
 
+    ## Gets the name of a face
+    #  More details.
     def get_the_name_of(self, image=None, box=None, encoding=None):
         #print('entrou 1')
 
@@ -120,6 +136,8 @@ class FaceRecognition:
         name = matches[maxx]
         return name, encoding, maxx
 
+    ## Reloads face recognition modules and updates it
+    #  More details.
     def reload(self):
         self.temp = self.name2encodings
         self.name2encodings = defaultdict(list)
@@ -145,7 +163,10 @@ class FaceRecognition:
                 self.change_name_tag_es(imghash, name, k)
 
 
-    # -- helper --
+    ## Changes relations with faces
+    # meaning other fances can be now conected with more faces or disconnected and may have another name
+    # here we change relationship of those faces
+    #  More details.
     def change_relationship(self, image_hash, new_personname, old_personname, confiance=1.0, approved=True, enc=None, thumbnail=None):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         #if img is None:
@@ -197,7 +218,8 @@ class FaceRecognition:
         if isinstance(neww['confiance'], tuple):
             neww['confiance'] = neww['confiance'][0]
         img.person.connect(new_person, neww)
-        
+    ## change face name tag in elasticSearch
+    #  More details.
     def change_name_tag_es(self, image_hash, new_personname, old_personname):
         try:
             img = ImageES.get(using=es, id=image_hash)
@@ -212,6 +234,9 @@ class FaceRecognition:
             img.save(using=es)
         except Exception as e:
             logging.info("[Face Recog]: [ERROR] Change in ES: " + str(e))
+
+    ## Removes a face form an image
+    #  More details.
     def remove_image(self, image_hash):
         self.delete_thumbs(image_hash)
 
@@ -230,7 +255,8 @@ class FaceRecognition:
             p = Person.nodes.get_or_none(name=k)
             if p is not None:
                 p.delete()
-                
+    ## Deletes face thumbnails
+    #  More details.
     def delete_thumbs(self, image_hash):
         img = ImageNeo.nodes.get_or_none(hash=image_hash)
         if img is None:

@@ -1,11 +1,20 @@
 #!/usr/bin/env python
+
+## @package project
+#  This package will call neo4j and es
+#  so that it can start the django server.
+#
+#  More details.
+
 """Django's command-line utility for administrative tasks."""
 import os
 import subprocess
 import sys
 from scripts.esScript import close_es,open_es
 from scripts.neoScript import close_neo4j,open_neo4j
-
+## Documentation for a function.
+#
+#  More details.
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
