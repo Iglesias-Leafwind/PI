@@ -1,3 +1,7 @@
+## @package project
+#  Django config file.
+#
+#  More details.
 """
 Django settings for project project.
 

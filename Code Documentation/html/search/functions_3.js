@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['dashboard_613',['dashboard',['../namespaceviews.html#af133548565659e6a7e2fd99618cd23ee',1,'views']]],
+  ['delete_614',['delete',['../namespaceviews.html#a8a686fade21aea5a943f57ebb671c8b0',1,'views']]],
+  ['delete_5fcities_615',['delete_cities',['../classfile_system_manager_1_1_simple_file_system_manager.html#a8199ed8444d091d4c0cd1322e2043501',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5fconnected_5ftags_5fand_5fpersons_616',['delete_connected_tags_and_persons',['../classfile_system_manager_1_1_simple_file_system_manager.html#a41641a2f9552f9cd495836bdc35580d5',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5fcountries_617',['delete_countries',['../classfile_system_manager_1_1_simple_file_system_manager.html#ad60e1a9825436b221174074d062b128a',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5fes_5ftag_618',['delete_es_tag',['../namespaceutils.html#a17fae0455438fb2d6d5482511ab907bf',1,'utils']]],
+  ['delete_5ffolder_619',['delete_folder',['../namespaceprocessing.html#afd4f5f8a5b495c94ebee7f5bfbedddae',1,'processing']]],
+  ['delete_5ffolder_5ffrom_5ffs_620',['delete_folder_from_fs',['../classfile_system_manager_1_1_simple_file_system_manager.html#a6c0eedf1514c65c1206a07998cbe0c96',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5fimages_621',['delete_images',['../classfile_system_manager_1_1_simple_file_system_manager.html#abec98d0dc3f1b19ea3566e93bc64b83e',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5flocations_622',['delete_locations',['../classfile_system_manager_1_1_simple_file_system_manager.html#a87520184e34024b7d970a41fa15191fa',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5fnode_623',['delete_node',['../classfile_system_manager_1_1_node.html#ae543203d50893daad7e8713a93da2eb3',1,'fileSystemManager::Node']]],
+  ['delete_5fregions_624',['delete_regions',['../classfile_system_manager_1_1_simple_file_system_manager.html#a8deb9394616d66e71a228e93a89651ba',1,'fileSystemManager::SimpleFileSystemManager']]],
+  ['delete_5ftag_625',['delete_tag',['../namespaceutils.html#a0f71f72c5eee56ae95275ce8a3757ff7',1,'utils']]],
+  ['delete_5fthumbs_626',['delete_thumbs',['../classface__recognition_1_1_face_recognition.html#aafdb02913da4a512e969f63b86efe9b1',1,'face_recognition::FaceRecognition']]],
+  ['dhash_627',['dhash',['../namespaceprocessing.html#a43146e83ae8d3cb5e29c2756c398748f',1,'processing']]],
+  ['divide_5ftasks_5fto_5fmany_628',['divide_tasks_to_many',['../namespaceprocessing.html#a457624c262d19d657f133d859240bd73',1,'processing']]],
+  ['do_629',['do',['../namespacepaths_p_c.html#a185f7998cf8604f1faea677e99324224',1,'pathsPC']]]
+];

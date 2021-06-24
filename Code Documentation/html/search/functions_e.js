@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['save_5fface_5fidentification_712',['save_face_identification',['../classface__recognition_1_1_face_recognition.html#a2e55291d48d8f16fd9d6acd12c134324',1,'face_recognition::FaceRecognition']]],
+  ['scenes_5fgallery_713',['scenes_gallery',['../namespaceviews.html#af3b9dfebe11744e2e936b1d46b6b87fc',1,'views']]],
+  ['search_714',['search',['../namespaceviews.html#a0ea5fad6965cb52dcd072be88062b8e6',1,'views']]],
+  ['search_5fby_5fimage_5fpage_5fresources_715',['search_by_image_page_resources',['../namespaceviews.html#a403e6a6cfff267d6fdf156ce37e4b6af',1,'views']]],
+  ['search_5ffolder_716',['search_folder',['../namespaceviews.html#ab2a0f67092c5446740fc4db1180bf6ab',1,'views']]],
+  ['search_5ffolder_5fjson_717',['search_folder_json',['../namespaceviews.html#a25310cb03357f15db5567a00b9cf2cf8',1,'views']]],
+  ['searchtag_718',['searchtag',['../namespaceviews.html#a6bb7b3ea67036afcc311dce9f42d37e3',1,'views']]],
+  ['set_5fbreeds_5flimits_719',['set_breeds_limits',['../namespaceviews.html#a766a005a24608a4f8f7ade6f7047fa2f',1,'views']]],
+  ['set_5fface_5frec_5flimits_720',['set_face_rec_limits',['../namespaceviews.html#ae519bbfb93fdb50c4eaa65f9d18a6163',1,'views']]],
+  ['set_5ffrom_5finsertion_5fdate_721',['set_from_insertion_date',['../namespaceviews.html#ab3d359d25c6c748ced94bea64f24113c',1,'views']]],
+  ['set_5ffrom_5ftaken_5fdate_722',['set_from_taken_date',['../namespaceviews.html#a511f0be24c199621cdb3fca619b909d7',1,'views']]],
+  ['set_5fobject_5fextr_5flimits_723',['set_object_extr_limits',['../namespaceviews.html#af6032b1c853246dfc640c882da3ccb02',1,'views']]],
+  ['set_5fplaces_5flimits_724',['set_places_limits',['../namespaceviews.html#aa880d9dfb5e17aa5ffeb58ea4531bfba',1,'views']]],
+  ['set_5fto_5finsertion_5fdate_725',['set_to_insertion_date',['../namespaceviews.html#a3f52e72151a2f5c639d1d65f5b1a1759',1,'views']]],
+  ['set_5fto_5ftaken_5fdate_726',['set_to_taken_date',['../namespaceviews.html#a0847f7a2f2a2220567e5c61dd2c8a95a',1,'views']]],
+  ['set_5fup_727',['set_up',['../namespaceprocessing.html#ab2753b982a0c3c3dec8b512ce4233ef8',1,'processing']]],
+  ['setup_728',['setUp',['../classtest__face__recognition_1_1_face_recog_test_case.html#a47e77c0c1113dac9283e12e92dc04f57',1,'test_face_recognition.FaceRecogTestCase.setUp()'],['../classtest__file_system_manager_1_1_f_s_test_case.html#a39a120b2d431179bf80bcdba769411cf',1,'test_fileSystemManager.FSTestCase.setUp()'],['../classtest__nlp_filter_search_1_1_nlptestcase.html#a8d502f46dd4f1b65ee2f7dd9078e057e',1,'test_nlpFilterSearch.Nlptestcase.setUp()'],['../classtest__object__extraction_1_1_o_e_test_case.html#af976d6fc0d73507c49c2fc65a8ea04d9',1,'test_object_extraction.OETestCase.setUp()'],['../classtest__processing_1_1_processing_test_case.html#a0049ee8287d938fba4b078a421a54b24',1,'test_processing.ProcessingTestCase.setUp()'],['../classtest__utils_1_1_b_g_g_test_case.html#acb01f728448d5974dfd08ab65c80d55c',1,'test_utils.BGGTestCase.setUp()'],['../classtest___v_g_g___1_1_b_g_g_test_case.html#aa65035049267153a407bb5ae09cf8eb3',1,'test_VGG_.BGGTestCase.setUp()']]],
+  ['stemming_5fmethod_729',['stemming_method',['../namespacenlp_filter_search.html#ad54aa6dd724fe7d5d1c19ce5142a10cb',1,'nlpFilterSearch']]],
+  ['subtract_5fthread_5ftasks_730',['subtract_thread_tasks',['../namespaceprocessing.html#a1a11e0ad49d1d86515316462ef9be734',1,'processing']]]
+];

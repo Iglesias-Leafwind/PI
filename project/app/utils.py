@@ -1,3 +1,7 @@
+## @package app
+#  This module contains various functions that are usefull overall
+#  and contain the locks used to lock threads
+#  More details.
 import os
 import random
 import cv2
@@ -30,7 +34,9 @@ breedsThreshold = 0.7
 is_small = lambda w, h : w * h <= 800*1000
 is_medium = lambda w, h : 800*1000 < w * h < 3000*1000
 is_large = lambda w, h : 3000*1000 <= w * h
-
+## Resets all filters to the startup filters
+#
+#  More details.
 def reset_filters():
     global searchFilterOptions
     global timeHelper
@@ -76,7 +82,9 @@ timeHelper = {}
 searchFilterOptions = {}
 reset_filters()
 
-
+## Gets all images of a path
+#
+#  More details.
 def get_images_per_uri(path_name):
     dirs_and_files = {}  # key - dir name, value - list of files (imgs)
 
@@ -92,7 +100,9 @@ def get_images_per_uri(path_name):
                 check_file_type(dirs_and_files, f, path_name)
     return dirs_and_files
 
-
+## Checks image file type (if it is a valid image or not)
+#
+#  More details.
 def check_file_type(dirs_and_files, f, path_name):
     image_type = imghdr.what(f)
     if f.endswith('jpg') or f.endswith('jpeg') or f.endswith('png') or f.endswith('JPG') or image_type in ['jpeg',
@@ -103,10 +113,15 @@ def check_file_type(dirs_and_files, f, path_name):
         else:
             dirs_and_files[path_name] = [os.path.basename(f)]
 
-
+## Gets a random number integer between 1 and 1 << 63
+#
+#  More details.
 def get_random_number():
     return random.randint(1, 1 << 63)
-
+## Adds a tag to a image with a specific hash
+#  @param hashcode Image hashcode
+#  @param tag_name Manual tag, tag name
+#  More details.
 def add_tag(hashcode, tag_name):
     t = Tag.nodes.get_or_none(name=tag_name)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
@@ -117,7 +132,10 @@ def add_tag(hashcode, tag_name):
     i.tag.connect(t, {'originalTagName': tag_name, 'originalTagSource': "manual", 'manual': True, 'score': 1})
     add_es_tag(hashcode, tag_name)
 
-
+## Deletes a tag of a specific image
+#  @param hashcode Image hashcode
+#  @param tag_name Tag name
+#  More details.
 def delete_tag(hashcode, tag_name):
     t = Tag.nodes.get_or_none(name=tag_name)
     i = ImageNeo.nodes.get_or_none(hash=hashcode)
@@ -133,7 +151,10 @@ def delete_tag(hashcode, tag_name):
     delete_es_tag(hashcode, tag_name)
     return [tag_name, tag_source]
 
-
+## Adds a tag to a update elastic search
+#  @param hashcode Image hashcode
+#  @param tag Neo4j Tag class
+#  More details.
 def add_es_tag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
     a.tags.append(tag)
@@ -141,14 +162,19 @@ def add_es_tag(hashcode, tag):
     a.update(using=es, tags=a.tags)
     a.save(using=es)
 
-
+## Deletes a tag of a image
+#  @param hashcode Image hashcode
+#  @param tag Neo4j Tag class
+#  More details.
 def delete_es_tag(hashcode, tag):
     a = ImageES.get(using=es, id=hashcode)
     a.tags.remove(tag)
     a.tags = list(set(a.tags))
     a.update(using=es, tags=a.tags)
     a.save(using=es)
-    
+## Create face thumbnail
+#
+#  More details.
 def get_face_thumbnail(img, box, save_in=None):
     top, right, bottom, left= box
     cropimg = img[top:bottom, left:right]
@@ -159,7 +185,9 @@ def get_face_thumbnail(img, box, save_in=None):
         # new_path = img_path.split('.')[-2] + '_face.' + img_path.split('.')[-1]
         cv2.imwrite(save_in, cropimg)
     return cropimg
-
+## Gets and saves the img?
+#
+#  More details.
 def get_and_save_thumbnail(img_path, side_pixels, save_path):
     pil_img = Image.open(img_path)
 
@@ -171,7 +199,9 @@ def get_and_save_thumbnail(img_path, side_pixels, save_path):
                          (img_height + crop_side) // 2))
     thumb = thumb.resize((side_pixels, side_pixels), Image.LANCZOS)
     thumb.save(save_path)
-
+## Image Features class that contains image features
+#
+#  More details.
 class ImageFeature:
     def __init__(self, features=None, hash=None):
         self.features = features

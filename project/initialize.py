@@ -1,3 +1,8 @@
+## @package project
+#  This package will check if nltk has everything downloaded
+#  and will startup manage.py file with the correct arguments.
+#
+#  More details.
 import sys
 import manage
 import nltk

@@ -1,0 +1,24 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node26 [label="StructuredNode",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node26 -> Node0 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 [label="models.City",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_city.html",tooltip="Object City class format for neo4j containing: city name It has relations with region It has relation..."];
+  Node26 -> Node28 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node28 [label="models.Country",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_country.html",tooltip="Object Country class format for neo4j containing: country name It has relations with region More deta..."];
+  Node26 -> Node29 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node29 [label="models.Folder",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_folder.html",tooltip="Object Folder class format for neo4j containing: folder id_ folder name if it is root or not if it is..."];
+  Node26 -> Node30 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node30 [label="models.ImageNeo",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_image_neo.html",tooltip="Object Image class format for neo4j containing: folder path image name creation date insertion date p..."];
+  Node26 -> Node31 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node31 [label="models.Location",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_location.html",tooltip="Object Location class format for neo4j containing: location name It has relations with city It has re..."];
+  Node26 -> Node32 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node32 [label="models.Person",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_person.html",tooltip="Object Person class format for neo4j containing: person name It has relations with Image More details..."];
+  Node26 -> Node33 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node33 [label="models.Region",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_region.html",tooltip="Object Region class format for neo4j containing: region name It has relations with city More details."];
+  Node26 -> Node34 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node34 [label="models.Tag",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmodels_1_1_tag.html",tooltip="Object Tag class format for neo4j containing: tag name It has relations with Image More details."];
+}
