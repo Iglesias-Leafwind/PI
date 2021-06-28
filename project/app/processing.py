@@ -1086,11 +1086,11 @@ def generate_thumbnail(imagepath, image_hash):
     if(w - thumbnail_w > h - thumbnail_h):
         ratio = thumbnail_w/w
         thumbnail_h = int(h * ratio)
-        padding_tb = int((thumbnail_w-thumbnail_h)/2)
+        padding_tb = int((thumbnail_w-thumbnail_h))
     else:
         ratio = thumbnail_h/h
         thumbnail_w = int(w * ratio)
-        padding_lr = int((thumbnail_h-thumbnail_w)/2)
+        padding_lr = int((thumbnail_h-thumbnail_w))
 
     image = cv2.copyMakeBorder(image, padding_tb, padding_tb, padding_lr, padding_lr, cv2.BORDER_REPLICATE)
     # resize image

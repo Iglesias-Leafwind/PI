@@ -4,7 +4,6 @@
 #  More details.
 import os
 dir_path = os.getcwd()
-dir_path,_ = os.path.split(dir_path)
 # CHANGE TO YOUR PATH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 dbsPath = 'bolt://neo4j:12345@localhost:7687'
 ocrPath = os.path.join(dir_path,'app/resources/tesseract-OCR/tesseract')

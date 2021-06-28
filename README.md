@@ -12,22 +12,29 @@
 	* https://jdk.java.net/java-se-ri/11
 * **Cmake:**
 	* https://cmake.org/download/
-**Create venv:**
-* **Windows:**
-	* python -m venv venv
-	* activate venv
-	* pip install -r requirements.txt
-**Startup system:**
-* **Executable:**
-	* Just double click
-* **Python File:**
-	* python Imageable.py
-* **or while in venv:**
-	* python Initialize.py
-** If downloading from git don't forget to go to our website: **
-	* ** http://xcoa.av.it.pt/~pi202021g03/ **
-** And download Resources folder! **
-	* ** Finally place it inside app folder **
+* **VS c++ support:**
+	* https://www.microsoft.com/en-us/download/details.aspx?id=48145
+* **Create venv:**
+	* **Windows:**
+		* Open the Registry Editor by searching “regedit.”
+		* In the Registry Editor, use the left sidebar to navigate to HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem
+		* On the right, find a value named **LongPathsEnabled** and double-click it. If you don’t see the value listed, you’ll need to create it by right-clicking the FileSystem key, choosing New > DWORD (32-bit) Value, and then naming the new value **LongPathsEnabled**.
+		* In the value’s properties window, change the value from 0 to 1 in the “Value data” box and then click OK and you can close the windows.
+		**Note: You will need to create venv in the same path as the executable for it to work.
+		* python -m venv venv
+		* activate venv
+		* pip install -r requirements.txt
+* **Startup system:**
+	* **Executable:**
+		* Just double click
+	* **Python File:**
+		* python Imageable.py
+	* **or while in venv:**
+		* python Initialize.py
+	** If downloading from git don't forget to go to our website: **
+		* ** http://xcoa.av.it.pt/~pi202021g03/ **
+	** And download Resources folder! **
+		* ** Finally place it inside app folder **
 #### Known issues:
 * **JDK works between versions 11 and 15**
 * **Problems with neo4j or elasticsearch not finding java**
