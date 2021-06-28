@@ -37,6 +37,12 @@
 		* ** Finally place it inside app folder **
 #### Known issues:
 * **JDK works between versions 11 and 15**
+* **Memory allocation problems with elasticSearch**
+	* After starting up elasticSearch execute the following commands:
+		* curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": {"cluster.routing.allocation.disk.threshold_enabled": false } }'
+		* curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}' "
+* **Problems finding pyEnchant and enchant C**
+	* Install using:	sudo apt install libenchant1c2a
 * **Problems with neo4j or elasticsearch not finding java**
 	* **Setup JAVA_HOME as a environment variable:**
 	* **Windows:**
