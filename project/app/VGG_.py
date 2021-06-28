@@ -3,9 +3,9 @@
 #
 #  More details.
 import numpy as np
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications.vgg16 import preprocess_input
-from tensorflow.keras.preprocessing import image
+from tensorflow.python.keras.applications.vgg16 import VGG16
+from tensorflow.python.keras.applications.vgg16 import preprocess_input
+from tensorflow.python.keras.preprocessing import image
 from numpy import linalg as LA
 
 ## VGG class that will be called throughout the project.

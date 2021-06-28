@@ -39,14 +39,19 @@ def stemming_method(real_word_tokens):
 
     # 1st, let's check the PorterStemmer
     stemmed_words = set()
-    d = enchant.Dict("en_UK")
-    for word in real_word_tokens:
-        stemmed_word = ps.stem(word)
-        if not d.check(stemmed_word): # english vocabulary
-            stemmed_word = ls.stem(word)    # 2nd, let's try the LancasterStemmer
-            if not d.check(stemmed_word):
-                stemmed_word = word
-        stemmed_words |= {stemmed_word}
+    try:
+        d = enchant.Dict("en_UK")
+        for word in real_word_tokens:
+            stemmed_word = ps.stem(word)
+            if not d.check(stemmed_word): # english vocabulary
+                stemmed_word = ls.stem(word)    # 2nd, let's try the LancasterStemmer
+                if not d.check(stemmed_word):
+                    stemmed_word = word
+            stemmed_words |= {stemmed_word}
+    except Exception:
+        for word in real_word_tokens:
+            stemmed_word = ps.stem(word)
+            stemmed_words |= {stemmed_word}
     
     return set(stemmed_words)
 ## Applies pos_tagging to the stemmed words

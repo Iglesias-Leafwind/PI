@@ -6,6 +6,9 @@
 import sys
 import manage
 import nltk
+import enchant
+import os
+print("Dicts: " + str(enchant.list_languages()))
 nltk.download("words")
 nltk.download("stopwords")
 nltk.download("punkt")
