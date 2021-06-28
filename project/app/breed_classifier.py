@@ -3,7 +3,7 @@
 #  More details.
 import cv2
 import numpy as np
-from keras.models import load_model
+from tensorflow.python.keras.models import load_model
 
 MODEL_PATH = 'app/resources/breedclassifier-model/breedclassifier'
 IMG_SIZE = 299
