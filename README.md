@@ -31,7 +31,7 @@
 		* python Imageable.py
 	* **or while in venv:**
 		* python Initialize.py
-	* **If downloading from git don't forget to download de Resources folder:**
+	* **If downloading from git don't forget to download the Resources folder:**
 		* ** Windows: https://drive.google.com/file/d/1jKhzoAXbsaDcB96_3zmGypUk_QDeS2Ud/view?usp=sharing **
 		* ** Linux: https://drive.google.com/file/d/1FkqN6nUFQCcGF02mTFbbE36h52cBC3Zi/view?usp=sharing **
 		* ** Finally place it inside app/resources folder **
