@@ -31,10 +31,10 @@
 		* python Imageable.py
 	* **or while in venv:**
 		* python Initialize.py
-	** If downloading from git don't forget to go to our website: **
-		* ** http://xcoa.av.it.pt/~pi202021g03/ **
-	** And download Resources folder! **
-		* ** Finally place it inside app folder **
+	* **If downloading from git don't forget to download de Resources folder:**
+		* ** Windows: https://drive.google.com/file/d/1jKhzoAXbsaDcB96_3zmGypUk_QDeS2Ud/view?usp=sharing **
+		* ** Linux: https://drive.google.com/file/d/1FkqN6nUFQCcGF02mTFbbE36h52cBC3Zi/view?usp=sharing **
+		* ** Finally place it inside app/resources folder **
 #### Known issues:
 * **JDK works between versions 11 and 15**
 * **Memory allocation problems with elasticSearch**
